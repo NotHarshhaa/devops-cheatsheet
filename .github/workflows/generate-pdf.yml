@@ -1,0 +1,36 @@
+name: Generate PDFs
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+  workflow_dispatch:
+
+jobs:
+  pdf:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Install pandoc and LaTeX
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y pandoc
+        sudo apt-get install -y texlive-xetex
+
+    - name: Generate PDF
+      run: |
+        for file in $(find . -name '*.md'); do
+          pandoc "$file" -o "${file%.md}.pdf" --pdf-engine=xelatex
+        done
+
+    - name: Upload PDF artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: pdfs
+        path: '**/*.pdf'
