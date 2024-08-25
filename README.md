@@ -1,6 +1,6 @@
 # 🚀 DevOps Tools Cheatsheet Collection
 
-![](https://imgur.com/JyEFkwH.png)
+![text](https://imgur.com/JyEFkwH.png)
 
 Welcome to the **DevOps Tools Cheatsheet Collection**! This repository is your one-stop shop for quick-reference guides on a wide range of DevOps tools and technologies. Whether you're a seasoned DevOps engineer, a sysadmin, a developer, or just starting your journey in DevOps, these cheatsheets are designed to help you navigate the complex world of DevOps with ease.
 
@@ -20,6 +20,8 @@ Welcome to the **DevOps Tools Cheatsheet Collection**! This repository is your o
 ├── Containerization/
 │   ├── Docker.md
 │   ├── Kubernetes.md
+│   ├── CRI-O.md
+│   ├── OpenShift.md
 │   ├── Helm.md
 │   └── Podman.md
 │
@@ -39,6 +41,7 @@ Welcome to the **DevOps Tools Cheatsheet Collection**! This repository is your o
 │   ├── AWS.md
 │   ├── Azure.md
 │   ├── GCP.md
+│   ├── Kubernetes-on-AWS.md
 │   └── Terraform.md
 │
 └── Networking/
@@ -67,6 +70,8 @@ Essential tips and commands for working with containers and orchestration:
 
 - [**Docker**](./Containerization/Docker.md)
 - [**Kubernetes**](./Containerization/Kubernetes.md)
+- [**CRI-O**](./Containerization/CRI-O.md)
+- [**OpenShift**](./Containerization/OpenShift.md)
 - [**Helm**](./Containerization/Helm.md)
 - [**Podman**](./Containerization/Podman.md)
 
@@ -94,6 +99,7 @@ Cloud platform and infrastructure as code tools:
 
 - [**AWS**](./Cloud/AWS.md)
 - [**Azure**](./Cloud/Azure.md)
+- [**Kubernetes-on-AWS**](./Cloud/Kubernetes-on-AWS.md)
 - [**Google Cloud Platform (GCP)**](./Cloud/GCP.md)
 - [**Terraform**](./Cloud/Terraform.md)
 

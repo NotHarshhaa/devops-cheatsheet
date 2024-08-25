@@ -2,205 +2,591 @@
 
 ![text](https://imgur.com/XHwJp6U.png)
 
-### Checkout detailed article on [Dev.to](https://dev.to/prodevopsguytech/docker-commands-from-beginner-to-advanced-for-devops-engineers-bb3)
+## Checkout detailed article on [Dev.to](https://dev.to/prodevopsguytech/docker-commands-from-beginner-to-advanced-for-devops-engineers-bb3)
 
-**1. Introduction:**
+## 1. Introduction to Docker
 
-- **Docker** is a platform that automates the deployment of applications inside lightweight, portable containers. It allows developers to package an application with all its dependencies into a standardized unit for software development.
+### What is Docker?
 
-**2. Key Concepts:**
+- **Docker** is an open-source platform that automates the deployment, scaling, and management of applications by using containerization technology. Containers are lightweight, portable, and consistent environments that contain everything needed to run a piece of software, including the code, runtime, system tools, libraries, and settings.
 
-- **Container:** An isolated environment where applications run. Containers are lightweight and share the host OS kernel.
-- **Image:** A read-only template with instructions for creating a Docker container.
-- **Dockerfile:** A script containing a list of commands to create a Docker image.
-- **Docker Hub:** A cloud-based repository where you can find and store Docker images.
-- **Registry:** A storage and content delivery system, holding named Docker images, available in different tagged versions.
+### Key Concepts
 
-**3. Basic Docker Commands:**
+- **Docker Engine**: The core component of Docker, responsible for running containers.
+- **Image**: A lightweight, standalone, and executable software package that includes everything needed to run an application.
+- **Container**: A runtime instance of a Docker image that shares the host system's kernel.
+- **Dockerfile**: A script containing a series of commands to assemble a Docker image.
+- **Registry**: A storage and distribution system for Docker images, such as Docker Hub.
+- **Docker Compose**: A tool for defining and running multi-container Docker applications using a YAML file.
 
-- **Run a Container:**
+---
+
+## 2. Installing Docker
+
+### Install Docker on Linux
+
+- **Install Docker Engine**:
 
   ```bash
-  docker run -d -p 8080:80 nginx
+  sudo apt-get update
+  sudo apt-get install docker-ce docker-ce-cli containerd.io
   ```
 
-  - `-d`: Run container in the background.
-  - `-p 8080:80`: Map port 8080 on the host to port 80 in the container.
-  
-- **List Containers:**
+- **Start Docker Service**:
+
+  ```bash
+  sudo systemctl start docker
+  sudo systemctl enable docker
+  ```
+
+### Install Docker on macOS
+
+- **Install Docker Desktop**:
+  - Download and install Docker Desktop from [Docker's official website](https://www.docker.com/products/docker-desktop).
+
+### Install Docker on Windows
+
+- **Install Docker Desktop**:
+  - Download and install Docker Desktop from [Docker's official website](https://www.docker.com/products/docker-desktop).
+
+---
+
+## 3. Basic Docker Operations
+
+### Working with Docker Images
+
+- **Search for an Image**:
+
+  ```bash
+  docker search nginx
+  ```
+
+- **Pull an Image from Docker Hub**:
+
+  ```bash
+  docker pull nginx
+  ```
+
+- **List All Images**:
+
+  ```bash
+  docker images
+  ```
+
+- **Remove an Image**:
+
+  ```bash
+  docker rmi nginx
+  ```
+
+### Working with Docker Containers
+
+- **Run a Container**:
+
+  ```bash
+  docker run -d -p 80:80 --name mynginx nginx
+  ```
+
+- **List Running Containers**:
 
   ```bash
   docker ps
   ```
 
-  - `-a`: List all containers, including stopped ones.
-  
-- **Stop a Container:**
+- **List All Containers (including stopped)**:
 
   ```bash
-  docker stop container_id
+  docker ps -a
   ```
-  
-- **Remove a Container:**
+
+- **Stop a Running Container**:
 
   ```bash
-  docker rm container_id
+  docker stop mynginx
   ```
-  
-- **Build an Image:**
+
+- **Remove a Container**:
 
   ```bash
-  docker build -t my-image:latest .
+  docker rm mynginx
   ```
 
-  - `-t my-image:latest`: Tag the image with a name and version.
-  
-- **Pull an Image from Docker Hub:**
+### Docker Networks
+
+- **List All Networks**:
 
   ```bash
-  docker pull ubuntu:latest
+  docker network ls
   ```
 
-- **Push an Image to Docker Hub:**
+- **Create a New Network**:
 
   ```bash
-  docker push mydockerhubusername/my-image:latest
+  docker network create mynetwork
   ```
 
-**4. Dockerfile Essentials:**
+- **Connect a Container to a Network**:
 
-- **Basic Dockerfile Structure:**
+  ```bash
+  docker network connect mynetwork mynginx
+  ```
+
+- **Disconnect a Container from a Network**:
+
+  ```bash
+  docker network disconnect mynetwork mynginx
+  ```
+
+---
+
+## 4. Building Docker Images
+
+### Dockerfile Basics
+
+- **Sample Dockerfile**:
 
   ```Dockerfile
-  FROM ubuntu:20.04
-  RUN apt-get update && apt-get install -y nginx
-  COPY . /var/www/html
-  EXPOSE 80
-  CMD ["nginx", "-g", "daemon off;"]
+  # Use an official Node.js runtime as a parent image
+  FROM node:14
+
+  # Set the working directory in the container
+  WORKDIR /app
+
+  # Copy the current directory contents into the container at /app
+  COPY . /app
+
+  # Install any needed packages specified in package.json
+  RUN npm install
+
+  # Make port 8080 available to the world outside this container
+  EXPOSE 8080
+
+  # Define environment variable
+  ENV NODE_ENV production
+
+  # Run app.js using node
+  CMD ["node", "app.js"]
   ```
 
-  - **FROM:** Sets the base image.
-  - **RUN:** Executes commands in the image.
-  - **COPY:** Copies files from the host to the container.
-  - **EXPOSE:** Specifies the port on which the container listens.
-  - **CMD:** Provides the default command for the container.
+### Building an Image from a Dockerfile
 
-**5. Networking:**
-
-- **Bridge Network (Default):** Connect containers on the same host.
+- **Build the Image**:
 
   ```bash
-  docker network create my-bridge-network
-  docker run -d --name my-container --network my-bridge-network nginx
+  docker build -t mynodeapp .
   ```
-  
-- **Host Network:** The container uses the host's networking.
+
+### Managing Image Tags
+
+- **Tag an Image**:
 
   ```bash
-  docker run --rm -d --network host nginx
+  docker tag mynodeapp myrepo/mynodeapp:v1.0
   ```
-  
-- **Overlay Network:** For multi-host networking in Docker Swarm or Kubernetes.
+
+- **Push an Image to Docker Hub**:
 
   ```bash
-  docker network create -d overlay my-overlay-network
+  docker push myrepo/mynodeapp:v1.0
   ```
 
-**6. Volumes:**
+---
 
-- **Creating a Volume:**
+## 5. Docker Compose
+
+### Introduction to Docker Compose
+
+- **Docker Compose** is a tool for defining and running multi-container Docker applications. You use a YAML file to configure your application's services, and then use a single command to create and start all the services.
+
+### Sample `docker-compose.yml` File
+
+```yaml
+version: '3'
+services:
+  web:
+    image: nginx
+    ports:
+      - "8080:80"
+  db:
+    image: mysql:5.7
+    environment:
+      MYSQL_ROOT_PASSWORD: example
+```
+
+### Docker Compose Commands
+
+- **Start Services**:
 
   ```bash
-  docker volume create my-volume
+  docker-compose up
   ```
-  
-- **Mounting a Volume:**
+
+- **Stop Services**:
 
   ```bash
-  docker run -d --name my-container -v my-volume:/data busybox
+  docker-compose down
   ```
-  
-- **Bind Mounts:**
+
+- **Scale Services**:
 
   ```bash
-  docker run -d --name my-container -v /host/data:/container/data busybox
+  docker-compose up --scale web=3
   ```
 
-**7. Docker Compose:**
+### Managing Volumes with Docker Compose
 
-- **Basic `docker-compose.yml` Example:**
+- **Defining Volumes**:
 
   ```yaml
-  version: '3'
   services:
     web:
       image: nginx
-      ports:
-        - "8080:80"
-    db:
-      image: mysql
-      environment:
-        MYSQL_ROOT_PASSWORD: example
+      volumes:
+        - ./webdata:/usr/share/nginx/html
   ```
 
-- **Commands:**
-  - Start services: `docker-compose up -d`
-  - Stop services: `docker-compose down`
-  - View logs: `docker-compose logs`
+---
 
-**8. Advanced Docker Topics:**
+## 6. Docker Volumes and Storage
 
-- **Multi-Stage Builds:** Optimize image size by separating the build environment from the runtime environment.
+### Understanding Docker Volumes
 
-  ```Dockerfile
-  FROM golang:1.16 AS builder
-  WORKDIR /app
-  COPY . .
-  RUN go build -o myapp
+- **Volumes** are the preferred mechanism for persisting data generated and used by Docker containers.
 
-  FROM alpine:3.13
-  COPY --from=builder /app/myapp /usr/local/bin/
-  CMD ["myapp"]
-  ```
-  
-- **Docker Secrets:** Manage sensitive data securely.
+### Managing Volumes
+
+- **Create a Volume**:
 
   ```bash
-  echo "my_secret_password" | docker secret create my_secret -
+  docker volume create myvolume
   ```
-  
-- **Docker Swarm Mode:** Enable clustering of Docker engines.
+
+- **List All Volumes**:
+
+  ```bash
+  docker volume ls
+  ```
+
+- **Inspect a Volume**:
+
+  ```bash
+  docker volume inspect myvolume
+  ```
+
+- **Remove a Volume**:
+
+  ```bash
+  docker volume rm myvolume
+  ```
+
+### Mounting Volumes
+
+- **Mount a Volume to a Container**:
+
+  ```bash
+  docker run -d -p 80:80 --name mynginx -v myvolume:/usr/share/nginx/html nginx
+  ```
+
+### Bind Mounts
+
+- **Use a Bind Mount**:
+
+  ```bash
+  docker run -d -p 80:80 --name mynginx -v /path/to/local/dir:/usr/share/nginx/html nginx
+  ```
+
+---
+
+## 7. Docker Networking
+
+### Networking Modes
+
+- **Bridge Network**: The default network driver, which allows containers to communicate on the same host.
+- **Host Network**: Removes network isolation between the container and the Docker host.
+- **Overlay Network**: Enables networking between multiple Docker hosts in a swarm.
+
+### Working with Networks
+
+- **Create a User-Defined Bridge Network**:
+
+  ```bash
+  docker network create mynetwork
+  ```
+
+- **Run a Container in a Network**:
+
+  ```bash
+  docker run -d --name mynginx --network=mynetwork nginx
+  ```
+
+- **Inspect a Network**:
+
+  ```bash
+  docker network inspect mynetwork
+  ```
+
+### DNS in Docker
+
+- Docker containers can resolve each other's hostnames to IP addresses by using the embedded DNS server.
+
+---
+
+## 8. Docker Security
+
+### Securing Docker
+
+- **Least Privileged User**: Always run containers as a non-root user.
+
+  ```Dockerfile
+  FROM nginx
+  USER www-data
+  ```
+
+- **Use Trusted Images**: Use official images or images from trusted sources.
+- **Keep Docker Updated**: Regularly update Docker to the latest version to benefit from security patches.
+
+### Docker Content Trust
+
+- **Enable Docker Content Trust (DCT)**:
+
+  ```bash
+  export DOCKER_CONTENT_TRUST=1
+  ```
+
+### Managing Secrets
+
+- **Create a Secret in Docker Swarm**:
+
+  ```bash
+  echo "mysecretpassword" | docker secret create my_secret -
+  ```
+
+- **Use a Secret in a Service**:
+
+  ```bash
+  docker service create --name myservice --secret my_secret nginx
+  ```
+
+### Securing Docker Daemon
+
+- **Use TLS to Secure Docker API**:
+  - Generate TLS certificates and configure the Docker daemon to use them for secure communication.
+
+### Limiting Container Resources
+
+- **Limit Memory**:
+
+  ```bash
+  docker run -d --name mynginx --memory="256m" nginx
+  ```
+
+- **Limit CPU**:
+
+  ```bash
+  docker run -d --name mynginx --cpus="1.0" nginx
+  ```
+
+---
+
+## 9. Advanced Docker Features
+
+### Docker Swarm
+
+- **Initialize a Swarm**:
 
   ```bash
   docker swarm init
   ```
 
-**9. Security Best Practices:**
+- **Join a Swarm**:
 
-- **Use Official Images:** Prefer official images from Docker Hub to ensure security.
-- **Minimize Image Layers:** Combine commands in Dockerfile to reduce the number of layers.
-- **Run as Non-Root User:** Avoid running containers as the root user.
+  ```bash
+  docker swarm join --token SWMTKN-1-xxxx
+  ```
+
+- **Deploy a Stack**:
+
+  ```bash
+  docker stack deploy -c docker-compose.yml mystack
+  ```
+
+### Multi-Stage Builds
+
+- **Example of a Multi-Stage Dockerfile**:
 
   ```Dockerfile
-  USER nobody
+  # First Stage
+  FROM golang:1.16 as builder
+  WORKDIR /app
+  COPY . .
+  RUN go build -o myapp
+
+  # Second Stage
+  FROM alpine:latest
+  WORKDIR /app
+  COPY --from=builder /app/myapp .
+  CMD ["./myapp"]
   ```
 
-**10. Troubleshooting:**
+### Docker Plugins
 
-- **Inspecting a Container:**
+- **List Installed Plugins**:
 
   ```bash
-  docker inspect container_id
+  docker plugin ls
   ```
-  
-- **Accessing Container Logs:**
+
+- **Install a Plugin
+
+**:
 
   ```bash
-  docker logs container_id
+  docker plugin install vieux/sshfs
   ```
-  
-- **Entering a Running Container:**
+
+### Docker Daemon Configuration
+
+- **Customizing Docker Daemon**:
+  - Edit the `/etc/docker/daemon.json` file to configure the Docker daemon.
+
+  ```json
+  {
+    "log-driver": "json-file",
+    "log-level": "warn",
+    "storage-driver": "overlay2"
+  }
+  ```
+
+- **Reload Daemon Configuration**:
 
   ```bash
-  docker exec -it container_id /bin/bash
+  sudo systemctl reload docker
   ```
+
+---
+
+## 10. Monitoring and Logging
+
+### Docker Logs
+
+- **View Container Logs**:
+
+  ```bash
+  docker logs mynginx
+  ```
+
+- **Follow Logs**:
+
+  ```bash
+  docker logs -f mynginx
+  ```
+
+### Monitoring Containers
+
+- **Inspect Resource Usage**:
+
+  ```bash
+  docker stats mynginx
+  ```
+
+- **Docker Events**:
+  - Monitor Docker events in real-time.
+
+  ```bash
+  docker events
+  ```
+
+### Integrating with Monitoring Tools
+
+- **Prometheus and Grafana**: Use cAdvisor and Prometheus Node Exporter to monitor Docker containers.
+
+  ```bash
+  docker run -d --name=cadvisor --volume=/:/rootfs:ro --volume=/var/run:/var/run:ro --volume=/sys:/sys:ro --volume=/var/lib/docker/:/var/lib/docker:ro --volume=/dev/disk/:/dev/disk:ro --publish=8080:8080 google/cadvisor:latest
+  ```
+
+---
+
+## 11. Docker Best Practices
+
+### Dockerfile Best Practices
+
+- **Minimize Image Size**: Use multi-stage builds and slim base images.
+- **Leverage Build Cache**: Organize Dockerfile instructions to maximize the use of cache layers.
+- **Use `.dockerignore`**: Exclude unnecessary files from the build context using a `.dockerignore` file.
+
+### Container Management Best Practices
+
+- **Immutable Infrastructure**: Treat containers as immutable, replace rather than modify running containers.
+- **Keep Containers Stateless**: Design containers to be stateless, with external data persistence.
+- **Log to STDOUT/STDERR**: Ensure containers log to STDOUT/STDERR for easier aggregation and analysis.
+
+### Security Best Practices
+
+- **Regularly Scan Images**: Use tools like `trivy` to scan images for vulnerabilities.
+- **Use Namespaces**: Use namespaces to isolate container resources and enhance security.
+- **Limit Capabilities**: Drop unnecessary capabilities from containers.
+
+  ```bash
+  docker run --cap-drop=ALL --cap-add=NET_BIND_SERVICE nginx
+  ```
+
+---
+
+## 12. Troubleshooting Docker
+
+### Common Issues
+
+- **Container Exits Immediately**:
+  - Check the Docker logs for errors.
+
+  ```bash
+  docker logs <container_id>
+  ```
+
+- **Image Build Fails**:
+  - Debug using the `--no-cache` option to rebuild the image without cache.
+
+  ```bash
+  docker build --no-cache -t myimage .
+  ```
+
+- **Networking Issues**:
+  - Verify network settings and connectivity.
+
+  ```bash
+  docker network inspect <network_name>
+  ```
+
+### Useful Docker Commands for Troubleshooting
+
+- **Inspect a Container**:
+
+  ```bash
+  docker inspect <container_id>
+  ```
+
+- **Enter a Running Container**:
+
+  ```bash
+  docker exec -it <container_id> /bin/bash
+  ```
+
+- **Check Resource Usage**:
+
+  ```bash
+  docker stats
+  ```
+
+---
+
+## 13. References
+
+### Official Documentation
+
+- [Docker Documentation](https://docs.docker.com/)
+
+### Community Resources
+
+- [Docker Hub](https://hub.docker.com/)
+- [Docker GitHub Repository](https://github.com/docker/docker-ce)
+- [Docker Forums](https://forums.docker.com/)

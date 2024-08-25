@@ -2,168 +2,223 @@
 
 ![text](https://imgur.com/aYuSIvY.png)
 
-### Checkout detailed article on [Dev.to](https://dev.to/prodevopsguytech/kubernetes-commands-for-devops-engineers-124o)
+## Checkout detailed article on [Dev.to](https://dev.to/prodevopsguytech/kubernetes-commands-for-devops-engineers-124o)
 
-**1. Introduction:**
+## 1. Introduction to Kubernetes
 
-- **Kubernetes** is an open-source container orchestration platform that automates the deployment, scaling, and management of containerized applications. Kubernetes clusters can span hosts across public, private, or hybrid clouds.
+### What is Kubernetes?
 
-**2. Key Concepts:**
+- **Kubernetes** is an open-source container orchestration platform that automates the deployment, scaling, and management of containerized applications.
 
-- **Cluster:** A set of nodes where Kubernetes runs, consisting of at least one master node and multiple worker nodes.
-- **Node:** A worker machine in Kubernetes, either a virtual or a physical machine, where Pods are deployed.
-- **Pod:** The smallest deployable unit in Kubernetes, a Pod encapsulates one or more containers.
-- **Service:** An abstraction that defines a logical set of Pods and a policy by which to access them.
-- **Deployment:** A higher-level concept that manages Pods and ReplicaSets.
+### Key Concepts
 
-**3. Kubernetes Architecture:**
+- **Cluster**: A set of worker machines, called nodes, that run containerized applications.
+- **Node**: A single machine in a Kubernetes cluster.
+- **Pod**: The smallest deployable unit, which can contain one or more containers.
+- **Service**: A stable network endpoint to expose a set of pods.
+- **Namespace**: A way to divide cluster resources between multiple users.
+- **Kubelet**: An agent running on each node that ensures containers are running in a Pod.
+- **Kubectl**: Command-line tool to interact with Kubernetes clusters.
 
-- **Master Components:**
-  - **API Server:** The front-end for the Kubernetes control plane.
-  - **Scheduler:** Assigns Pods to nodes based on resource availability.
-  - **Controller Manager:** Manages controllers that regulate the state of the cluster.
-  - **etcd:** A consistent and highly-available key-value store used as Kubernetes' backing store for all cluster data.
+---
 
-- **Worker Node Components:**
-  - **Kubelet:** Ensures that containers are running in a Pod.
-  - **Kube-proxy:** Manages network communication inside and outside of the cluster.
-  - **Container Runtime:** Software responsible for running containers, e.g., Docker, containerd.
+## 2. Basic Kubernetes Operations
 
-**4. Kubernetes Installation:**
+### Setting Up a Kubernetes Cluster
 
-- **Minikube (Local Cluster):**
+- **Minikube**: Set up a single-node Kubernetes cluster for testing.
 
   ```bash
-  curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
-  sudo install minikube-linux-amd64 /usr/local/bin/minikube
   minikube start
   ```
 
-- **Kubeadm (Production Cluster):**
+### Working with `kubectl`
+
+- **Get Cluster Information**:
 
   ```bash
-  kubeadm init
+  kubectl cluster-info
   ```
 
-**5. Managing Pods:**
-
-- **Create a Pod:**
-
-  ```yaml
-  apiVersion: v1
-  kind: Pod
-  metadata:
-    name: my-pod
-  spec:
-    containers:
-    - name: nginx
-      image: nginx
-  ```
+- **Get All Nodes in the Cluster**:
 
   ```bash
-  kubectl apply -f pod.yaml
+  kubectl get nodes
   ```
 
-- **View Pod Status:**
+### Managing Pods
+
+- **Create a Pod**:
+
+  ```bash
+  kubectl run mypod --image=nginx
+  ```
+
+- **List All Pods**:
 
   ```bash
   kubectl get pods
   ```
 
-- **Describe a Pod:**
+- **Describe a Pod**:
 
   ```bash
-  kubectl describe pod my-pod
+  kubectl describe pod mypod
   ```
 
-- **Delete a Pod:**
+- **Delete a Pod**:
 
   ```bash
-  kubectl delete pod my-pod
+  kubectl delete pod mypod
   ```
 
-**6. Deployments and Scaling:**
+### Using Namespaces
 
-- **Create a Deployment:**
+- **List All Namespaces**:
+
+  ```bash
+  kubectl get namespaces
+  ```
+
+- **Create a Namespace**:
+
+  ```bash
+  kubectl create namespace mynamespace
+  ```
+
+- **Delete a Namespace**:
+
+  ```bash
+  kubectl delete namespace mynamespace
+  ```
+
+---
+
+## 3. Deployments and Scaling
+
+### Deployments
+
+- **Create a Deployment**:
+
+  ```bash
+  kubectl create deployment myapp --image=nginx
+  ```
+
+- **View Deployment Status**:
+
+  ```bash
+  kubectl get deployments
+  ```
+
+- **Update a Deployment**:
+
+  ```bash
+  kubectl set image deployment/myapp nginx=nginx:1.16
+  ```
+
+- **Rollback a Deployment**:
+
+  ```bash
+  kubectl rollout undo deployment/myapp
+  ```
+
+### Scaling Applications
+
+- **Scale a Deployment**:
+
+  ```bash
+  kubectl scale deployment myapp --replicas=3
+  ```
+
+- **Auto-scaling with Horizontal Pod Autoscaler (HPA)**:
+
+  ```bash
+  kubectl autoscale deployment myapp --min=1 --max=5 --cpu-percent=80
+  ```
+
+---
+
+## 4. Services and Networking
+
+### Services
+
+- **Expose a Pod with a Service**:
+
+  ```bash
+  kubectl expose pod mypod --port=80 --target-port=8080
+  ```
+
+- **Create a Service for a Deployment**:
+
+  ```bash
+  kubectl expose deployment myapp --type=NodePort --port=80
+  ```
+
+- **List All Services**:
+
+  ```bash
+  kubectl get services
+  ```
+
+### Networking
+
+- **Understanding Cluster Networking**: Kubernetes abstracts network communication between Pods.
+- **Network Policies**: Restrict Pod communication using Network Policies.
 
   ```yaml
-  apiVersion: apps/v1
-  kind: Deployment
+  apiVersion: networking.k8s.io/v1
+  kind: NetworkPolicy
   metadata:
-    name: nginx-deployment
+    name: mynetworkpolicy
+    namespace: mynamespace
   spec:
-    replicas: 3
-    selector:
+    podSelector:
       matchLabels:
-        app: nginx
-    template:
-      metadata:
-        labels:
-          app: nginx
-      spec:
-        containers:
-        - name: nginx
-          image: nginx:1.14.2
+        role: db
+    policyTypes:
+    - Ingress
+    - Egress
+    ingress:
+    - from:
+      - podSelector:
+          matchLabels:
+            role: frontend
+    egress:
+    - to:
+      - podSelector:
+          matchLabels:
+            role: backend
   ```
 
-  ```bash
-  kubectl apply -f deployment.yaml
-  ```
+---
 
-- **Scaling a Deployment:**
+## 5. Persistent Storage
 
-  ```bash
-  kubectl scale deployment/nginx-deployment --replicas=5
-  ```
+### Volumes
 
-- **Rolling Updates:**
-
-  ```bash
-  kubectl set image deployment/nginx-deployment nginx=nginx:1.16.0
-  ```
-
-**7. Services and Networking:**
-
-- **Expose a Deployment as a Service:**
-
-  ```bash
-  kubectl expose deployment/nginx-deployment --type=LoadBalancer --name=my-service
-  ```
-
-- **Service Types:**
-  - **ClusterIP:** Default type, accessible only within the cluster.
-  - **NodePort:** Exposes the Service on each Node’s IP at a static port.
-  - **LoadBalancer:** Provision a LoadBalancer to expose the Service externally.
-
-**8. Persistent Storage:**
-
-- **Persistent Volume (PV):**
+- **Create a Persistent Volume**:
 
   ```yaml
   apiVersion: v1
   kind: PersistentVolume
   metadata:
-    name: pv-name
-  spec
-
-:
+    name: mypv
+  spec:
     capacity:
       storage: 1Gi
     accessModes:
       - ReadWriteOnce
-    persistentVolumeReclaimPolicy: Retain
-    storageClassName: manual
     hostPath:
       path: "/mnt/data"
-
   ```
 
-- **Persistent Volume Claim (PVC):**
+- **Create a Persistent Volume Claim**:
+
   ```yaml
   apiVersion: v1
   kind: PersistentVolumeClaim
   metadata:
-    name: pvc-name
+    name: mypvc
   spec:
     accessModes:
       - ReadWriteOnce
@@ -172,96 +227,383 @@
         storage: 1Gi
   ```
 
-- **Mounting a PVC to a Pod:**
+### StorageClasses
+
+- **Create a StorageClass**:
 
   ```yaml
+  apiVersion: storage.k8s.io/v1
+  kind: StorageClass
+  metadata:
+    name: mystorageclass
+  provisioner: kubernetes.io/aws-ebs
+  parameters:
+    type: gp2
+  ```
+
+---
+
+## 6. ConfigMaps and Secrets
+
+### ConfigMaps
+
+- **Create a ConfigMap from a File**:
+
+  ```bash
+  kubectl create configmap myconfig --from-file=config.txt
+  ```
+
+- **View a ConfigMap**:
+
+  ```bash
+  kubectl get configmap myconfig -o yaml
+  ```
+
+- **Use a ConfigMap in a Pod**:
+
+  ```yaml
+  apiVersion: v1
+  kind: Pod
+  metadata:
+    name: mypod
   spec:
-    volumes:
-      - name: my-volume
-        persistentVolumeClaim:
-          claimName: pvc-name
     containers:
-      - name: my-container
-        volumeMounts:
-          - mountPath: "/mnt/data"
-            name: my-volume
+    - name: mycontainer
+      image: nginx
+      envFrom:
+      - configMapRef:
+          name: myconfig
   ```
 
-**9. ConfigMaps and Secrets:**
+### Secrets
 
-- **ConfigMap Example:**
+- **Create a Secret from a Literal Value**:
+
+  ```bash
+  kubectl create secret generic mysecret --from-literal=username=admin
+  ```
+
+- **View a Secret**:
+
+  ```bash
+  kubectl get secret mysecret -o yaml
+  ```
+
+- **Use a Secret in a Pod**:
 
   ```yaml
   apiVersion: v1
-  kind: ConfigMap
+  kind: Pod
   metadata:
-    name: my-config
-  data:
-    key: value
+    name: mypod
+  spec:
+    containers:
+    - name: mycontainer
+      image: nginx
+      envFrom:
+      - secretRef:
+          name: mysecret
   ```
 
-- **Secret Example:**
+---
+
+## 7. Ingress Controllers
+
+### Setting Up Ingress
+
+- **Install an Ingress Controller**: Use a Helm chart or YAML manifest to install an ingress controller (e.g., NGINX Ingress Controller).
+
+  ```bash
+  kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/cloud/deploy.yaml
+  ```
+
+### Configuring Ingress Resources
+
+- **Create an Ingress Resource**:
 
   ```yaml
-  apiVersion: v1
-  kind: Secret
+  apiVersion: networking.k8s.io/v1
+  kind: Ingress
   metadata:
-    name: my-secret
-  type: Opaque
-  data:
-    username: YWRtaW4=
-    password: MWYyZDFlMmU2N2Rm
+    name: myingress
+  spec:
+    rules:
+    - host: myapp.example.com
+      http:
+        paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: myapp-service
+              port:
+                number: 80
   ```
 
-**10. Advanced Kubernetes Concepts:**
+- **TLS Termination with Ingress**:
 
-- **Helm Charts:** Package manager for Kubernetes.
-- **Operators:** Extend Kubernetes functionalities by managing complex applications.
-- **Custom Resource Definitions (CRD):** Extend Kubernetes API to manage custom resources.
+  ```yaml
+  apiVersion: networking.k8s.io/v1
+  kind: Ingress
+  metadata:
+    name: myingress
+  spec:
+    tls:
+    - hosts:
+      - myapp.example.com
+      secretName: mytlssecret
+    rules:
+    - host: myapp.example.com
+      http:
+        paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: myapp-service
+              port:
+                number: 80
+  ```
 
-**11. Monitoring and Logging:**
+---
 
-- **Prometheus and Grafana:** For metrics and monitoring.
-- **ELK Stack (Elasticsearch, Logstash, Kibana):** For centralized logging.
-- **kubectl logs:** View logs of a specific Pod.
+## 8. Kubernetes Security
 
-**12. Kubernetes Security:**
+### Role-Based Access Control (RBAC)
 
-- **RBAC (Role-Based Access Control):** Define access controls in the cluster.
+- **Create a Role**:
 
   ```yaml
   apiVersion: rbac.authorization.k8s.io/v1
   kind: Role
   metadata:
-    namespace: default
-    name: pod-reader
+    namespace: mynamespace
+    name: myrole
   rules:
   - apiGroups: [""]
     resources: ["pods"]
     verbs: ["get", "watch", "list"]
   ```
 
-- **Network Policies:** Define how Pods communicate with each other and other network endpoints.
+- **Bind a Role to a User**:
+
+  ```yaml
+  apiVersion: rbac.authorization.k8s.io/v1
+  kind: RoleBinding
+  metadata:
+    name: myrolebinding
+    namespace: mynamespace
+  subjects:
+  - kind: User
+    name: myuser
+    apiGroup: rbac.authorization.k8s.io
+  roleRef:
+    kind: Role
+    name: myrole
+    apiGroup: rbac.authorization.k8s.io
+  ```
+
+### Pod Security Policies (PSP)
+
+- **Create a PSP**:
+
+  ```yaml
+  apiVersion: policy/v1beta1
+  kind: PodSecurityPolicy
+  metadata:
+    name: mypsp
+  spec:
+    privileged: false
+    seLinux:
+      rule: RunAsAny
+    supplementalGroups:
+      rule: RunAsAny
+    runAsUser:
+      rule: RunAsAny
+    fsGroup:
+      rule: RunAsAny
+    volumes:
+    - '*'
+  ```
+
+### Network Policies
+
+- **Create a Network Policy**:
 
   ```yaml
   apiVersion: networking.k8s.io/v1
   kind: NetworkPolicy
   metadata:
-    name: allow-nginx
+    name: allow-db
+    namespace: mynamespace
   spec:
     podSelector:
       matchLabels:
-        app: nginx
+        role: db
     policyTypes:
-      - Ingress
+
+
+    - Ingress
     ingress:
-      - from:
-        - ipBlock:
-            cidr: 192.168.1.0/24
+    - from:
+      - podSelector:
+          matchLabels:
+            role: frontend
   ```
 
-**13. Troubleshooting Kubernetes:**
+### Securing Kubernetes API Server
 
-- **kubectl get events:** Get events to diagnose issues.
-- **kubectl describe:** Describe resource for detailed state.
-- **kubectl debug:** Debug a container in a pod.
+- **Enable API Server Auditing**:
+  - Edit the API server manifest to include auditing options.
+
+  ```yaml
+  - --audit-log-path=/var/log/kubernetes/audit.log
+  - --audit-policy-file=/etc/kubernetes/audit-policy.yaml
+  ```
+
+---
+
+## 9. Advanced Kubernetes
+
+### Custom Resource Definitions (CRDs)
+
+- **Create a Custom Resource Definition**:
+
+  ```yaml
+  apiVersion: apiextensions.k8s.io/v1
+  kind: CustomResourceDefinition
+  metadata:
+    name: myresources.example.com
+  spec:
+    group: example.com
+    versions:
+    - name: v1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+    scope: Namespaced
+    names:
+      plural: myresources
+      singular: myresource
+      kind: MyResource
+      shortNames:
+      - mr
+  ```
+
+### Operators
+
+- **Introduction to Operators**: Operators are Kubernetes applications designed to manage complex stateful applications by extending the Kubernetes API.
+- **Creating an Operator**:
+  - Use the Operator SDK to scaffold and build an operator.
+
+  ```bash
+  operator-sdk init --domain=example.com --repo=github.com/example/memcached-operator
+  operator-sdk create api --group=cache --version=v1 --kind=Memcached --resource --controller
+  ```
+
+### Service Mesh with Istio
+
+- **Install Istio**:
+
+  ```bash
+  istioctl install --set profile=demo
+  ```
+
+- **Deploy an Application with Istio**:
+  - Annotate namespace to enable Istio sidecar injection.
+
+  ```bash
+  kubectl label namespace mynamespace istio-injection=enabled
+  ```
+
+  - Deploy application in the annotated namespace.
+- **Traffic Management with Istio**:
+  - Create VirtualService and DestinationRule to manage traffic routing.
+
+  ```yaml
+  apiVersion: networking.istio.io/v1alpha3
+  kind: VirtualService
+  metadata:
+    name: myapp
+  spec:
+    hosts:
+    - myapp.example.com
+    http:
+    - route:
+      - destination:
+          host: myapp
+          subset: v1
+  ```
+  
+### Monitoring and Logging
+
+- **Prometheus and Grafana**:
+  - **Install Prometheus**:
+
+    ```bash
+    kubectl apply -f https://github.com/prometheus-operator/prometheus-operator/blob/main/bundle.yaml
+    ```
+
+  - **Install Grafana**:
+
+    ```bash
+    kubectl apply -f https://raw.githubusercontent.com/grafana/grafana/main/deploy/kubernetes/grafana-deployment.yaml
+    ```
+
+  - **View Metrics in Grafana**: Access the Grafana dashboard and configure data sources to use Prometheus.
+
+- **Logging with ELK Stack**:
+  - **Deploy ELK Stack**: Use Helm or custom YAML manifests to deploy Elasticsearch, Logstash, and Kibana.
+
+    ```bash
+    helm install elk-stack stable/elastic-stack
+    ```
+
+  - **Configure Fluentd for Log Collection**:
+    - Deploy Fluentd as a DaemonSet to collect logs from all nodes and send them to Elasticsearch.
+
+### High Availability and Disaster Recovery
+
+- **Kubernetes High Availability (HA)**:
+  - **HA Master Nodes**: Set up multiple master nodes to ensure availability.
+  - **HA etcd Cluster**: Use an HA etcd cluster to store Kubernetes state with redundancy.
+
+- **Disaster Recovery**:
+  - **Backup and Restore etcd**:
+    - Use `etcdctl` to take snapshots of the etcd cluster.
+
+    ```bash
+    etcdctl snapshot save /path/to/backup
+    ```
+
+    - Restore from the snapshot when needed.
+
+### Federation
+
+- **Multi-Cluster Federation**:
+  - **Set Up Federation**: Use Kubernetes Federation v2 to manage multiple clusters from a single control plane.
+
+  ```bash
+  kubefedctl join mycluster --cluster-context=mycluster-context --host-cluster-context=host-cluster-context
+  ```
+
+  - **Deploy Federated Resources**: Deploy resources that span across multiple clusters using the Federation API.
+
+---
+
+## 10. References
+
+### Official Documentation
+
+- [Kubernetes Official Documentation](https://kubernetes.io/docs/)
+
+### Community Resources
+
+- [Kubernetes Slack](http://slack.k8s.io/)
+- [Kubernetes GitHub Repository](https://github.com/kubernetes/kubernetes)
+- [Kubernetes Blog](https://kubernetes.io/blog/)
