@@ -29,6 +29,7 @@ Welcome to the **DevOps Tools Cheatsheet Collection**! This repository is your o
 │   ├── Prometheus.md
 │   ├── Grafana.md
 │   ├── ELK-Stack.md
+│   ├── CloudWatch.md
 │   └── Nagios.md
 │
 ├── Security/
@@ -36,6 +37,11 @@ Welcome to the **DevOps Tools Cheatsheet Collection**! This repository is your o
 │   ├── SonarQube.md
 │   ├── AquaSec.md
 │   └── HashiCorp-Vault.md
+│
+├── Version-Control/
+│   ├── GitLab.md
+│   ├── GitHub.md
+│   └── Bitbucket.md
 │
 ├── Cloud/
 │   ├── AWS.md
@@ -83,6 +89,7 @@ Monitoring and observability tools to keep your systems healthy and performant:
 - [**Grafana**](./Monitoring/Grafana.md)
 - [**ELK Stack**](./Monitoring/ELK-Stack.md)
 - [**Nagios**](./Monitoring/Nagios.md)
+- [**CloudWatch**](./Monitoring/CloudWatch.md)
 
 ### 🔐 **Security**
 
@@ -92,6 +99,14 @@ Security tools and practices to protect your infrastructure and applications:
 - [**SonarQube**](./Security/SonarQube.md)
 - [**AquaSec**](./Security/AquaSec.md)
 - [**HashiCorp Vault**](./Security/HashiCorp-Vault.md)
+
+### 🔖 **Version Control**
+
+Comprehensive version control tools and DevOps platforms with Git solutions.
+
+- [**GitLab**](./Version-Control/GitLab.md)
+- [**GitHub**](./Version-Control/Github.md)
+- [**BitBucket**](./Version-Control/Bitbucket.md)
 
 ### ☁️ **Cloud Infrastructure**
 
@@ -125,6 +140,7 @@ Networking tools for service mesh, load balancing, and more:
 ## 🛠️ How to Use This Repository
 
 > [!NOTE]
+>
 > 1. **Explore the Categories**: Navigate through the folders to find the tool or technology you’re interested in.
 > 2. **Use the Cheatsheets**: Each cheatsheet is designed to provide quick access to the most important commands and concepts.
 > 3. **Contribute**: Found something missing? Want to share your own tips? Check out our [Contributing Guidelines](./CONTRIBUTING.md) and submit a pull request.
