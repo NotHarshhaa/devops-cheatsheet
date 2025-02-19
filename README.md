@@ -1,6 +1,6 @@
 # 🚀 DevOps Tools Cheatsheet Collection
 
-![text](https://imgur.com/JyEFkwH.png)
+![text](https://imgur.com/tdtHIqB.png)
 
 Welcome to the **DevOps Tools Cheatsheet Collection**! This repository is your one-stop shop for quick-reference guides on a wide range of DevOps tools and technologies. Whether you're a seasoned DevOps engineer, a sysadmin, a developer, or just starting your journey in DevOps, these cheatsheets are designed to help you navigate the complex world of DevOps with ease.
 
