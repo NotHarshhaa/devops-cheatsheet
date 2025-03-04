@@ -59,6 +59,7 @@ Welcome to the **DevOps Tools Cheatsheet Collection** – your go-to resource fo
 ├── Cloud/
 │   ├── AWS.md
 │   ├── Azure.md
+│   ├── Ansible.md
 │   ├── GCP.md
 │   ├── Kubernetes-on-AWS.md
 │   └── Terraform.md
@@ -115,6 +116,7 @@ Efficiently manage repositories and collaboration:
 Provision and manage infrastructure the right way:  
 ☁️ [AWS](./Cloud/AWS.md)  
 ☁️ [Azure](./Cloud/Azure.md)  
+☁️ [Ansible](./Cloud/Ansible.md)  
 ☁️ [Google Cloud Platform (GCP)](./Cloud/GCP.md)  
 ☁️ [Terraform](./Cloud/Terraform.md)  
 ☁️ [Kubernetes on AWS](./Cloud/Kubernetes-on-AWS.md)  
