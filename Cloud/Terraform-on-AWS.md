@@ -1,6 +1,6 @@
-# Terraform Cheatsheet
+# Terraform on AWS Cheatsheet
 
-![text](https://imgur.com/FwmjyK1.png)
+![text](https://stratusgrid.com/hubfs/AWS%20Configuration%20Recorder%20Module%20on%20Terraform.webp)
 
 #### **1. Introduction to Terraform**
 
