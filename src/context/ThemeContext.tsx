@@ -12,7 +12,8 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<Theme>('light');
+  // Initialize with undefined to avoid hydration mismatch
+  const [theme, setTheme] = useState<Theme | undefined>(undefined);
 
   useEffect(() => {
     // Check if theme is stored in localStorage
@@ -25,15 +26,34 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     } else if (prefersDark) {
       setTheme('dark');
       document.documentElement.classList.add('dark');
+    } else {
+      setTheme('light');
+      document.documentElement.classList.remove('dark');
     }
   }, []);
 
   const toggleTheme = () => {
-    const newTheme = theme === 'light' ? 'dark' : 'light';
-    setTheme(newTheme);
-    localStorage.setItem('theme', newTheme);
-    document.documentElement.classList.toggle('dark');
+    setTheme((prevTheme) => {
+      const newTheme = prevTheme === 'light' ? 'dark' : 'light';
+      
+      // Update localStorage
+      localStorage.setItem('theme', newTheme);
+      
+      // Update DOM synchronously
+      if (newTheme === 'dark') {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+      
+      return newTheme;
+    });
   };
+
+  // Don't render children until theme is determined to avoid flashing
+  if (theme === undefined) {
+    return null;
+  }
 
   return (
     <ThemeContext.Provider value={{ theme, toggleTheme }}>
