@@ -1,4 +1,5 @@
 export interface Cheatsheet {
+  status: string;
   title: string;
   description: string;
   category: string;
@@ -19,7 +20,8 @@ export const cheatsheets: Cheatsheet[] = [
     icon: "🔧",
     difficulty: "Beginner",
     popularity: 95,
-    tags: ["CI/CD", "Automation", "Pipeline"]
+    tags: ["CI/CD", "Automation", "Pipeline"],
+    status: ""
   },
   {
     title: "GitHub Actions",
@@ -29,7 +31,8 @@ export const cheatsheets: Cheatsheet[] = [
     icon: "⚡",
     difficulty: "Beginner",
     popularity: 90,
-    tags: ["CI/CD", "GitHub", "Automation"]
+    tags: ["CI/CD", "GitHub", "Automation"],
+    status: ""
   },
   {
     title: "GitLab CI",
@@ -39,7 +42,8 @@ export const cheatsheets: Cheatsheet[] = [
     icon: "🦊",
     difficulty: "Intermediate",
     popularity: 85,
-    tags: ["CI/CD", "GitLab", "Pipeline"]
+    tags: ["CI/CD", "GitLab", "Pipeline"],
+    status: ""
   },
   {
     title: "CircleCI",
@@ -49,7 +53,8 @@ export const cheatsheets: Cheatsheet[] = [
     icon: "⭕",
     difficulty: "Intermediate",
     popularity: 80,
-    tags: ["CI/CD", "Cloud", "Automation"]
+    tags: ["CI/CD", "Cloud", "Automation"],
+    status: ""
   },
 
   // Containerization
@@ -61,7 +66,8 @@ export const cheatsheets: Cheatsheet[] = [
     icon: "🐳",
     difficulty: "Beginner",
     popularity: 98,
-    tags: ["Containers", "DevOps", "Microservices"]
+    tags: ["Containers", "DevOps", "Microservices"],
+    status: ""
   },
   {
     title: "Kubernetes",
@@ -71,43 +77,52 @@ export const cheatsheets: Cheatsheet[] = [
     icon: "☸️",
     difficulty: "Advanced",
     popularity: 95,
-    tags: ["Containers", "Orchestration", "Cloud-Native"]
+    tags: ["Containers", "Orchestration", "Cloud-Native"],
+    status: ""
   },
-  { title: "CRI-O",
+  {
+    title: "CRI-O",
     description: "Open Container Initiative-based container runtime",
     category: "Containerization",
     slug: "CRI-O",
     icon: "🐳",
     difficulty: "Beginner",
     popularity: 90,
-    tags: ["Containers", "Orchestration", "Cloud-Native"]
+    tags: ["Containers", "Orchestration", "Cloud-Native"],
+    status: ""
   },
-  { title: "Podman",
+  {
+    title: "Podman",
     description: "Open-source container engine",
     category: "Containerization",
     slug: "Podman",
     icon: "🐳",
     difficulty: "Beginner",
     popularity: 90,
-    tags: ["Containers", "Orchestration", "Cloud-Native"]
+    tags: ["Containers", "Orchestration", "Cloud-Native"],
+    status: ""
   },
-  { title: "OpenShift",
+  {
+    title: "OpenShift",
     description: "Container platform for building and shipping apps",
     category: "Containerization",
     slug: "OpenShift",
     icon: "🐳",
     difficulty: "Beginner",
     popularity: 90,
-    tags: ["Containers", "Orchestration", "Cloud-Native"]
+    tags: ["Containers", "Orchestration", "Cloud-Native"],
+    status: ""
   },
-  { title: "Helm",
+  {
+    title: "Helm",
     description: "Package manager for Kubernetes",
     category: "Containerization",
     slug: "Helm",
     icon: "🐳",
     difficulty: "Beginner",
     popularity: 90,
-    tags: ["Containers", "Orchestration", "Cloud-Native"]
+    tags: ["Containers", "Orchestration", "Cloud-Native"],
+    status: ""
   },
 
   // Infrastructure Management
@@ -119,7 +134,8 @@ export const cheatsheets: Cheatsheet[] = [
     icon: "🔄",
     difficulty: "Intermediate",
     popularity: 90,
-    tags: ["Automation", "Configuration Management", "IaC"]
+    tags: ["Automation", "Configuration Management", "IaC"],
+    status: ""
   },
   {
     title: "Terraform",
@@ -129,25 +145,30 @@ export const cheatsheets: Cheatsheet[] = [
     icon: "🏗️",
     difficulty: "Intermediate",
     popularity: 92,
-    tags: ["IaC", "Cloud", "Automation"]
+    tags: ["IaC", "Cloud", "Automation"],
+    status: ""
   },
-  { title: "Chef",
+  {
+    title: "Chef",
     description: "Infrastructure as Code tool",
     category: "Infrastructure-Management",
     slug: "Chef",
     icon: "🏗️",
     difficulty: "Intermediate",
     popularity: 90,
-    tags: ["IaC", "Cloud", "Automation"]
+    tags: ["IaC", "Cloud", "Automation"],
+    status: ""
   },
-  { title: "Puppet",
+  {
+    title: "Puppet",
     description: "Infrastructure as Code tool",
     category: "Infrastructure-Management",
     slug: "Puppet",
     icon: "🏗️",
     difficulty: "Intermediate",
     popularity: 90,
-    tags: ["IaC", "Cloud", "Automation"]
+    tags: ["IaC", "Cloud", "Automation"],
+    status: ""
   },
 
   // Monitoring
@@ -159,7 +180,8 @@ export const cheatsheets: Cheatsheet[] = [
     icon: "📊",
     difficulty: "Intermediate",
     popularity: 88,
-    tags: ["Monitoring", "Metrics", "Alerting"]
+    tags: ["Monitoring", "Metrics", "Alerting"],
+    status: ""
   },
   {
     title: "Grafana",
@@ -169,34 +191,41 @@ export const cheatsheets: Cheatsheet[] = [
     icon: "📈",
     difficulty: "Intermediate",
     popularity: 87,
-    tags: ["Monitoring", "Visualization", "Dashboards"]
+    tags: ["Monitoring", "Visualization", "Dashboards"],
+    status: ""
   },
-  { title: "ELK Stack",
+  {
+    title: "ELK Stack",
     description: "Elasticsearch, Logstash, and Kibana",
     category: "Monitoring",
     slug: "ELK-Stack",
     icon: "📈",
     difficulty: "Intermediate",
     popularity: 87,
-    tags: ["Monitoring", "Visualization", "Dashboards"]
+    tags: ["Monitoring", "Visualization", "Dashboards"],
+    status: ""
   },
-  { title: "CloudWatch",
+  {
+    title: "CloudWatch",
     description: "Monitoring and alerting tool",
     category: "Monitoring",
     slug: "CloudWatch",
     icon: "📈",
     difficulty: "Intermediate",
     popularity: 87,
-    tags: ["Monitoring", "Visualization", "Dashboards"]
+    tags: ["Monitoring", "Visualization", "Dashboards"],
+    status: ""
   },
-  { title: "Nagios",
+  {
+    title: "Nagios",
     description: "Monitoring and alerting tool",
     category: "Monitoring",
     slug: "Nagios",
     icon: "📈",
     difficulty: "Intermediate",
     popularity: 87,
-    tags: ["Monitoring", "Visualization", "Dashboards"]
+    tags: ["Monitoring", "Visualization", "Dashboards"],
+    status: ""
   },
 
   // Security
@@ -208,7 +237,8 @@ export const cheatsheets: Cheatsheet[] = [
     icon: "🔒",
     difficulty: "Intermediate",
     popularity: 85,
-    tags: ["Security", "Code Quality", "Static Analysis"]
+    tags: ["Security", "Code Quality", "Static Analysis"],
+    status: ""
   },
   {
     title: "HashiCorp Vault",
@@ -218,25 +248,30 @@ export const cheatsheets: Cheatsheet[] = [
     icon: "🔐",
     difficulty: "Advanced",
     popularity: 83,
-    tags: ["Security", "Secrets Management", "Authentication"]
+    tags: ["Security", "Secrets Management", "Authentication"],
+    status: ""
   },
-  { title: "Aqua Security",
+  {
+    title: "Aqua Security",
     description: "Security tool for Kubernetes",
     category: "Security",
     slug: "AquaSec",
     icon: "🔐",
     difficulty: "Advanced",
     popularity: 83,
-    tags: ["Security", "Secrets Management", "Authentication"]
+    tags: ["Security", "Secrets Management", "Authentication"],
+    status: ""
   },
-  { title: "Trivy",
+  {
+    title: "Trivy",
     description: "Security tool for Kubernetes",
     category: "Security",
     slug: "Trivy",
     icon: "🔐",
     difficulty: "Advanced",
     popularity: 83,
-    tags: ["Security", "Secrets Management", "Authentication"]
+    tags: ["Security", "Secrets Management", "Authentication"],
+    status: ""
   },
 
   // Version Control
@@ -248,7 +283,8 @@ export const cheatsheets: Cheatsheet[] = [
     icon: "🦊",
     difficulty: "Beginner",
     popularity: 88,
-    tags: ["Version Control", "CI/CD", "DevOps Platform"]
+    tags: ["Version Control", "CI/CD", "DevOps Platform"],
+    status: ""
   },
   {
     title: "GitHub",
@@ -258,16 +294,19 @@ export const cheatsheets: Cheatsheet[] = [
     icon: "🐱",
     difficulty: "Beginner",
     popularity: 95,
-    tags: ["Version Control", "Collaboration", "Open Source"]
+    tags: ["Version Control", "Collaboration", "Open Source"],
+    status: ""
   },
-  { title: "Bitbucket",
+  {
+    title: "Bitbucket",
     description: "Software development platform",
     category: "Version-Control",
     slug: "Bitbucket",
     icon: "🐱",
     difficulty: "Beginner",
     popularity: 95,
-    tags: ["Version Control", "Collaboration", "Open Source"]
+    tags: ["Version Control", "Collaboration", "Open Source"],
+    status: ""
   },
 
   // Cloud
@@ -279,7 +318,8 @@ export const cheatsheets: Cheatsheet[] = [
     icon: "☁️",
     difficulty: "Advanced",
     popularity: 96,
-    tags: ["Cloud", "AWS", "Infrastructure"]
+    tags: ["Cloud", "AWS", "Infrastructure"],
+    status: ""
   },
   {
     title: "Azure",
@@ -289,34 +329,41 @@ export const cheatsheets: Cheatsheet[] = [
     icon: "☁️",
     difficulty: "Advanced",
     popularity: 90,
-    tags: ["Cloud", "Microsoft", "Infrastructure"]
+    tags: ["Cloud", "Microsoft", "Infrastructure"],
+    status: ""
   },
-  { title: "Google Cloud",
+  {
+    title: "Google Cloud",
     description: "Google's cloud platform",
     category: "Cloud",
     slug: "GCP",
     icon: "☁️",
     difficulty: "Advanced",
     popularity: 90,
-    tags: ["Cloud", "Google", "Infrastructure"]
+    tags: ["Cloud", "Google", "Infrastructure"],
+    status: ""
   },
-  { title: "Kubernetes On AWS",
+  {
+    title: "Kubernetes On AWS",
     description: "Kubernetes on AWS",
     category: "Cloud",
     slug: "Kubernetes-on-AWS",
     icon: "☁️",
     difficulty: "Advanced",
     popularity: 90,
-    tags: ["Cloud", "Kubernetes", "AWS", "Infrastructure"]
+    tags: ["Cloud", "Kubernetes", "AWS", "Infrastructure"],
+    status: ""
   },
-  { title: "Terraform On AWS",
+  {
+    title: "Terraform On AWS",
     description: "Terraform on AWS",
     category: "Cloud",
     slug: "Terraform-on-AWS",
     icon: "☁️",
     difficulty: "Advanced",
     popularity: 90,
-    tags: ["Cloud", "Terraform", "AWS", "Infrastructure"]
+    tags: ["Cloud", "Terraform", "AWS", "Infrastructure"],
+    status: ""
   },
 
   // Networking
@@ -328,7 +375,8 @@ export const cheatsheets: Cheatsheet[] = [
     icon: "🌐",
     difficulty: "Advanced",
     popularity: 82,
-    tags: ["Service Mesh", "Kubernetes", "Networking"]
+    tags: ["Service Mesh", "Kubernetes", "Networking"],
+    status: ""
   },
   {
     title: "Consul",
@@ -338,25 +386,30 @@ export const cheatsheets: Cheatsheet[] = [
     icon: "🔗",
     difficulty: "Advanced",
     popularity: 80,
-    tags: ["Service Discovery", "Networking", "HashiCorp"]
+    tags: ["Service Discovery", "Networking", "HashiCorp"],
+    status: ""
   },
-  { title: "Envoy",
+  {
+    title: "Envoy",
     description: "Service mesh for Kubernetes",
     category: "Networking",
     slug: "Envoy",
     icon: "🌐",
     difficulty: "Advanced",
     popularity: 80,
-    tags: ["Service Mesh", "Kubernetes", "Networking"]
+    tags: ["Service Mesh", "Kubernetes", "Networking"],
+    status: ""
   },
-  { title: "Linkerd",
+  {
+    title: "Linkerd",
     description: "Service mesh for Kubernetes",
     category: "Networking",
     slug: "Linkerd",
     icon: "🌐",
     difficulty: "Advanced",
     popularity: 80,
-    tags: ["Service Mesh", "Kubernetes", "Networking"]
+    tags: ["Service Mesh", "Kubernetes", "Networking"],
+    status: ""
   }, 
 ];
 
