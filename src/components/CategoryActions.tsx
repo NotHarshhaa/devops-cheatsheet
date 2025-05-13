@@ -60,8 +60,8 @@ export function CategoryActions({ category }: CategoryActionsProps) {
   return (
     <div className="flex items-center gap-2">
       <button
-        className={`p-2 rounded-lg hover:bg-gray-50 transition-colors ${
-          isSaved ? 'text-blue-600' : 'text-gray-400 hover:text-gray-600'
+        className={`p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors ${
+          isSaved ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300'
         }`}
         title={isSaved ? 'Remove from saved' : 'Save for later'}
         onClick={handleSave}
@@ -71,7 +71,7 @@ export function CategoryActions({ category }: CategoryActionsProps) {
         </svg>
       </button>
       <button
-        className="p-2 rounded-lg hover:bg-gray-50 text-gray-400 hover:text-gray-600 transition-colors"
+        className="p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
         title="Share"
         onClick={handleShare}
       >

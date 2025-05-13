@@ -5,6 +5,7 @@ import { Header } from '@/components/Header'
 import { Footer } from '@/components/Footer'
 import { ScrollToTop } from '@/components/ScrollToTop'
 import { Toaster } from 'react-hot-toast'
+import { ThemeProvider } from '@/context/ThemeContext'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -69,14 +70,16 @@ export default function RootLayout({
         <link rel="manifest" href="/site.webmanifest" />
         <meta name="theme-color" content="#000000" />
       </head>
-      <body className={`${inter.className} min-h-screen bg-gray-50 flex flex-col`}>
-        <Header />
-        <main className="flex-grow">
-          {children}
-        </main>
-        <Footer />
-        <ScrollToTop />
-        <Toaster position="bottom-right" />
+      <body className={`${inter.className} min-h-screen bg-gray-50 dark:bg-black flex flex-col`}>
+        <ThemeProvider>
+          <Header />
+          <main className="flex-grow">
+            {children}
+          </main>
+          <Footer />
+          <ScrollToTop />
+          <Toaster position="bottom-right" />
+        </ThemeProvider>
       </body>
     </html>
   )

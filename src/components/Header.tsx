@@ -2,9 +2,11 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { Github, Menu, X } from 'lucide-react';
+import { FaGithub } from 'react-icons/fa';
+import { HiMenu, HiX } from 'react-icons/hi';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ThemeToggle } from './ThemeToggle';
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -42,19 +44,21 @@ export function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100">
+    <header className="sticky top-0 z-50 bg-white/90 dark:bg-gray-900/90 backdrop-blur-md border-b border-gray-100 dark:border-gray-800 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-3">
-            <Image
-              src="/android-chrome-512x512.png"
-              alt="DevOps Cheatsheet Hub"
-              width={32}
-              height={32}
-              className="w-8 h-8 rounded-lg"
-            />
-            <span className="text-xl font-semibold text-gray-900">
+          <Link href="/" className="flex items-center gap-3 group">
+            <div className="w-10 h-10 rounded-xl from-blue-500 to-purple-600 flex items-center justify-center shadow-md transform group-hover:scale-110 transition-transform duration-300">
+              <Image
+                src="/android-chrome-512x512.png"
+                alt="DevOps Cheatsheet Hub"
+                width={24}
+                height={24}
+                className="w-6 h-6"
+              />
+            </div>
+            <span className="text-xl font-semibold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400">
               DevOps Cheatsheet Hub
             </span>
           </Link>
@@ -63,65 +67,69 @@ export function Header() {
           <nav className="hidden md:flex items-center gap-6">
             <Link 
               href="/categories"
-              className="text-gray-600 hover:text-gray-900 transition-colors relative group"
+              className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors relative group px-2 py-1"
             >
               Categories
-              <span className="absolute inset-x-0 bottom-0 h-0.5 bg-blue-600 scale-x-0 group-hover:scale-x-100 transition-transform origin-left" />
+              <span className="absolute inset-x-0 bottom-0 h-0.5 bg-gradient-to-r from-blue-500 to-purple-500 scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300" />
             </Link>
             <Link 
               href="/about"
-              className="text-gray-600 hover:text-gray-900 transition-colors relative group"
+              className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors relative group px-2 py-1"
             >
               About
-              <span className="absolute inset-x-0 bottom-0 h-0.5 bg-blue-600 scale-x-0 group-hover:scale-x-100 transition-transform origin-left" />
+              <span className="absolute inset-x-0 bottom-0 h-0.5 bg-gradient-to-r from-blue-500 to-purple-500 scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300" />
             </Link>
             <Link
               href="https://github.com/NotHarshhaa"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-gray-600 hover:text-gray-900 transition-colors transform hover:scale-110"
+              className="bg-gray-100 dark:bg-gray-800 p-2 rounded-full text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
             >
-              <Github className="w-5 h-5" />
+              <FaGithub className="w-5 h-5" />
             </Link>
+            <ThemeToggle />
             <Link
               href="/contribute"
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-all duration-200 hover:shadow-lg transform hover:-translate-y-0.5"
+              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-5 py-2 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-0.5"
             >
               Contribute
             </Link>
           </nav>
 
-          {/* Mobile Menu Button */}
-          <motion.button 
-            className="md:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            whileTap={{ scale: 0.95 }}
-            whileHover={{ backgroundColor: 'rgb(243 244 246)' }}
-          >
-            <AnimatePresence mode="wait">
-              {isMenuOpen ? (
-                <motion.div
-                  key="close"
-                  initial={{ rotate: -90, opacity: 0 }}
-                  animate={{ rotate: 0, opacity: 1 }}
-                  exit={{ rotate: 90, opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <X className="w-6 h-6 text-gray-600" />
-                </motion.div>
-              ) : (
-                <motion.div
-                  key="menu"
-                  initial={{ rotate: 90, opacity: 0 }}
-                  animate={{ rotate: 0, opacity: 1 }}
-                  exit={{ rotate: -90, opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <Menu className="w-6 h-6 text-gray-600" />
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </motion.button>
+          <div className="flex items-center gap-4 md:hidden">
+            <ThemeToggle />
+            {/* Mobile Menu Button */}
+            <motion.button 
+              className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              whileTap={{ scale: 0.95 }}
+              aria-label={isMenuOpen ? "Close menu" : "Open menu"}
+            >
+              <AnimatePresence mode="wait">
+                {isMenuOpen ? (
+                  <motion.div
+                    key="close"
+                    initial={{ rotate: -90, opacity: 0 }}
+                    animate={{ rotate: 0, opacity: 1 }}
+                    exit={{ rotate: 90, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <HiX className="w-6 h-6 text-gray-600 dark:text-gray-300" />
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="menu"
+                    initial={{ rotate: 90, opacity: 0 }}
+                    animate={{ rotate: 0, opacity: 1 }}
+                    exit={{ rotate: -90, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <HiMenu className="w-6 h-6 text-gray-600 dark:text-gray-300" />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.button>
+          </div>
         </div>
 
         {/* Mobile Navigation Dropdown */}
@@ -132,13 +140,13 @@ export function Header() {
               animate="open"
               exit="closed"
               variants={menuVariants}
-              className="md:hidden py-4 border-t border-gray-100"
+              className="md:hidden py-4 border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900"
             >
               <motion.nav className="flex flex-col gap-4">
                 <motion.div variants={menuItemVariants}>
                   <Link 
                     href="/categories" 
-                    className="block px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors"
+                    className="block px-4 py-3 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors"
                     onClick={() => setIsMenuOpen(false)}
                   >
                     Categories
@@ -147,7 +155,7 @@ export function Header() {
                 <motion.div variants={menuItemVariants}>
                   <Link 
                     href="/about" 
-                    className="block px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors"
+                    className="block px-4 py-3 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors"
                     onClick={() => setIsMenuOpen(false)}
                   >
                     About
@@ -158,8 +166,9 @@ export function Header() {
                     href="https://github.com/NotHarshhaa"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="block px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors"
+                    className="flex items-center gap-3 px-4 py-3 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors"
                   >
+                    <FaGithub className="w-5 h-5" />
                     GitHub
                   </a>
                 </motion.div>
@@ -169,7 +178,7 @@ export function Header() {
                 >
                   <Link
                     href="/contribute"
-                    className="block mx-4 text-center bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-all duration-200 hover:shadow-lg"
+                    className="block mx-4 my-2 text-center bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-3 rounded-lg shadow-md transition-all duration-200 hover:shadow-lg"
                     onClick={() => setIsMenuOpen(false)}
                   >
                     Contribute

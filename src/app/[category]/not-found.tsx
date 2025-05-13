@@ -2,13 +2,13 @@ import Link from 'next/link';
 
 export default function NotFound() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-black dark:to-gray-900">
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="text-center">
-          <h2 className="text-3xl font-bold text-gray-900 sm:text-4xl">
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white sm:text-4xl">
             Category Not Found
           </h2>
-          <p className="mt-4 text-lg text-gray-600">
+          <p className="mt-4 text-lg text-gray-600 dark:text-gray-300">
             Sorry, we couldn't find the category you're looking for.
           </p>
           <div className="mt-8">

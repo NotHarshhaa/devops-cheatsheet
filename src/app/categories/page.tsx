@@ -13,9 +13,9 @@ export default async function CategoriesPage() {
   }, {} as Record<string, typeof cheatsheets>);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-black dark:to-gray-900">
       {/* Hero Section */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
+      <div className="bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-800 dark:to-purple-800 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <h1 className="text-5xl font-bold mb-6">
             DevOps Categories
@@ -28,7 +28,7 @@ export default async function CategoriesPage() {
 
       {/* Categories Grid */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">
           DevOps Categories
         </h1>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -49,7 +49,7 @@ export default async function CategoriesPage() {
       </div>
 
       {/* Quick Stats */}
-      <div className="bg-gray-900 text-white">
+      <div className="bg-gray-900 dark:bg-black text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
             <div>
