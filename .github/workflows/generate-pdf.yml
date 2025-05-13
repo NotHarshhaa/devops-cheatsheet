@@ -1,36 +1,192 @@
-name: Generate PDFs
+name: DevOps Cheatsheet PDF Generator
 
 on:
   push:
-    branches:
-      - master
+    branches: [ main, master ]
+    paths:
+      - '**/*.md'
+      - '.github/workflows/generate-pdf.yml'
   pull_request:
-    branches:
-      - master
+    branches: [ main, master ]
+    paths:
+      - '**/*.md'
   workflow_dispatch:
+    inputs:
+      specific_category:
+        description: 'Generate PDFs for specific category (leave empty for all)'
+        required: false
+        type: string
 
 jobs:
-  pdf:
+  generate-pdfs:
+    name: Generate Cheatsheet PDFs
     runs-on: ubuntu-latest
-
+    
     steps:
-    - name: Checkout code
+    - name: Checkout Repository
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
 
-    - name: Install pandoc and LaTeX
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install Dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y pandoc
-        sudo apt-get install -y texlive-xetex
+        sudo apt-get install -y pandoc texlive-xetex texlive-fonts-recommended texlive-fonts-extra
 
-    - name: Generate PDF
+    - name: Cache PDF Generation
+      uses: actions/cache@v3
+      with:
+        path: |
+          .pdf-cache
+        key: ${{ runner.os }}-pdf-${{ hashFiles('**/*.md') }}
+        restore-keys: |
+          ${{ runner.os }}-pdf-
+
+    - name: Setup PDF Directory
       run: |
-        for file in $(find . -name '*.md'); do
-          pandoc "$file" -o "${file%.md}.pdf" --pdf-engine=xelatex
+        mkdir -p pdfs
+        mkdir -p .pdf-cache
+
+    - name: Generate PDFs
+      run: |
+        # Function to generate PDF with custom styling
+        generate_pdf() {
+          local input_file="$1"
+          local output_file="$2"
+          local category="$(dirname "$input_file" | sed 's/.\///')"
+          local title="$(basename "$input_file" .md)"
+          
+          # Create header with metadata
+          cat > header.yaml <<EOF
+        ---
+        title: "${title//-/ } Cheatsheet"
+        author: "DevOps Cheatsheet Hub"
+        date: "$(date +'%B %d, %Y')"
+        geometry: margin=2cm
+        colorlinks: true
+        linkcolor: blue
+        urlcolor: blue
+        toccolor: blue
+        toc: true
+        toc-depth: 2
+        category: "${category}"
+        header-includes:
+          - \usepackage{fancyhdr}
+          - \pagestyle{fancy}
+          - \fancyhead[L]{DevOps Cheatsheet Hub}
+          - \fancyhead[R]{${category}}
+          - \fancyfoot[C]{\thepage}
+        ---
+        EOF
+
+          # Combine header with content and generate PDF
+          cat header.yaml "$input_file" | pandoc \
+            -f markdown \
+            -t pdf \
+            --pdf-engine=xelatex \
+            --highlight-style=tango \
+            -o "$output_file" \
+            --toc \
+            --toc-depth=2 \
+            --variable=geometry:margin=2cm
+        }
+
+        # Process files based on input
+        if [ -n "${{ github.event.inputs.specific_category }}" ]; then
+          category="${{ github.event.inputs.specific_category }}"
+          echo "Generating PDFs for category: $category"
+          for file in "$category"/*.md; do
+            if [ -f "$file" ]; then
+              output_file="pdfs/$(basename "${file%.md}.pdf")"
+              if [ ! -f ".pdf-cache/$(basename "$output_file")" ] || [ "$file" -nt ".pdf-cache/$(basename "$output_file")" ]; then
+                echo "Generating PDF for $file"
+                generate_pdf "$file" "$output_file"
+                cp "$output_file" ".pdf-cache/"
+              else
+                echo "Using cached version for $file"
+                cp ".pdf-cache/$(basename "$output_file")" "$output_file"
+              fi
+            fi
+          done
+        else
+          echo "Generating PDFs for all categories"
+          for file in */*.md; do
+            if [ -f "$file" ]; then
+              output_file="pdfs/$(dirname "$file")-$(basename "${file%.md}.pdf")"
+              if [ ! -f ".pdf-cache/$(basename "$output_file")" ] || [ "$file" -nt ".pdf-cache/$(basename "$output_file")" ]; then
+                echo "Generating PDF for $file"
+                generate_pdf "$file" "$output_file"
+                cp "$output_file" ".pdf-cache/"
+              else
+                echo "Using cached version for $file"
+                cp ".pdf-cache/$(basename "$output_file")" "$output_file"
+              fi
+            fi
+          done
+        fi
+
+    - name: Create PDF Index
+      run: |
+        echo "# DevOps Cheatsheet PDFs" > pdfs/index.md
+        echo "Generated on: $(date +'%B %d, %Y')" >> pdfs/index.md
+        echo "" >> pdfs/index.md
+        
+        for category in */; do
+          if [ -d "$category" ]; then
+            echo "## ${category%/}" >> pdfs/index.md
+            for pdf in pdfs/${category%/}*.pdf; do
+              if [ -f "$pdf" ]; then
+                name=$(basename "$pdf" .pdf | sed 's/-/ /g')
+                echo "- [$name]($pdf)" >> pdfs/index.md
+              fi
+            done
+            echo "" >> pdfs/index.md
+          fi
         done
 
-    - name: Upload PDF artifacts
+    - name: Upload Individual PDFs
       uses: actions/upload-artifact@v4
       with:
-        name: pdfs
-        path: '**/*.pdf'
+        name: cheatsheet-pdfs
+        path: pdfs/*.pdf
+        retention-days: 30
+
+    - name: Create Release
+      if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+      run: |
+        # Zip all PDFs
+        cd pdfs
+        zip -r ../cheatsheets.zip *.pdf
+        cd ..
+        
+        # Create release tag
+        TAG="v$(date +'%Y.%m.%d-%H%M')"
+        gh release create "$TAG" \
+          --title "DevOps Cheatsheets $TAG" \
+          --notes-file pdfs/index.md \
+          cheatsheets.zip
+      env:
+        GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+
+    - name: Update Documentation
+      if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        
+        # Update README with latest PDF links
+        sed -i '/## Available PDFs/q' README.md
+        echo "" >> README.md
+        cat pdfs/index.md >> README.md
+        
+        # Commit and push if there are changes
+        git add README.md
+        git diff --quiet && git diff --staged --quiet || (git commit -m "docs: Update PDF links [skip ci]" && git push)
+      env:
+        GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
