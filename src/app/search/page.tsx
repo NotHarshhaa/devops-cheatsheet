@@ -1,115 +1,189 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
-import { Cheatsheet } from '@/utils/markdown';
-import { useEffect } from 'react';
+import { Search as SearchIcon, Loader2, Tag, Star, BarChart2 } from 'lucide-react';
+import { Cheatsheet, getAllCheatsheets } from '@/data/cheatsheets';
+
+function highlightText(text: string, query: string) {
+  if (!query.trim()) return text;
+
+  const parts = text.split(new RegExp(`(${query})`, 'gi'));
+  return parts.map((part, index) => 
+    part.toLowerCase() === query.toLowerCase() ? 
+      <span key={index} className="bg-yellow-200 text-gray-900 rounded px-0.5">{part}</span> : 
+      part
+  );
+}
+
+function DifficultyBadge({ difficulty }: { difficulty: Cheatsheet['difficulty'] }) {
+  const colors = {
+    Beginner: 'bg-green-100 text-green-800',
+    Intermediate: 'bg-blue-100 text-blue-800',
+    Advanced: 'bg-purple-100 text-purple-800',
+  };
+
+  return (
+    <span className={`px-2 py-1 rounded-full text-xs font-medium ${colors[difficulty]}`}>
+      {difficulty}
+    </span>
+  );
+}
 
 export default function SearchPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [cheatsheets, setCheatsheets] = useState<Cheatsheet[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
 
   useEffect(() => {
-    async function fetchCheatsheets() {
+    const loadCheatsheets = async () => {
       try {
-        const response = await fetch('/api/cheatsheets');
-        if (!response.ok) {
-          throw new Error('Failed to fetch cheatsheets');
-        }
-        const data = await response.json();
+        const data = await getAllCheatsheets();
         setCheatsheets(data);
+        setIsLoading(false);
       } catch (error) {
-        console.error('Error fetching cheatsheets:', error);
-      } finally {
-        setLoading(false);
+        console.error('Error loading cheatsheets:', error);
+        setCheatsheets([]);
+        setIsLoading(false);
       }
-    }
+    };
 
-    fetchCheatsheets();
+    loadCheatsheets();
   }, []);
 
-  const filteredCheatsheets = cheatsheets.filter(cheatsheet => {
-    const searchContent = `${cheatsheet.title} ${cheatsheet.description} ${cheatsheet.category}`.toLowerCase();
-    return searchContent.includes(searchTerm.toLowerCase());
-  });
+  const categories = useMemo(() => 
+    Array.from(new Set(cheatsheets.map(sheet => sheet.category))),
+    [cheatsheets]
+  );
 
-  if (loading) {
-    return (
+  const filteredCheatsheets = useMemo(() => {
+    return cheatsheets.filter(cheatsheet => {
+      const matchesSearch = searchTerm.trim() === '' || 
+        `${cheatsheet.title} ${cheatsheet.description} ${cheatsheet.category}`
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase());
+
+      const matchesCategory = selectedCategories.length === 0 || 
+        selectedCategories.includes(cheatsheet.category);
+
+      return matchesSearch && matchesCategory;
+    });
+  }, [cheatsheets, searchTerm, selectedCategories]);
+
+  const toggleCategory = (category: string) => {
+    setSelectedCategories(prev => 
+      prev.includes(category) 
+        ? prev.filter(c => c !== category)
+        : [...prev, category]
+    );
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-3/4 mb-4"></div>
-          <div className="h-4 bg-gray-200 rounded w-1/2 mb-8"></div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[...Array(6)].map((_, i) => (
-              <div key={i} className="bg-gray-200 rounded-lg h-48"></div>
+        {/* Search Header */}
+        <div className="text-center mb-12">
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">
+            Search DevOps Tools
+          </h1>
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            Find the tools and resources you need from our comprehensive collection.
+          </p>
+        </div>
+
+        {/* Search Input */}
+        <div className="max-w-2xl mx-auto mb-8">
+          <div className="relative">
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search for tools, categories, or keywords..."
+              className="w-full px-6 py-4 rounded-full border border-gray-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent pl-14"
+            />
+            <div className="absolute left-4 top-1/2 -translate-y-1/2">
+              <SearchIcon className="w-6 h-6 text-gray-400" />
+            </div>
+          </div>
+        </div>
+
+        {/* Category Filters */}
+        <div className="max-w-4xl mx-auto mb-8">
+          <div className="flex flex-wrap gap-2">
+            {categories.map(category => (
+              <button
+                key={category}
+                onClick={() => toggleCategory(category)}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-colors
+                  ${selectedCategories.includes(category)
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+              >
+                {category.replace(/-/g, ' ')}
+              </button>
             ))}
           </div>
         </div>
-      </div>
-    );
-  }
 
-  return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-4">
-          Search Cheatsheets
-        </h1>
-        <div className="relative">
-          <input
-            type="text"
-            placeholder="Search by title, description, or category..."
-            className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-          <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-            <svg
-              className="h-5 w-5 text-gray-400"
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-              aria-hidden="true"
-            >
-              <path
-                fillRule="evenodd"
-                d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
-                clipRule="evenodd"
-              />
-            </svg>
-          </div>
+        {/* Search Results */}
+        <div className="max-w-4xl mx-auto">
+          {isLoading ? (
+            <div className="text-center py-12">
+              <Loader2 className="w-8 h-8 text-blue-500 animate-spin mx-auto" />
+              <p className="text-gray-600 mt-4">Loading results...</p>
+            </div>
+          ) : filteredCheatsheets.length > 0 ? (
+            <div className="space-y-6">
+              <p className="text-sm text-gray-500 mb-4">
+                Found {filteredCheatsheets.length} results
+                {searchTerm && ` for "${searchTerm}"`}
+              </p>
+              {filteredCheatsheets.map((cheatsheet) => (
+                <Link
+                  key={`${cheatsheet.category}-${cheatsheet.slug}`}
+                  href={`/${cheatsheet.category}/${cheatsheet.slug}`}
+                  className="block bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-all duration-200 group"
+                >
+                  <div className="flex items-start gap-4">
+                    <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-blue-50 flex items-center justify-center text-2xl">
+                      {cheatsheet.icon}
+                    </div>
+                    <div className="flex-1">
+                      <h2 className="text-xl font-semibold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
+                        {highlightText(cheatsheet.title, searchTerm)}
+                      </h2>
+                      <p className="text-gray-600 mb-4">
+                        {highlightText(cheatsheet.description, searchTerm)}
+                      </p>
+                      <div className="flex flex-wrap items-center gap-3 text-sm">
+                        <span className="flex items-center gap-1 text-gray-500">
+                          <Tag className="w-4 h-4" />
+                          {cheatsheet.category.replace(/-/g, ' ')}
+                        </span>
+                        <span className="flex items-center gap-1 text-gray-500">
+                          <Star className="w-4 h-4" />
+                          {cheatsheet.popularity}% Popular
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <BarChart2 className="w-4 h-4" />
+                          <DifficultyBadge difficulty={cheatsheet.difficulty} />
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <p className="text-gray-600">No results found for "{searchTerm}"</p>
+              <p className="text-gray-500 mt-2">Try different keywords or browse our categories</p>
+            </div>
+          )}
         </div>
       </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredCheatsheets.map((cheatsheet) => (
-          <Link
-            key={`${cheatsheet.category}/${cheatsheet.slug}`}
-            href={`/${cheatsheet.category}/${cheatsheet.slug}`}
-            className="block bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 p-6"
-          >
-            <div className="text-2xl mb-2">{cheatsheet.icon}</div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">
-              {cheatsheet.title}
-            </h2>
-            <p className="text-gray-500 text-sm mb-4">
-              {cheatsheet.description}
-            </p>
-            <span className="inline-block bg-gray-100 rounded-full px-3 py-1 text-sm font-semibold text-gray-700">
-              {cheatsheet.category}
-            </span>
-          </Link>
-        ))}
-      </div>
-
-      {filteredCheatsheets.length === 0 && !loading && (
-        <div className="text-center py-12">
-          <p className="text-gray-500 text-lg">
-            No cheatsheets found matching your search.
-          </p>
-        </div>
-      )}
     </div>
   );
 } 

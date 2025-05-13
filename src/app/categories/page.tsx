@@ -1,5 +1,6 @@
 import { getAllCheatsheets } from '@/utils/markdown';
-import Link from 'next/link';
+import { categories, categoryIcons } from '@/utils/categories';
+import { CategoryCard } from '@/components/CategoryCard';
 
 export default async function CategoriesPage() {
   const cheatsheets = await getAllCheatsheets();
@@ -12,40 +13,65 @@ export default async function CategoriesPage() {
   }, {} as Record<string, typeof cheatsheets>);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <h1 className="text-4xl font-bold text-gray-900 mb-8">
-        DevOps Categories
-      </h1>
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+      {/* Hero Section */}
+      <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+          <h1 className="text-5xl font-bold mb-6">
+            DevOps Categories
+          </h1>
+          <p className="text-xl text-blue-100 max-w-3xl">
+            Explore our comprehensive collection of DevOps tools and resources, organized by category.
+          </p>
+        </div>
+      </div>
 
-      <div className="space-y-12">
-        {Object.entries(categoriesMap).map(([category, categoryCheatsheets]) => (
-          <div key={category} className="bg-white rounded-lg shadow-sm p-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">
-              {category}
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {categoryCheatsheets.map((cheatsheet) => (
-                <Link
-                  key={cheatsheet.slug}
-                  href={`/${category}/${cheatsheet.slug}`}
-                  className="block bg-gray-50 rounded-lg p-4 hover:bg-gray-100 transition-colors duration-200"
-                >
-                  <div className="flex items-start space-x-3">
-                    <div className="text-2xl">{cheatsheet.icon}</div>
-                    <div>
-                      <h3 className="font-medium text-gray-900">
-                        {cheatsheet.title}
-                      </h3>
-                      <p className="text-sm text-gray-500 mt-1">
-                        {cheatsheet.description}
-                      </p>
-                    </div>
-                  </div>
-                </Link>
-              ))}
+      {/* Categories Grid */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <h1 className="text-3xl font-bold text-gray-900 mb-8">
+          DevOps Categories
+        </h1>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {categories.map((category) => {
+            const info = categoryIcons[category];
+            return (
+              <CategoryCard
+                key={category}
+                icon={info.icon}
+                title={category.replace(/-/g, ' ')}
+                description={info.description}
+                toolCount={info.toolCount}
+                category={category}
+              />
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Quick Stats */}
+      <div className="bg-gray-900 text-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
+            <div>
+              <div className="text-4xl font-bold text-blue-400 mb-2">
+                {Object.values(categoriesMap).reduce((acc, curr) => acc + curr.length, 0)}+
+              </div>
+              <div className="text-gray-400">Total Tools</div>
+            </div>
+            <div>
+              <div className="text-4xl font-bold text-purple-400 mb-2">
+                {Object.keys(categoriesMap).length}
+              </div>
+              <div className="text-gray-400">Categories</div>
+            </div>
+            <div>
+              <div className="text-4xl font-bold text-green-400 mb-2">
+                24/7
+              </div>
+              <div className="text-gray-400">Community Support</div>
             </div>
           </div>
-        ))}
+        </div>
       </div>
     </div>
   );
