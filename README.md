@@ -166,7 +166,7 @@ Automate the provisioning and management of your infrastructure:
 
 > [!NOTE]
 >
-> 1. **Explore the Categories**: Navigate through the folders to find the tool or technology you’re interested in.
+> 1. **Explore the Categories**: Navigate through the folders to find the tool or technology you're interested in.
 > 2. **Use the Cheatsheets**: Each cheatsheet is designed to provide quick access to the most important commands and concepts.
 > 3. **Contribute**: Found something missing? Want to share your own tips? Check out our [Contributing Guidelines](./CONTRIBUTING.md) and submit a pull request.
 
@@ -190,7 +190,7 @@ Automate the provisioning and management of your infrastructure:
 ## 🛠️ Author & Community  
 
 This project is crafted with 💡 by **[Harshhaa](https://github.com/NotHarshhaa)**.  
-Your feedback is always welcome! Let’s build together. 🚀  
+Your feedback is always welcome! Let's build together. 🚀  
 
 📧 **Connect with me:**  
 🔗 **GitHub**: [@NotHarshhaa](https://github.com/NotHarshhaa)  
@@ -213,3 +213,75 @@ If this helped you, consider:
 ### 📢 Stay Connected  
 
 ![Follow Me](https://imgur.com/2j7GSPs.png)
+
+# DevOps Tools Cheatsheet UI
+
+A modern web interface for the DevOps Tools Cheatsheet Collection, built with Next.js, TypeScript, and Tailwind CSS.
+
+## Features
+
+- 📱 Responsive design that works on all devices
+- 🎨 Modern UI with smooth transitions and animations
+- 🔍 Easy navigation through different DevOps categories
+- 📚 Comprehensive collection of DevOps tools and best practices
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js 18.x or later
+- npm or yarn package manager
+
+### Installation
+
+1. Clone the repository:
+```bash
+git clone https://github.com/yourusername/devops-cheatsheet.git
+cd devops-cheatsheet
+```
+
+2. Install dependencies:
+```bash
+npm install
+# or
+yarn install
+```
+
+3. Run the development server:
+```bash
+npm run dev
+# or
+yarn dev
+```
+
+4. Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+
+## Project Structure
+
+```
+devops-cheatsheet/
+├── src/
+│   ├── app/
+│   │   ├── layout.tsx    # Root layout component
+│   │   ├── page.tsx      # Home page component
+│   │   └── globals.css   # Global styles
+│   └── components/       # Reusable components
+├── public/              # Static files
+├── tailwind.config.js   # Tailwind CSS configuration
+├── tsconfig.json       # TypeScript configuration
+└── package.json        # Project dependencies
+```
+
+## Contributing
+
+Contributions are welcome! Please read our [Contributing Guide](CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
+
+## License
+
+This project is licensed under the terms of the license included with this repository.
+
+## Acknowledgments
+
+- Built with [Next.js](https://nextjs.org/)
+- Styled with [Tailwind CSS](https://tailwindcss.com/)
+- Icons from [Heroicons](https://heroicons.com/)
