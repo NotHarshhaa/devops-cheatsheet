@@ -277,6 +277,10 @@ export function Header() {
               <span>Search</span>
             </Link>
 
+            <div className="pl-2">
+              <ThemeToggle />
+            </div>
+
             <a
               href="https://github.com/NotHarshhaa"
               target="_blank"
@@ -286,10 +290,6 @@ export function Header() {
               <Github className="w-4 h-4" />
               <span>GitHub</span>
             </a>
-
-            <div className="pl-2">
-              <ThemeToggle />
-            </div>
 
             <Link href="/contribute" className="relative group ml-3">
               <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg blur opacity-60 group-hover:opacity-100 transition duration-200"></div>
