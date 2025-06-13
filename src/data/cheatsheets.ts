@@ -21,7 +21,7 @@ export const cheatsheets: Cheatsheet[] = [
     difficulty: "Beginner",
     popularity: 95,
     tags: ["CI/CD", "Automation", "Pipeline"],
-    status: ""
+    status: "",
   },
   {
     title: "GitHub Actions",
@@ -32,7 +32,7 @@ export const cheatsheets: Cheatsheet[] = [
     difficulty: "Beginner",
     popularity: 90,
     tags: ["CI/CD", "GitHub", "Automation"],
-    status: ""
+    status: "",
   },
   {
     title: "GitLab CI",
@@ -43,7 +43,7 @@ export const cheatsheets: Cheatsheet[] = [
     difficulty: "Intermediate",
     popularity: 85,
     tags: ["CI/CD", "GitLab", "Pipeline"],
-    status: ""
+    status: "",
   },
   {
     title: "CircleCI",
@@ -54,7 +54,7 @@ export const cheatsheets: Cheatsheet[] = [
     difficulty: "Intermediate",
     popularity: 80,
     tags: ["CI/CD", "Cloud", "Automation"],
-    status: ""
+    status: "",
   },
 
   // Containerization
@@ -62,12 +62,12 @@ export const cheatsheets: Cheatsheet[] = [
     title: "Docker",
     description: "Container platform for building and shipping apps",
     category: "Containerization",
-    slug: "docker",
+    slug: "Docker",
     icon: "🐳",
     difficulty: "Beginner",
     popularity: 98,
     tags: ["Containers", "DevOps", "Microservices"],
-    status: ""
+    status: "",
   },
   {
     title: "Kubernetes",
@@ -78,7 +78,7 @@ export const cheatsheets: Cheatsheet[] = [
     difficulty: "Advanced",
     popularity: 95,
     tags: ["Containers", "Orchestration", "Cloud-Native"],
-    status: ""
+    status: "",
   },
   {
     title: "CRI-O",
@@ -89,7 +89,7 @@ export const cheatsheets: Cheatsheet[] = [
     difficulty: "Beginner",
     popularity: 90,
     tags: ["Containers", "Orchestration", "Cloud-Native"],
-    status: ""
+    status: "",
   },
   {
     title: "Podman",
@@ -100,7 +100,7 @@ export const cheatsheets: Cheatsheet[] = [
     difficulty: "Beginner",
     popularity: 90,
     tags: ["Containers", "Orchestration", "Cloud-Native"],
-    status: ""
+    status: "",
   },
   {
     title: "OpenShift",
@@ -111,7 +111,7 @@ export const cheatsheets: Cheatsheet[] = [
     difficulty: "Beginner",
     popularity: 90,
     tags: ["Containers", "Orchestration", "Cloud-Native"],
-    status: ""
+    status: "",
   },
   {
     title: "Helm",
@@ -122,7 +122,7 @@ export const cheatsheets: Cheatsheet[] = [
     difficulty: "Beginner",
     popularity: 90,
     tags: ["Containers", "Orchestration", "Cloud-Native"],
-    status: ""
+    status: "",
   },
 
   // Infrastructure Management
@@ -135,7 +135,7 @@ export const cheatsheets: Cheatsheet[] = [
     difficulty: "Intermediate",
     popularity: 90,
     tags: ["Automation", "Configuration Management", "IaC"],
-    status: ""
+    status: "",
   },
   {
     title: "Terraform",
@@ -146,7 +146,7 @@ export const cheatsheets: Cheatsheet[] = [
     difficulty: "Intermediate",
     popularity: 92,
     tags: ["IaC", "Cloud", "Automation"],
-    status: ""
+    status: "",
   },
   {
     title: "Chef",
@@ -157,7 +157,7 @@ export const cheatsheets: Cheatsheet[] = [
     difficulty: "Intermediate",
     popularity: 90,
     tags: ["IaC", "Cloud", "Automation"],
-    status: ""
+    status: "",
   },
   {
     title: "Puppet",
@@ -168,7 +168,7 @@ export const cheatsheets: Cheatsheet[] = [
     difficulty: "Intermediate",
     popularity: 90,
     tags: ["IaC", "Cloud", "Automation"],
-    status: ""
+    status: "",
   },
 
   // Monitoring
@@ -181,7 +181,7 @@ export const cheatsheets: Cheatsheet[] = [
     difficulty: "Intermediate",
     popularity: 88,
     tags: ["Monitoring", "Metrics", "Alerting"],
-    status: ""
+    status: "",
   },
   {
     title: "Grafana",
@@ -192,7 +192,7 @@ export const cheatsheets: Cheatsheet[] = [
     difficulty: "Intermediate",
     popularity: 87,
     tags: ["Monitoring", "Visualization", "Dashboards"],
-    status: ""
+    status: "",
   },
   {
     title: "ELK Stack",
@@ -203,7 +203,7 @@ export const cheatsheets: Cheatsheet[] = [
     difficulty: "Intermediate",
     popularity: 87,
     tags: ["Monitoring", "Visualization", "Dashboards"],
-    status: ""
+    status: "",
   },
   {
     title: "CloudWatch",
@@ -214,7 +214,7 @@ export const cheatsheets: Cheatsheet[] = [
     difficulty: "Intermediate",
     popularity: 87,
     tags: ["Monitoring", "Visualization", "Dashboards"],
-    status: ""
+    status: "",
   },
   {
     title: "Nagios",
@@ -225,7 +225,7 @@ export const cheatsheets: Cheatsheet[] = [
     difficulty: "Intermediate",
     popularity: 87,
     tags: ["Monitoring", "Visualization", "Dashboards"],
-    status: ""
+    status: "",
   },
 
   // Security
@@ -238,7 +238,7 @@ export const cheatsheets: Cheatsheet[] = [
     difficulty: "Intermediate",
     popularity: 85,
     tags: ["Security", "Code Quality", "Static Analysis"],
-    status: ""
+    status: "",
   },
   {
     title: "HashiCorp Vault",
@@ -249,7 +249,7 @@ export const cheatsheets: Cheatsheet[] = [
     difficulty: "Advanced",
     popularity: 83,
     tags: ["Security", "Secrets Management", "Authentication"],
-    status: ""
+    status: "",
   },
   {
     title: "Aqua Security",
@@ -260,7 +260,7 @@ export const cheatsheets: Cheatsheet[] = [
     difficulty: "Advanced",
     popularity: 83,
     tags: ["Security", "Secrets Management", "Authentication"],
-    status: ""
+    status: "",
   },
   {
     title: "Trivy",
@@ -271,7 +271,7 @@ export const cheatsheets: Cheatsheet[] = [
     difficulty: "Advanced",
     popularity: 83,
     tags: ["Security", "Secrets Management", "Authentication"],
-    status: ""
+    status: "",
   },
 
   // Version Control
@@ -284,7 +284,7 @@ export const cheatsheets: Cheatsheet[] = [
     difficulty: "Beginner",
     popularity: 88,
     tags: ["Version Control", "CI/CD", "DevOps Platform"],
-    status: ""
+    status: "",
   },
   {
     title: "GitHub",
@@ -295,7 +295,7 @@ export const cheatsheets: Cheatsheet[] = [
     difficulty: "Beginner",
     popularity: 95,
     tags: ["Version Control", "Collaboration", "Open Source"],
-    status: ""
+    status: "",
   },
   {
     title: "Bitbucket",
@@ -306,7 +306,7 @@ export const cheatsheets: Cheatsheet[] = [
     difficulty: "Beginner",
     popularity: 95,
     tags: ["Version Control", "Collaboration", "Open Source"],
-    status: ""
+    status: "",
   },
 
   // Cloud
@@ -319,7 +319,7 @@ export const cheatsheets: Cheatsheet[] = [
     difficulty: "Advanced",
     popularity: 96,
     tags: ["Cloud", "AWS", "Infrastructure"],
-    status: ""
+    status: "",
   },
   {
     title: "Azure",
@@ -330,7 +330,7 @@ export const cheatsheets: Cheatsheet[] = [
     difficulty: "Advanced",
     popularity: 90,
     tags: ["Cloud", "Microsoft", "Infrastructure"],
-    status: ""
+    status: "",
   },
   {
     title: "Google Cloud",
@@ -341,7 +341,7 @@ export const cheatsheets: Cheatsheet[] = [
     difficulty: "Advanced",
     popularity: 90,
     tags: ["Cloud", "Google", "Infrastructure"],
-    status: ""
+    status: "",
   },
   {
     title: "Kubernetes On AWS",
@@ -352,7 +352,7 @@ export const cheatsheets: Cheatsheet[] = [
     difficulty: "Advanced",
     popularity: 90,
     tags: ["Cloud", "Kubernetes", "AWS", "Infrastructure"],
-    status: ""
+    status: "",
   },
   {
     title: "Terraform On AWS",
@@ -363,7 +363,7 @@ export const cheatsheets: Cheatsheet[] = [
     difficulty: "Advanced",
     popularity: 90,
     tags: ["Cloud", "Terraform", "AWS", "Infrastructure"],
-    status: ""
+    status: "",
   },
 
   // Networking
@@ -376,7 +376,7 @@ export const cheatsheets: Cheatsheet[] = [
     difficulty: "Advanced",
     popularity: 82,
     tags: ["Service Mesh", "Kubernetes", "Networking"],
-    status: ""
+    status: "",
   },
   {
     title: "Consul",
@@ -387,7 +387,7 @@ export const cheatsheets: Cheatsheet[] = [
     difficulty: "Advanced",
     popularity: 80,
     tags: ["Service Discovery", "Networking", "HashiCorp"],
-    status: ""
+    status: "",
   },
   {
     title: "Envoy",
@@ -398,7 +398,7 @@ export const cheatsheets: Cheatsheet[] = [
     difficulty: "Advanced",
     popularity: 80,
     tags: ["Service Mesh", "Kubernetes", "Networking"],
-    status: ""
+    status: "",
   },
   {
     title: "Linkerd",
@@ -409,18 +409,22 @@ export const cheatsheets: Cheatsheet[] = [
     difficulty: "Advanced",
     popularity: 80,
     tags: ["Service Mesh", "Kubernetes", "Networking"],
-    status: ""
-  }, 
+    status: "",
+  },
 ];
 
 export async function getAllCheatsheets(): Promise<Cheatsheet[]> {
   return cheatsheets;
 }
 
-export async function getCheatsheetBySlug(category: string, slug: string): Promise<Cheatsheet | null> {
+export async function getCheatsheetBySlug(
+  category: string,
+  slug: string,
+): Promise<Cheatsheet | null> {
   const cheatsheet = cheatsheets.find(
-    c => c.category.toLowerCase() === category.toLowerCase() && 
-         c.slug.toLowerCase() === slug.toLowerCase()
+    (c) =>
+      c.category.toLowerCase() === category.toLowerCase() &&
+      c.slug.toLowerCase() === slug.toLowerCase(),
   );
   return cheatsheet || null;
-} 
+}

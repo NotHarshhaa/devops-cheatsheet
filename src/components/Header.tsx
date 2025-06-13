@@ -1,67 +1,64 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import {
-  FaGithub,
-  FaStar,
-  FaCompass,
-  FaInfoCircle,
-  FaHandsHelping,
-} from "react-icons/fa";
-import { HiMenu, HiX } from "react-icons/hi";
-import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import {
+  Menu,
+  X,
+  Github,
+  ChevronDown,
+  Search,
+  Code,
+  BarChart2,
+  Settings,
+  BookOpen,
+  Heart,
+  Star,
+  Users,
+} from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
-  const [lastScrollY, setLastScrollY] = useState(0);
-  const [visible, setVisible] = useState(true);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState("");
 
-  // Handle scroll events for header visibility and styling
+  // Handle scroll events
   useEffect(() => {
     const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-
-      // Determine if user has scrolled down
-      if (currentScrollY > 60) {
-        setScrolled(true);
-      } else {
-        setScrolled(false);
-      }
-
-      // Hide/show header based on scroll direction
-      if (currentScrollY > lastScrollY && currentScrollY > 200) {
-        setVisible(false);
-      } else {
-        setVisible(true);
-      }
-
-      setLastScrollY(currentScrollY);
+      setIsScrolled(window.scrollY > 20);
     };
-
-    window.addEventListener("scroll", handleScroll, { passive: true });
+    window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [lastScrollY]);
+  }, []);
+
+  // Animation variants
+  const headerVariants = {
+    initial: { y: -100 },
+    animate: {
+      y: 0,
+      transition: { type: "spring", stiffness: 100, damping: 15 },
+    },
+  };
 
   const menuVariants = {
     closed: {
-      opacity: 0,
       height: 0,
+      opacity: 0,
       transition: {
-        duration: 0.3,
-        ease: [0.04, 0.62, 0.23, 0.98],
+        height: { duration: 0.3 },
+        opacity: { duration: 0.2 },
         when: "afterChildren",
       },
     },
     open: {
-      opacity: 1,
       height: "auto",
+      opacity: 1,
       transition: {
-        duration: 0.4,
-        ease: [0.04, 0.62, 0.23, 0.98],
+        height: { duration: 0.4 },
+        opacity: { duration: 0.3 },
         when: "beforeChildren",
         staggerChildren: 0.05,
       },
@@ -69,119 +66,246 @@ export function Header() {
   };
 
   const menuItemVariants = {
+    closed: { opacity: 0, y: -5 },
+    open: { opacity: 1, y: 0 },
+  };
+
+  const dropdownVariants = {
     closed: {
       opacity: 0,
-      y: 10,
-      transition: { duration: 0.2 },
+      y: -5,
+      height: 0,
+      transition: {
+        y: { duration: 0.1 },
+        opacity: { duration: 0.1 },
+        height: { duration: 0.2 },
+      },
     },
     open: {
       opacity: 1,
       y: 0,
-      transition: { duration: 0.3 },
+      height: "auto",
+      transition: {
+        y: { duration: 0.1 },
+        opacity: { duration: 0.1 },
+        height: { duration: 0.3 },
+      },
     },
   };
 
-  // Dynamic classes based on scroll position
-  const headerClasses = `fixed w-full z-50 transition-all duration-300 ${
-    scrolled
-      ? "bg-white/90 dark:bg-gray-900/90 backdrop-blur-lg shadow-md"
-      : "bg-transparent dark:bg-transparent"
-  } ${visible ? "top-0" : "-top-24"}`;
+  const logoVariants = {
+    initial: { opacity: 0, x: -20 },
+    animate: { opacity: 1, x: 0, transition: { duration: 0.5 } },
+  };
 
   return (
-    <header className={headerClasses}>
+    <motion.header
+      initial="initial"
+      animate="animate"
+      variants={headerVariants}
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        isScrolled
+          ? "bg-white/90 dark:bg-gray-900/90 backdrop-blur-lg shadow-md py-3"
+          : "bg-white/90 dark:bg-gray-900/90 backdrop-blur-lg py-5"
+      }`}
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20">
+        <div className="flex items-center justify-between">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-3 group relative">
-            <div className="relative">
-              <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full blur-md opacity-70 group-hover:opacity-100 transition duration-300"></div>
-              <div className="relative w-10 h-10 rounded-full bg-white dark:bg-gray-900 flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform duration-300">
-                <Image
-                  src="/android-chrome-512x512.png"
-                  alt="DevOps Cheatsheet Hub"
-                  width={28}
-                  height={28}
-                  className="w-6 h-6"
-                />
+          <motion.div variants={logoVariants} className="flex-shrink-0">
+            <Link href="/" className="flex items-center gap-2 group">
+              <div className="relative">
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full blur-[10px] opacity-70 group-hover:opacity-100 transition-all duration-300"></div>
+                <div className="relative flex items-center justify-center w-11 h-11 bg-white dark:bg-gray-900 rounded-full shadow-md border border-gray-200 dark:border-gray-700 overflow-hidden transform group-hover:scale-105 transition-transform duration-300">
+                  <Image
+                    src="/android-chrome-512x512.png"
+                    alt="DevOps Cheatsheet"
+                    width={28}
+                    height={28}
+                    className="w-7 h-7"
+                  />
+                </div>
               </div>
-            </div>
-            <div className="overflow-hidden">
-              <motion.span
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ duration: 0.5 }}
-                className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400"
-              >
-                DevOps Cheatsheet Hub
-              </motion.span>
-            </div>
-          </Link>
+              <div className="flex flex-col">
+                <span className="text-xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400">
+                  DevOps Hub
+                </span>
+                <span className="text-[10px] text-gray-500 dark:text-gray-400 -mt-1">
+                  Your Ultimate Cheatsheet
+                </span>
+              </div>
+            </Link>
+          </motion.div>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-6">
-            <Link
-              href="/categories"
-              className="flex items-center gap-2 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors relative group py-2 px-3"
-            >
-              <FaCompass className="opacity-70 group-hover:opacity-100 transform group-hover:rotate-45 transition-all duration-300" />
-              <span>Categories</span>
-              <span className="absolute inset-0 bg-blue-50 dark:bg-blue-900/20 rounded-lg scale-0 group-hover:scale-100 transition-transform duration-300 -z-10" />
-            </Link>
+          <nav className="hidden lg:flex items-center space-x-1">
+            {/* Dropdown for Categories */}
+            <div className="relative">
+              <button
+                onClick={() =>
+                  setDropdownOpen(
+                    dropdownOpen === "categories" ? "" : "categories",
+                  )
+                }
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                onMouseEnter={() => setDropdownOpen("categories")}
+                onMouseLeave={() => setDropdownOpen("")}
+              >
+                <Code className="w-4 h-4" />
+                <span>Categories</span>
+                <ChevronDown
+                  className={`w-4 h-4 transition-transform duration-200 ${
+                    dropdownOpen === "categories" ? "rotate-180" : ""
+                  }`}
+                />
+              </button>
+
+              <AnimatePresence>
+                {dropdownOpen === "categories" && (
+                  <motion.div
+                    initial="closed"
+                    animate="open"
+                    exit="closed"
+                    variants={dropdownVariants}
+                    className="absolute top-full left-0 w-56 mt-1 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden z-50"
+                    onMouseEnter={() => setDropdownOpen("categories")}
+                    onMouseLeave={() => setDropdownOpen("")}
+                  >
+                    <div className="p-2">
+                      {[
+                        {
+                          name: "CI/CD",
+                          icon: <Settings className="w-4 h-4" />,
+                        },
+                        {
+                          name: "Containers",
+                          icon: <Code className="w-4 h-4" />,
+                        },
+                        {
+                          name: "Monitoring",
+                          icon: <BarChart2 className="w-4 h-4" />,
+                        },
+                      ].map((category) => (
+                        <Link
+                          key={category.name}
+                          href={`/${category.name.toLowerCase().replace(/\s+/g, "-")}`}
+                          className="flex items-center gap-3 px-3 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                        >
+                          <span className="text-blue-500 dark:text-blue-400">
+                            {category.icon}
+                          </span>
+                          <span>{category.name}</span>
+                        </Link>
+                      ))}
+                      <div className="mt-1 pt-1 border-t border-gray-100 dark:border-gray-700">
+                        <Link
+                          href="/categories"
+                          className="flex items-center gap-2 px-3 py-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                        >
+                          <span>View All Categories</span>
+                          <ChevronDown className="w-4 h-4 rotate-270" />
+                        </Link>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* Resources Dropdown */}
+            <div className="relative">
+              <button
+                onClick={() =>
+                  setDropdownOpen(
+                    dropdownOpen === "resources" ? "" : "resources",
+                  )
+                }
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                onMouseEnter={() => setDropdownOpen("resources")}
+                onMouseLeave={() => setDropdownOpen("")}
+              >
+                <BookOpen className="w-4 h-4" />
+                <span>Resources</span>
+                <ChevronDown
+                  className={`w-4 h-4 transition-transform duration-200 ${
+                    dropdownOpen === "resources" ? "rotate-180" : ""
+                  }`}
+                />
+              </button>
+
+              <AnimatePresence>
+                {dropdownOpen === "resources" && (
+                  <motion.div
+                    initial="closed"
+                    animate="open"
+                    exit="closed"
+                    variants={dropdownVariants}
+                    className="absolute top-full left-0 w-56 mt-1 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden z-50"
+                    onMouseEnter={() => setDropdownOpen("resources")}
+                    onMouseLeave={() => setDropdownOpen("")}
+                  >
+                    <div className="p-2">
+                      <Link
+                        href="/getting-started"
+                        className="flex items-center gap-3 px-3 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                      >
+                        <span className="text-green-500 dark:text-green-400">
+                          <Star className="w-4 h-4" />
+                        </span>
+                        <span>Getting Started</span>
+                      </Link>
+                      <Link
+                        href="/about"
+                        className="flex items-center gap-3 px-3 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                      >
+                        <span className="text-purple-500 dark:text-purple-400">
+                          <Users className="w-4 h-4" />
+                        </span>
+                        <span>About Us</span>
+                      </Link>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
 
             <Link
-              href="/getting-started"
-              className="flex items-center gap-2 text-gray-600 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 transition-colors relative group py-2 px-3"
+              href="/search"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
             >
-              <FaStar className="opacity-70 group-hover:opacity-100 transform group-hover:rotate-45 transition-all duration-300" />
-              <span>Get Started</span>
-              <span className="absolute inset-0 bg-green-50 dark:bg-green-900/20 rounded-lg scale-0 group-hover:scale-100 transition-transform duration-300 -z-10" />
+              <Search className="w-4 h-4" />
+              <span>Search</span>
             </Link>
 
-            <Link
-              href="/about"
-              className="flex items-center gap-2 text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 transition-colors relative group py-2 px-3"
-            >
-              <FaInfoCircle className="opacity-70 group-hover:opacity-100 transform group-hover:scale-110 transition-all duration-300" />
-              <span>About</span>
-              <span className="absolute inset-0 bg-purple-50 dark:bg-purple-900/20 rounded-lg scale-0 group-hover:scale-100 transition-transform duration-300 -z-10" />
-            </Link>
-
-            <Link
+            <a
               href="https://github.com/NotHarshhaa"
               target="_blank"
               rel="noopener noreferrer"
-              className="relative group"
-              aria-label="GitHub"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
             >
-              <span className="absolute -inset-2 bg-gray-100 dark:bg-gray-800 rounded-full opacity-0 group-hover:opacity-100 transform scale-50 group-hover:scale-100 transition-all duration-300"></span>
-              <FaGithub className="w-5 h-5 text-gray-700 dark:text-gray-300 relative" />
-            </Link>
+              <Github className="w-4 h-4" />
+              <span>GitHub</span>
+            </a>
 
-            <div className="mx-1">
+            <div className="pl-2">
               <ThemeToggle />
             </div>
 
-            <Link
-              href="/contribute"
-              className="relative group px-5 py-2.5 overflow-hidden"
-            >
-              <span className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg"></span>
-              <span className="absolute inset-0 bg-gradient-to-r from-blue-700 to-purple-700 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
-              <span className="relative flex items-center gap-2 text-white font-medium">
-                <FaHandsHelping className="w-4 h-4 group-hover:animate-pulse" />
-                Contribute
-              </span>
+            <Link href="/contribute" className="relative group ml-3">
+              <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg blur opacity-60 group-hover:opacity-100 transition duration-200"></div>
+              <div className="relative flex items-center gap-2 bg-white dark:bg-gray-900 text-gray-900 dark:text-white px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700">
+                <Heart className="w-4 h-4 text-red-500" />
+                <span className="font-medium">Contribute</span>
+              </div>
             </Link>
           </nav>
 
-          <div className="flex items-center gap-4 md:hidden">
+          {/* Mobile Menu Button */}
+          <div className="flex items-center lg:hidden gap-4">
             <ThemeToggle />
-            {/* Mobile Menu Button */}
-            <motion.button
-              className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+            <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              whileTap={{ scale: 0.95 }}
+              className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300"
               aria-label={isMenuOpen ? "Close menu" : "Open menu"}
             >
               <AnimatePresence mode="wait">
@@ -193,95 +317,152 @@ export function Header() {
                     exit={{ rotate: 90, opacity: 0 }}
                     transition={{ duration: 0.2 }}
                   >
-                    <HiX className="w-6 h-6 text-gray-600 dark:text-gray-300" />
+                    <X className="w-6 h-6" />
                   </motion.div>
                 ) : (
                   <motion.div
-                    key="menu"
+                    key="open"
                     initial={{ rotate: 90, opacity: 0 }}
                     animate={{ rotate: 0, opacity: 1 }}
                     exit={{ rotate: -90, opacity: 0 }}
                     transition={{ duration: 0.2 }}
                   >
-                    <HiMenu className="w-6 h-6 text-gray-600 dark:text-gray-300" />
+                    <Menu className="w-6 h-6" />
                   </motion.div>
                 )}
               </AnimatePresence>
-            </motion.button>
+            </button>
           </div>
         </div>
+      </div>
 
-        {/* Mobile Navigation Dropdown */}
-        <AnimatePresence>
-          {isMenuOpen && (
-            <motion.div
-              initial="closed"
-              animate="open"
-              exit="closed"
-              variants={menuVariants}
-              className="md:hidden overflow-hidden bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800"
-            >
-              <motion.nav className="flex flex-col gap-2 py-6">
-                <motion.div variants={menuItemVariants}>
-                  <Link
-                    href="/categories"
-                    className="flex items-center gap-3 px-6 py-3 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    <FaCompass className="w-5 h-5 text-blue-500 dark:text-blue-400" />
-                    <span className="font-medium">Categories</span>
-                  </Link>
+      {/* Mobile Navigation Dropdown */}
+      <AnimatePresence>
+        {isMenuOpen && (
+          <motion.div
+            initial="closed"
+            animate="open"
+            exit="closed"
+            variants={menuVariants}
+            className="lg:hidden overflow-hidden bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800"
+          >
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+              {/* Search Box */}
+              <motion.div variants={menuItemVariants} className="mb-6">
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Search className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Search tools..."
+                    className="block w-full pl-10 pr-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+              </motion.div>
+
+              {/* Mobile Menu Items */}
+              <div className="space-y-6">
+                <motion.div
+                  variants={menuItemVariants}
+                  className="border-b border-gray-100 dark:border-gray-800 pb-6"
+                >
+                  <div className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">
+                    Categories
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[
+                      { name: "CI/CD", icon: <Settings className="w-4 h-4" /> },
+                      {
+                        name: "Containers",
+                        icon: <Code className="w-4 h-4" />,
+                      },
+                      {
+                        name: "Monitoring",
+                        icon: <BarChart2 className="w-4 h-4" />,
+                      },
+                      {
+                        name: "All Categories",
+                        icon: <ChevronDown className="w-4 h-4" />,
+                      },
+                    ].map((category) => (
+                      <Link
+                        key={category.name}
+                        href={
+                          category.name === "All Categories"
+                            ? "/categories"
+                            : `/${category.name.toLowerCase().replace(/\s+/g, "-")}`
+                        }
+                        className="flex items-center gap-3 px-3 py-2 bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        <span className="text-blue-500 dark:text-blue-400">
+                          {category.icon}
+                        </span>
+                        <span>{category.name}</span>
+                      </Link>
+                    ))}
+                  </div>
+                </motion.div>
+
+                <motion.div
+                  variants={menuItemVariants}
+                  className="border-b border-gray-100 dark:border-gray-800 pb-6"
+                >
+                  <div className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">
+                    Resources
+                  </div>
+                  <div className="space-y-2">
+                    <Link
+                      href="/getting-started"
+                      className="flex items-center gap-3 px-3 py-2 bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      <span className="text-green-500 dark:text-green-400">
+                        <Star className="w-4 h-4" />
+                      </span>
+                      <span>Getting Started</span>
+                    </Link>
+                    <Link
+                      href="/about"
+                      className="flex items-center gap-3 px-3 py-2 bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      <span className="text-purple-500 dark:text-purple-400">
+                        <Users className="w-4 h-4" />
+                      </span>
+                      <span>About Us</span>
+                    </Link>
+                    <a
+                      href="https://github.com/NotHarshhaa"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 px-3 py-2 bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      <span className="text-gray-500 dark:text-gray-400">
+                        <Github className="w-4 h-4" />
+                      </span>
+                      <span>GitHub</span>
+                    </a>
+                  </div>
                 </motion.div>
 
                 <motion.div variants={menuItemVariants}>
-                  <Link
-                    href="/getting-started"
-                    className="flex items-center gap-3 px-6 py-3 text-gray-600 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    <FaStar className="w-5 h-5 text-green-500 dark:text-green-400" />
-                    <span className="font-medium">Get Started</span>
-                  </Link>
-                </motion.div>
-
-                <motion.div variants={menuItemVariants}>
-                  <Link
-                    href="/about"
-                    className="flex items-center gap-3 px-6 py-3 text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg transition-colors"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    <FaInfoCircle className="w-5 h-5 text-purple-500 dark:text-purple-400" />
-                    <span className="font-medium">About</span>
-                  </Link>
-                </motion.div>
-
-                <motion.div variants={menuItemVariants}>
-                  <a
-                    href="https://github.com/NotHarshhaa"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-3 px-6 py-3 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors"
-                  >
-                    <FaGithub className="w-5 h-5" />
-                    <span className="font-medium">GitHub</span>
-                  </a>
-                </motion.div>
-
-                <motion.div variants={menuItemVariants} className="px-4 pt-2">
                   <Link
                     href="/contribute"
-                    className="flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium px-6 py-3 rounded-lg shadow-md transition-all duration-200"
+                    className="flex items-center justify-center gap-2 w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium px-4 py-3 rounded-lg shadow-md transition-colors"
                     onClick={() => setIsMenuOpen(false)}
                   >
-                    <FaHandsHelping className="w-4 h-4" />
-                    Contribute
+                    <Heart className="w-4 h-4" />
+                    <span>Contribute</span>
                   </Link>
                 </motion.div>
-              </motion.nav>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-    </header>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.header>
   );
 }
