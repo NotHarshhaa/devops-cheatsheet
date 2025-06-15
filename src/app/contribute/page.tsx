@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, Variants, Transition } from "framer-motion";
 import Link from "next/link";
 import {
   FaGithub,
@@ -124,22 +124,26 @@ export default function ContributePage() {
     },
   ];
 
-  const fadeIn = {
+  const fadeIn: Variants = {
     hidden: { opacity: 0, y: 20 },
     visible: {
       opacity: 1,
       y: 0,
-      transition: { duration: 0.6 },
+      transition: {
+        type: "tween",
+        duration: 0.6
+      } as Transition,
     },
   };
 
-  const staggerContainer = {
+  const staggerContainer: Variants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
       transition: {
+        type: "tween",
         staggerChildren: 0.1,
-      },
+      } as Transition,
     },
   };
 

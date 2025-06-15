@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, Variants, Transition } from "framer-motion";
 import {
   Menu,
   X,
@@ -35,67 +35,89 @@ export function Header() {
   }, []);
 
   // Animation variants
-  const headerVariants = {
+  const headerVariants: Variants = {
     initial: { y: -100 },
     animate: {
       y: 0,
-      transition: { type: "spring", stiffness: 100, damping: 15 },
+      transition: {
+        type: "tween",
+        duration: 0.5,
+        ease: "easeOut"
+      } as Transition,
     },
   };
 
-  const menuVariants = {
+  const menuVariants: Variants = {
     closed: {
       height: 0,
       opacity: 0,
       transition: {
+        type: "tween",
         height: { duration: 0.3 },
         opacity: { duration: 0.2 },
         when: "afterChildren",
-      },
+      } as Transition,
     },
     open: {
       height: "auto",
       opacity: 1,
       transition: {
+        type: "tween",
         height: { duration: 0.4 },
         opacity: { duration: 0.3 },
         when: "beforeChildren",
         staggerChildren: 0.05,
-      },
+      } as Transition,
     },
   };
 
-  const menuItemVariants = {
+  const menuItemVariants: Variants = {
     closed: { opacity: 0, y: -5 },
-    open: { opacity: 1, y: 0 },
+    open: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        type: "tween",
+        duration: 0.2
+      } as Transition,
+    },
   };
 
-  const dropdownVariants = {
+  const dropdownVariants: Variants = {
     closed: {
       opacity: 0,
       y: -5,
       height: 0,
       transition: {
+        type: "tween",
         y: { duration: 0.1 },
         opacity: { duration: 0.1 },
         height: { duration: 0.2 },
-      },
+      } as Transition,
     },
     open: {
       opacity: 1,
       y: 0,
       height: "auto",
       transition: {
+        type: "tween",
         y: { duration: 0.1 },
         opacity: { duration: 0.1 },
         height: { duration: 0.3 },
-      },
+      } as Transition,
     },
   };
 
-  const logoVariants = {
+  const logoVariants: Variants = {
     initial: { opacity: 0, x: -20 },
-    animate: { opacity: 1, x: 0, transition: { duration: 0.5 } },
+    animate: {
+      opacity: 1,
+      x: 0,
+      transition: {
+        type: "tween",
+        duration: 0.5
+      } as Transition,
+    },
   };
 
   return (
