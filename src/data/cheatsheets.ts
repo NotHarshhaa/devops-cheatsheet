@@ -1,14 +1,34 @@
 export interface Cheatsheet {
-  status: string;
   title: string;
   description: string;
   category: string;
   slug: string;
   icon: string;
-  difficulty: "Beginner" | "Intermediate" | "Advanced";
+  difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
   popularity: number;
   tags: string[];
+  status?: string;
+  updatedAt: string;
+  content?: string;
 }
+
+export const getAllCheatsheets = async (category?: string): Promise<Cheatsheet[]> => {
+  try {
+    const protocol = process.env.NODE_ENV === 'development' ? 'http' : 'https';
+    const host = typeof window === 'undefined' ? 'localhost:3000' : window.location.host;
+    const baseUrl = `${protocol}://${host}`;
+    
+    const url = category 
+      ? `${baseUrl}/api/cheatsheets?limit=1000&category=${category}`
+      : `${baseUrl}/api/cheatsheets?limit=1000`;
+    const response = await fetch(url);
+    const data = await response.json();
+    return data.cheatsheets || [];
+  } catch (error) {
+    console.error('Error fetching cheatsheets:', error);
+    return [];
+  }
+};
 
 export const cheatsheets: Cheatsheet[] = [
   // CI-CD
@@ -22,6 +42,7 @@ export const cheatsheets: Cheatsheet[] = [
     popularity: 95,
     tags: ["CI/CD", "Automation", "Pipeline"],
     status: "",
+    updatedAt: "",
   },
   {
     title: "GitHub Actions",
@@ -33,6 +54,7 @@ export const cheatsheets: Cheatsheet[] = [
     popularity: 90,
     tags: ["CI/CD", "GitHub", "Automation"],
     status: "",
+    updatedAt: "",
   },
   {
     title: "GitLab CI",
@@ -44,6 +66,7 @@ export const cheatsheets: Cheatsheet[] = [
     popularity: 85,
     tags: ["CI/CD", "GitLab", "Pipeline"],
     status: "",
+    updatedAt: "",
   },
   {
     title: "CircleCI",
@@ -55,6 +78,7 @@ export const cheatsheets: Cheatsheet[] = [
     popularity: 80,
     tags: ["CI/CD", "Cloud", "Automation"],
     status: "",
+    updatedAt: "",
   },
 
   // Containerization
@@ -68,6 +92,7 @@ export const cheatsheets: Cheatsheet[] = [
     popularity: 98,
     tags: ["Containers", "DevOps", "Microservices"],
     status: "",
+    updatedAt: "",
   },
   {
     title: "Kubernetes",
@@ -79,6 +104,7 @@ export const cheatsheets: Cheatsheet[] = [
     popularity: 95,
     tags: ["Containers", "Orchestration", "Cloud-Native"],
     status: "",
+    updatedAt: "",
   },
   {
     title: "CRI-O",
@@ -90,6 +116,7 @@ export const cheatsheets: Cheatsheet[] = [
     popularity: 90,
     tags: ["Containers", "Orchestration", "Cloud-Native"],
     status: "",
+    updatedAt: "",
   },
   {
     title: "Podman",
@@ -101,6 +128,7 @@ export const cheatsheets: Cheatsheet[] = [
     popularity: 90,
     tags: ["Containers", "Orchestration", "Cloud-Native"],
     status: "",
+    updatedAt: "",
   },
   {
     title: "OpenShift",
@@ -112,6 +140,7 @@ export const cheatsheets: Cheatsheet[] = [
     popularity: 90,
     tags: ["Containers", "Orchestration", "Cloud-Native"],
     status: "",
+    updatedAt: "",
   },
   {
     title: "Helm",
@@ -123,6 +152,7 @@ export const cheatsheets: Cheatsheet[] = [
     popularity: 90,
     tags: ["Containers", "Orchestration", "Cloud-Native"],
     status: "",
+    updatedAt: "",
   },
 
   // Infrastructure Management
@@ -136,6 +166,7 @@ export const cheatsheets: Cheatsheet[] = [
     popularity: 90,
     tags: ["Automation", "Configuration Management", "IaC"],
     status: "",
+    updatedAt: "",
   },
   {
     title: "Terraform",
@@ -147,6 +178,7 @@ export const cheatsheets: Cheatsheet[] = [
     popularity: 92,
     tags: ["IaC", "Cloud", "Automation"],
     status: "",
+    updatedAt: "",
   },
   {
     title: "Chef",
@@ -158,6 +190,7 @@ export const cheatsheets: Cheatsheet[] = [
     popularity: 90,
     tags: ["IaC", "Cloud", "Automation"],
     status: "",
+    updatedAt: "",
   },
   {
     title: "Puppet",
@@ -169,6 +202,7 @@ export const cheatsheets: Cheatsheet[] = [
     popularity: 90,
     tags: ["IaC", "Cloud", "Automation"],
     status: "",
+    updatedAt: "",
   },
 
   // Monitoring
@@ -182,6 +216,7 @@ export const cheatsheets: Cheatsheet[] = [
     popularity: 88,
     tags: ["Monitoring", "Metrics", "Alerting"],
     status: "",
+    updatedAt: "",
   },
   {
     title: "Grafana",
@@ -193,6 +228,7 @@ export const cheatsheets: Cheatsheet[] = [
     popularity: 87,
     tags: ["Monitoring", "Visualization", "Dashboards"],
     status: "",
+    updatedAt: "",
   },
   {
     title: "ELK Stack",
@@ -204,6 +240,7 @@ export const cheatsheets: Cheatsheet[] = [
     popularity: 87,
     tags: ["Monitoring", "Visualization", "Dashboards"],
     status: "",
+    updatedAt: "",
   },
   {
     title: "CloudWatch",
@@ -215,6 +252,7 @@ export const cheatsheets: Cheatsheet[] = [
     popularity: 87,
     tags: ["Monitoring", "Visualization", "Dashboards"],
     status: "",
+    updatedAt: "",
   },
   {
     title: "Nagios",
@@ -226,6 +264,7 @@ export const cheatsheets: Cheatsheet[] = [
     popularity: 87,
     tags: ["Monitoring", "Visualization", "Dashboards"],
     status: "",
+    updatedAt: "",
   },
 
   // Security
@@ -239,6 +278,7 @@ export const cheatsheets: Cheatsheet[] = [
     popularity: 85,
     tags: ["Security", "Code Quality", "Static Analysis"],
     status: "",
+    updatedAt: "",
   },
   {
     title: "HashiCorp Vault",
@@ -250,6 +290,7 @@ export const cheatsheets: Cheatsheet[] = [
     popularity: 83,
     tags: ["Security", "Secrets Management", "Authentication"],
     status: "",
+    updatedAt: "",
   },
   {
     title: "Aqua Security",
@@ -261,6 +302,7 @@ export const cheatsheets: Cheatsheet[] = [
     popularity: 83,
     tags: ["Security", "Secrets Management", "Authentication"],
     status: "",
+    updatedAt: "",
   },
   {
     title: "Trivy",
@@ -272,6 +314,7 @@ export const cheatsheets: Cheatsheet[] = [
     popularity: 83,
     tags: ["Security", "Secrets Management", "Authentication"],
     status: "",
+    updatedAt: "",
   },
 
   // Version Control
@@ -285,6 +328,7 @@ export const cheatsheets: Cheatsheet[] = [
     popularity: 88,
     tags: ["Version Control", "CI/CD", "DevOps Platform"],
     status: "",
+    updatedAt: "",
   },
   {
     title: "GitHub",
@@ -296,6 +340,7 @@ export const cheatsheets: Cheatsheet[] = [
     popularity: 95,
     tags: ["Version Control", "Collaboration", "Open Source"],
     status: "",
+    updatedAt: "",
   },
   {
     title: "Bitbucket",
@@ -307,6 +352,7 @@ export const cheatsheets: Cheatsheet[] = [
     popularity: 95,
     tags: ["Version Control", "Collaboration", "Open Source"],
     status: "",
+    updatedAt: "",
   },
 
   // Cloud
@@ -320,6 +366,7 @@ export const cheatsheets: Cheatsheet[] = [
     popularity: 96,
     tags: ["Cloud", "AWS", "Infrastructure"],
     status: "",
+    updatedAt: "",
   },
   {
     title: "Azure",
@@ -331,6 +378,7 @@ export const cheatsheets: Cheatsheet[] = [
     popularity: 90,
     tags: ["Cloud", "Microsoft", "Infrastructure"],
     status: "",
+    updatedAt: "",
   },
   {
     title: "Google Cloud",
@@ -342,6 +390,7 @@ export const cheatsheets: Cheatsheet[] = [
     popularity: 90,
     tags: ["Cloud", "Google", "Infrastructure"],
     status: "",
+    updatedAt: "",
   },
   {
     title: "Kubernetes On AWS",
@@ -353,6 +402,7 @@ export const cheatsheets: Cheatsheet[] = [
     popularity: 90,
     tags: ["Cloud", "Kubernetes", "AWS", "Infrastructure"],
     status: "",
+    updatedAt: "",
   },
   {
     title: "Terraform On AWS",
@@ -364,6 +414,7 @@ export const cheatsheets: Cheatsheet[] = [
     popularity: 90,
     tags: ["Cloud", "Terraform", "AWS", "Infrastructure"],
     status: "",
+    updatedAt: "",
   },
 
   // Networking
@@ -377,6 +428,7 @@ export const cheatsheets: Cheatsheet[] = [
     popularity: 82,
     tags: ["Service Mesh", "Kubernetes", "Networking"],
     status: "",
+    updatedAt: "",
   },
   {
     title: "Consul",
@@ -388,6 +440,7 @@ export const cheatsheets: Cheatsheet[] = [
     popularity: 80,
     tags: ["Service Discovery", "Networking", "HashiCorp"],
     status: "",
+    updatedAt: "",
   },
   {
     title: "Envoy",
@@ -399,6 +452,7 @@ export const cheatsheets: Cheatsheet[] = [
     popularity: 80,
     tags: ["Service Mesh", "Kubernetes", "Networking"],
     status: "",
+    updatedAt: "",
   },
   {
     title: "Linkerd",
@@ -410,12 +464,9 @@ export const cheatsheets: Cheatsheet[] = [
     popularity: 80,
     tags: ["Service Mesh", "Kubernetes", "Networking"],
     status: "",
+    updatedAt: "",
   },
 ];
-
-export async function getAllCheatsheets(): Promise<Cheatsheet[]> {
-  return cheatsheets;
-}
 
 export async function getCheatsheetBySlug(
   category: string,

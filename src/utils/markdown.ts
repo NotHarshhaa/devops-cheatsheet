@@ -1,20 +1,21 @@
 import matter from 'gray-matter';
 import path from 'path';
 import fs from 'fs/promises';
-import { Category, categories } from './categories';
+import { Category, categories } from './categoryData';
 
 export interface CheatsheetMeta {
   title: string;
   description: string;
-  category: string;
+  category: Category;
   icon: string;
   slug: string;
+  difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
+  popularity: number;
+  tags: string[];
+  updatedAt: string;
 }
 
 export interface Cheatsheet extends CheatsheetMeta {
-  difficulty: "Beginner" | "Intermediate" | "Advanced";
-  popularity: number;
-  tags: any;
   content: string;
 }
 
@@ -27,20 +28,31 @@ export interface PaginatedResponse {
 
 export async function getCheatsheetBySlug(category: string, slug: string): Promise<Cheatsheet | null> {
   try {
+    // If the category is '404', return null to trigger the not-found page
+    if (category === '404' || slug === '404') {
+      return null;
+    }
+
     const fullPath = path.join(process.cwd(), category, `${slug}.md`);
     const fileContents = await fs.readFile(fullPath, 'utf8');
-    const { data, content } = matter(fileContents);
+    
+    // Parse frontmatter if it exists, otherwise use the whole content
+    const { data = {}, content } = matter(fileContents);
+
+    // If there's no frontmatter, assume the first line is the title
+    const firstLine = content.split('\n')[0].replace(/^#\s*/, '');
 
     return {
-      title: data.title || slug,
-      description: data.description || '',
-      category: category,
+      title: data.title || firstLine || slug,
+      description: data.description || 'A comprehensive guide and cheatsheet',
+      category: category as Category,
       icon: data.icon || '📄',
       slug: slug,
-      content,
+      content: content,
       difficulty: data.difficulty || 'Beginner',
-      popularity: data.popularity || 0,
-      tags: data.tags || []
+      popularity: data.popularity || 95,
+      tags: data.tags || [category],
+      updatedAt: data.updatedAt || new Date().toISOString()
     };
   } catch (error) {
     console.error(`Error reading cheatsheet ${category}/${slug}:`, error);
@@ -48,7 +60,7 @@ export async function getCheatsheetBySlug(category: string, slug: string): Promi
   }
 }
 
-export async function getAllCheatsheets(category = '', page = 1, limit = 10): Promise<PaginatedResponse> {
+export async function getAllCheatsheets(category: string | '' = '', page = 1, limit = 10): Promise<PaginatedResponse> {
   try {
     const cheatsheets: Cheatsheet[] = [];
     const categoriesToProcess = category ? [category] : categories;
@@ -65,19 +77,22 @@ export async function getAllCheatsheets(category = '', page = 1, limit = 10): Pr
           if (file.endsWith('.md')) {
             const filePath = path.join(categoryPath, file);
             const fileContent = await fs.readFile(filePath, 'utf-8');
-            const { data } = matter(fileContent);
+            const { data = {}, content } = matter(fileContent);
             
-            // Only load metadata initially, not the full content
+            // If there's no frontmatter, assume the first line is the title
+            const firstLine = content.split('\n')[0].replace(/^#\s*/, '');
+            
             cheatsheets.push({
-              title: data.title || '',
-              description: data.description || '',
-              category: cat,
+              title: data.title || firstLine || file.replace('.md', ''),
+              description: data.description || 'A comprehensive guide and cheatsheet',
+              category: cat as Category,
               slug: file.replace('.md', ''),
-              icon: data.icon || '',
-              content: '', // Don't load content initially
+              icon: data.icon || '📄',
+              content: content,
               difficulty: data.difficulty || 'Beginner',
-              popularity: data.popularity || 0,
-              tags: data.tags || []
+              popularity: data.popularity || 95,
+              tags: data.tags || [cat],
+              updatedAt: data.updatedAt || new Date().toISOString()
             });
           }
         }

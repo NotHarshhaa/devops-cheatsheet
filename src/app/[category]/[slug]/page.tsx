@@ -1,8 +1,8 @@
 import { Metadata } from 'next';
-import { notFound } from 'next/navigation';
 import { getCheatsheetBySlug } from '@/utils/markdown';
-import { CheatsheetTemplate } from '@/components/CheatsheetTemplate';
-import { marked } from 'marked';
+import { categoryData, type Category } from '@/utils/categoryData';
+import { getAllCheatsheets } from '@/data/cheatsheets';
+import { CheatsheetPageClient } from './CheatsheetPageClient';
 
 interface Props {
   params: {
@@ -12,7 +12,7 @@ interface Props {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const cheatsheet = await getCheatsheetBySlug(params.category, params.slug);
+  const cheatsheet = await getCheatsheetBySlug(params.category as Category, params.slug);
   if (!cheatsheet) return {};
 
   return {
@@ -21,39 +21,38 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default async function CheatsheetPage({ params }: Props) {
-  const cheatsheet = await getCheatsheetBySlug(params.category, params.slug);
+export async function generateStaticParams() {
+  // Get all categories
+  const categories = Object.keys(categoryData) as Category[];
   
-  if (!cheatsheet) {
-    notFound();
-  }
-
-  const parsedContent = await marked(cheatsheet.content);
-
-  const sections = [
-    {
-      id: 'content',
-      title: 'Content',
-      type: 'text' as const,
-      content: [
-        {
-          type: 'text' as const,
-          value: parsedContent
-        }
-      ]
-    }
-  ];
-
-  return (
-    <CheatsheetTemplate
-      title={cheatsheet.title}
-      category={cheatsheet.category}
-      icon={cheatsheet.icon}
-      description={cheatsheet.description}
-      difficulty={cheatsheet.difficulty}
-      readingTime="5 min read"
-      popularity={cheatsheet.popularity}
-      sections={sections}
-    />
+  // For each category, get all cheatsheets
+  const params = await Promise.all(
+    categories.map(async (category) => {
+      const cheatsheets = await getAllCheatsheets(category);
+      // Map each cheatsheet to its params
+      return cheatsheets.map((cheatsheet) => ({
+        category: category,
+        slug: cheatsheet.slug,
+      }));
+    })
   );
+  
+  // Flatten the array of arrays into a single array of params and add the 404 route
+  return [
+    ...params.flat(),
+    {
+      category: '404',
+      slug: '404',
+    },
+  ];
+}
+
+export default function CheatsheetPage({ params }: Props) {
+  // If this is the 404 route, return null to trigger the not-found page
+  if (params.category === '404' || params.slug === '404') {
+    return null;
+  }
+  
+  // Cast the category to Category type since we know it's valid from generateStaticParams
+  return <CheatsheetPageClient params={{ ...params, category: params.category as Category }} />;
 } 

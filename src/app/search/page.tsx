@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { Search as SearchIcon, Loader2, Tag, Star, BarChart2 } from 'lucide-react';
 import { Cheatsheet, getAllCheatsheets } from '@/data/cheatsheets';
+import { motion } from "framer-motion";
 
 function highlightText(text: string, query: string) {
   if (!query.trim()) return text;
@@ -33,23 +34,23 @@ function DifficultyBadge({ difficulty }: { difficulty: Cheatsheet['difficulty'] 
 export default function SearchPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [cheatsheets, setCheatsheets] = useState<Cheatsheet[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
 
   useEffect(() => {
-    const loadCheatsheets = async () => {
+    const fetchCheatsheets = async () => {
       try {
-        const data = await getAllCheatsheets();
-        setCheatsheets(data);
-        setIsLoading(false);
+        const response = await fetch('/api/cheatsheets?limit=1000');
+        const data = await response.json();
+        setCheatsheets(data.cheatsheets || []);
       } catch (error) {
-        console.error('Error loading cheatsheets:', error);
-        setCheatsheets([]);
-        setIsLoading(false);
+        console.error('Error fetching cheatsheets:', error);
+      } finally {
+        setLoading(false);
       }
     };
 
-    loadCheatsheets();
+    fetchCheatsheets();
   }, []);
 
   const categories = useMemo(() => 
@@ -129,7 +130,7 @@ export default function SearchPage() {
 
         {/* Search Results */}
         <div className="max-w-4xl mx-auto">
-          {isLoading ? (
+          {loading ? (
             <div className="text-center py-12">
               <Loader2 className="w-8 h-8 text-blue-500 dark:text-blue-400 animate-spin mx-auto" />
               <p className="text-gray-600 dark:text-gray-400 mt-4">Loading results...</p>

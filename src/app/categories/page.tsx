@@ -1,10 +1,9 @@
-import { getAllCheatsheets } from "@/utils/markdown";
-import { categories, categoryIcons } from "@/utils/categories";
-import { CategoryCard } from "@/components/CategoryCard";
 import { Search, Filter, Tag, ArrowDown, Grid3X3, List } from "lucide-react";
+import { categories, categoryData } from "@/utils/categoryData";
+import { CategoryCard } from "@/components/CategoryCard";
+import { cheatsheets } from "@/data/cheatsheets";
 
-export default async function CategoriesPage() {
-  const cheatsheets = await getAllCheatsheets();
+export default function CategoriesPage() {
   const categoriesMap = cheatsheets.reduce(
     (acc, cheatsheet) => {
       if (!acc[cheatsheet.category]) {
@@ -62,7 +61,7 @@ export default async function CategoriesPage() {
                     </div>
                     <div className="text-blue-100">Tools & Resources</div>
                     <div className="mt-4 text-white/60">
-                      {Object.keys(categoriesMap).length} Categories
+                      {categories.length} Categories
                     </div>
                   </div>
                 </div>
@@ -91,15 +90,14 @@ export default async function CategoriesPage() {
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {categories.map((category) => {
-            const info = categoryIcons[category];
+            const info = categoryData[category];
             return (
               <div
                 key={category}
                 className="transform hover:-translate-y-2 transition-transform duration-300"
               >
                 <CategoryCard
-                  icon={info.icon}
-                  title={category.replace(/-/g, " ")}
+                  title={category === 'CI-CD' ? 'CI/CD' : category.replace(/-/g, " ")}
                   description={info.description}
                   toolCount={info.toolCount}
                   category={category}
@@ -126,7 +124,7 @@ export default async function CategoriesPage() {
 
             <div className="bg-gray-800/50 dark:bg-black/40 backdrop-blur-sm p-8 rounded-2xl border border-gray-700/50 transform hover:scale-105 transition-transform">
               <div className="text-5xl font-bold text-purple-400 mb-2">
-                {Object.keys(categoriesMap).length}
+                {categories.length}
               </div>
               <div className="text-gray-400">Categories</div>
               <div className="mt-4 text-sm text-gray-500">

@@ -1,14 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'standalone',
-  compress: true,
-  poweredByHeader: false,
-  reactStrictMode: true,
-  swcMinify: true,
-  experimental: {
-    serverActions: true,
+  // Optimize bundle size
+  compiler: {
+    removeConsole: process.env.NODE_ENV === 'production',
   },
-  webpack: (config, { isServer }) => {
+  webpack: (config, { dev, isServer }) => {
     // Handle markdown files
     config.module.rules.push({
       test: /\.md$/,
@@ -23,25 +19,35 @@ const nextConfig = {
       };
     }
     
-    // Optimize the build
-    config.optimization = {
-      ...config.optimization,
-      minimize: true,
-      moduleIds: 'deterministic',
-      chunkIds: 'deterministic',
-    };
+    // Production optimizations
+    if (!dev) {
+      config.optimization = {
+        ...config.optimization,
+        minimize: true,
+        moduleIds: 'deterministic',
+        chunkIds: 'deterministic',
+      };
+
+      // Exclude large dependencies from server bundles
+      if (isServer) {
+        config.externals = [...(config.externals || []), 'sharp', 'gray-matter'];
+      }
+    }
 
     return config;
   },
-  // Optimize serverless functions
-  serverComponentsExternalPackages: ['sharp', 'gray-matter'],
-  outputFileTracing: true,
-  generateBuildId: async () => 'build',
-  // Cache optimization
-  onDemandEntries: {
-    maxInactiveAge: 60 * 60 * 1000,
-    pagesBufferLength: 2,
+  // Disable unnecessary features
+  productionBrowserSourceMaps: false,
+  optimizeFonts: false,
+  // Reduce bundle size
+  modularizeImports: {
+    'lucide-react': {
+      transform: 'lucide-react/dist/esm/icons/{{member}}',
+    },
+    '@heroicons/react/24/outline': {
+      transform: '@heroicons/react/24/outline/{{member}}',
+    },
   },
-};
+}
 
 export default nextConfig; 

@@ -2,16 +2,17 @@
 
 import Link from 'next/link';
 import { Book, Users } from 'lucide-react';
+import { CategoryIcon } from './CategoryIcon';
+import { Category } from '@/utils/categoryData';
 
 interface CategoryCardProps {
-  icon: React.ReactNode;
   title: string;
   description: string;
   toolCount: number;
-  category: string;
+  category: Category;
 }
 
-export function CategoryCard({ icon, title, description, toolCount, category }: CategoryCardProps) {
+export function CategoryCard({ title, description, toolCount, category }: CategoryCardProps) {
   const href = `/${category}`;
 
   return (
@@ -19,7 +20,7 @@ export function CategoryCard({ icon, title, description, toolCount, category }: 
       <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 p-6 border border-gray-100 dark:border-gray-800">
         <div className="flex items-start gap-4">
           <div className="w-12 h-12 rounded-lg bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center text-2xl">
-            {icon}
+            <CategoryIcon category={category} />
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2">

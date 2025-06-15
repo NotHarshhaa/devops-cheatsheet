@@ -9,6 +9,10 @@ import { ThemeProvider } from "@/context/ThemeContext";
 
 const inter = Inter({ subsets: ["latin"] });
 
+// Force static generation
+export const dynamic = 'force-static';
+export const revalidate = false;
+
 export const metadata: Metadata = {
   title: "DevOps Cheatsheet Hub",
   description: "A comprehensive collection of DevOps tools and practices",

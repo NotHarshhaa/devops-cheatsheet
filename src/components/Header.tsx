@@ -17,6 +17,13 @@ import {
   Heart,
   Star,
   Users,
+  Box,
+  Cloud,
+  Server,
+  GitBranch,
+  Shield,
+  Network,
+  ChevronRight,
 } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
 
@@ -197,20 +204,48 @@ export function Header() {
                       {[
                         {
                           name: "CI/CD",
+                          path: "CI-CD",
                           icon: <Settings className="w-4 h-4" />,
                         },
                         {
-                          name: "Containers",
-                          icon: <Code className="w-4 h-4" />,
+                          name: "Containerization",
+                          path: "Containerization",
+                          icon: <Box className="w-4 h-4" />,
+                        },
+                        {
+                          name: "Cloud",
+                          path: "Cloud",
+                          icon: <Cloud className="w-4 h-4" />,
+                        },
+                        {
+                          name: "Infrastructure Management",
+                          path: "Infrastructure-Management",
+                          icon: <Server className="w-4 h-4" />,
+                        },
+                        {
+                          name: "Version Control",
+                          path: "Version-Control",
+                          icon: <GitBranch className="w-4 h-4" />,
+                        },
+                        {
+                          name: "Security",
+                          path: "Security",
+                          icon: <Shield className="w-4 h-4" />,
+                        },
+                        {
+                          name: "Networking",
+                          path: "Networking",
+                          icon: <Network className="w-4 h-4" />,
                         },
                         {
                           name: "Monitoring",
+                          path: "Monitoring",
                           icon: <BarChart2 className="w-4 h-4" />,
                         },
                       ].map((category) => (
                         <Link
                           key={category.name}
-                          href={`/${category.name.toLowerCase().replace(/\s+/g, "-")}`}
+                          href={`/${category.path}`}
                           className="flex items-center gap-3 px-3 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
                         >
                           <span className="text-blue-500 dark:text-blue-400">
@@ -225,7 +260,7 @@ export function Header() {
                           className="flex items-center gap-2 px-3 py-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
                         >
                           <span>View All Categories</span>
-                          <ChevronDown className="w-4 h-4 rotate-270" />
+                          <ChevronRight className="w-4 h-4" />
                         </Link>
                       </div>
                     </div>

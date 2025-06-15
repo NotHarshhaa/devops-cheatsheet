@@ -1,11 +1,17 @@
 import { SearchBar } from "@/components/SearchBar";
 import { HomeFilters } from "@/components/HomeFilters";
 import Link from "next/link";
-import { categories, categoryIcons } from "@/utils/categories";
+import { categories, TOTAL_CATEGORIES, categoryData } from "@/utils/categoryData";
 import { ArrowRight, Sparkles } from "lucide-react";
-import { CategoryActions } from "@/components/CategoryActions";
+import { CategoryIcon } from "@/components/CategoryIcon";
 import { Suspense } from "react";
+import { ExploreButton } from "@/components/ExploreButton";
 
+// Force static generation
+export const dynamic = 'force-static';
+export const revalidate = false;
+
+// This ensures the page is static and not server-rendered
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-50 via-gray-50 to-white dark:from-gray-900 dark:via-gray-900 dark:to-black">
@@ -59,7 +65,7 @@ export default function HomePage() {
           <div className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-4 text-center max-w-4xl mx-auto px-4">
             {[
               { label: "Tools", value: "200+" },
-              { label: "Categories", value: categories.length.toString() },
+              { label: "Categories", value: TOTAL_CATEGORIES.toString() },
               { label: "Best Practices", value: "50+" },
               { label: "Resources", value: "100+" },
             ].map((stat, i) => (
@@ -107,12 +113,12 @@ export default function HomePage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {categories.map((category) => {
-            const info = categoryIcons[category];
-            const toolCount = info.toolCount;
+            const data = categoryData[category];
 
             return (
-              <div
+              <Link
                 key={category}
+                href={`/${category}/`}
                 className="group bg-white dark:bg-gray-800/80 rounded-2xl shadow-md border border-gray-100 dark:border-gray-700 p-6 hover:shadow-xl transition-all duration-300 hover:border-blue-200 dark:hover:border-blue-700 relative overflow-hidden"
               >
                 {/* Gradient background effect on hover */}
@@ -122,7 +128,7 @@ export default function HomePage() {
                   {/* Category Icon and Title */}
                   <div className="flex items-center gap-4">
                     <div className="w-14 h-14 rounded-xl bg-blue-100 dark:bg-blue-900/70 flex items-center justify-center text-2xl shadow-sm group-hover:scale-110 transition-transform duration-300 border border-blue-200 dark:border-blue-800">
-                      {info.icon}
+                      <CategoryIcon category={category} />
                     </div>
                     <h2 className="text-xl font-bold text-gray-900 dark:text-white leading-tight capitalize">
                       {category.replace(/-/g, " ")}
@@ -131,13 +137,13 @@ export default function HomePage() {
 
                   {/* Tool Count Badge */}
                   <span className="px-3 py-1 bg-blue-100 dark:bg-blue-900/70 text-blue-700 dark:text-blue-300 rounded-full text-sm font-medium whitespace-nowrap shadow-sm border border-blue-200 dark:border-blue-800">
-                    {toolCount}+ Tools
+                    {data.toolCount}+ Tools
                   </span>
                 </div>
 
                 {/* Description */}
                 <p className="text-gray-600 dark:text-gray-300 mb-6 min-h-[4rem] relative z-10">
-                  {info.description}
+                  {data.description}
                 </p>
 
                 {/* Metadata */}
@@ -151,27 +157,16 @@ export default function HomePage() {
                 </div>
 
                 {/* Explore Tools Button and Actions */}
-                <div className="flex items-center justify-between relative z-10">
-                  <Link
-                    href={`/${category}`}
-                    className="group inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-100 dark:bg-blue-900/70 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-800/70 transition-all duration-300 border border-blue-200 dark:border-blue-800"
-                  >
-                    <span className="font-medium">Explore tools</span>
-                    <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" />
-                  </Link>
-
-                  {/* Quick Actions */}
-                  <CategoryActions category={category} />
-                </div>
+                <ExploreButton category={category} />
 
                 {/* Progress Bar - Enhanced */}
                 <div className="mt-6 h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden relative z-10">
                   <div
                     className="h-full bg-gradient-to-r from-blue-500 to-purple-500 dark:from-blue-600 dark:to-purple-600 rounded-full"
-                    style={{ width: `${Math.min(toolCount * 3, 100)}%` }}
+                    style={{ width: `${Math.min(data.toolCount * 3, 100)}%` }}
                   />
                 </div>
-              </div>
+              </Link>
             );
           })}
         </div>
@@ -197,9 +192,9 @@ export default function HomePage() {
                       patternUnits="userSpaceOnUse"
                     >
                       <path
-                        d="M 40 0 L 0 0 0 40"
+                        d="M0 0h40v40H0z"
                         fill="none"
-                        stroke="white"
+                        stroke="currentColor"
                         strokeWidth="1"
                       />
                     </pattern>
@@ -208,36 +203,25 @@ export default function HomePage() {
                 </svg>
               </div>
 
-              <div className="relative flex flex-col md:flex-row gap-8 items-center">
-                <div className="md:w-2/3">
-                  <h2 className="text-3xl font-bold text-white mb-4">
-                    Ready to master DevOps?
-                  </h2>
-                  <p className="text-blue-100 mb-6">
-                    Get started with our curated resources and elevate your
-                    DevOps practices. Whether you're a beginner or an expert, we
-                    have something for everyone.
-                  </p>
-                  <div className="flex flex-wrap gap-4">
-                    <Link
-                      href="/getting-started"
-                      className="px-6 py-3 bg-white text-blue-700 font-medium rounded-lg hover:bg-blue-50 transition-colors"
-                    >
-                      Get Started
-                    </Link>
-                    <Link
-                      href="/best-practices"
-                      className="px-6 py-3 bg-blue-700 text-white font-medium rounded-lg border border-blue-500 hover:bg-blue-800 transition-colors"
-                    >
-                      Best Practices
-                    </Link>
-                  </div>
-                </div>
-                <div className="md:w-1/3 flex justify-center">
-                  <div className="w-40 h-40 rounded-full bg-white/10 flex items-center justify-center">
-                    <Sparkles className="w-20 h-20 text-white" />
-                  </div>
-                </div>
+              {/* Content */}
+              <div className="relative">
+                <h2 className="text-3xl font-bold text-white mb-6">
+                  Want to Contribute?
+                </h2>
+                <p className="text-blue-100 mb-8 max-w-2xl">
+                  Help us make this resource better! Share your knowledge,
+                  suggest improvements, or add new tools to help fellow DevOps
+                  engineers.
+                </p>
+                <Link
+                  href="https://github.com/yourusername/devops-cheatsheet"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white px-6 py-3 rounded-xl transition-all duration-200"
+                >
+                  <span>Contribute on GitHub</span>
+                  <ArrowRight className="w-5 h-5" />
+                </Link>
               </div>
             </div>
           </div>
