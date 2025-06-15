@@ -1,4 +1,4 @@
-# **Jenkins Cheatsheet**
+# Jenkins Cheatsheet
 
 ![](https://imgur.com/jWGs9lH.png)
 
@@ -8,18 +8,30 @@
 
 **2. Installation:**
 
-- **On Ubuntu:**
+- **Docker Installation:**
 
   ```bash
-  sudo apt update
-  sudo apt install openjdk-11-jre
-  wget -q -O - https://pkg.jenkins.io/debian/jenkins.io.key | sudo apt-key add -
-  sudo sh -c 'echo deb http://pkg.jenkins.io/debian-stable binary/ > /etc/apt/sources.list.d/jenkins.list'
-  sudo apt update
-  sudo apt install jenkins
-  sudo systemctl start jenkins
-  sudo systemctl status jenkins
+  docker run -d -p 8080:8080 -p 50000:50000 jenkins/jenkins:lts
   ```
+
+- **Direct Installation:**
+
+  - **For Ubuntu/Debian:**
+
+    ```bash
+    wget -q -O - https://pkg.jenkins.io/debian/jenkins.io.key | sudo apt-key add -
+    sudo sh -c 'echo deb http://pkg.jenkins.io/debian-stable binary/ > /etc/apt/sources.list.d/jenkins.list'
+    sudo apt update
+    sudo apt install jenkins
+    ```
+
+  - **For CentOS/RHEL:**
+
+    ```bash
+    sudo wget -O /etc/yum.repos.d/jenkins.repo https://pkg.jenkins.io/redhat-stable/jenkins.repo
+    sudo rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io.key
+    sudo yum install jenkins
+    ```
 
 - **Access Jenkins:**
   - Visit `http://localhost:8080` in your web browser.
@@ -157,3 +169,73 @@
   ```
 
 - **Shared Libraries:** Centralize and reuse pipeline code across projects using Shared Libraries.
+
+## **Troubleshooting**
+
+### **Common Issues**
+
+1. **Jenkins Won't Start**
+   ```bash
+   # Check logs
+   sudo tail -f /var/log/jenkins/jenkins.log
+   
+   # Check permissions
+   sudo chown -R jenkins:jenkins /var/lib/jenkins
+   ```
+
+2. **Pipeline Failure**
+   ```groovy
+   // Add error handling
+   pipeline {
+       agent any
+       stages {
+           stage('Build') {
+               steps {
+                   script {
+                       try {
+                           sh 'make build'
+                       } catch (exc) {
+                           echo 'Build failed!'
+                           throw exc
+                       }
+                   }
+               }
+           }
+       }
+   }
+   ```
+
+3. **Plugin Issues**
+   - Clear plugin cache:
+     ```bash
+     rm -rf $JENKINS_HOME/plugins/*.jpi
+     rm -rf $JENKINS_HOME/plugins/*.hpi
+     ```
+   - Restart Jenkins after plugin updates
+
+## **Useful Plugins**
+
+1. **Pipeline**
+   - Pipeline Graph View
+   - Pipeline Stage View
+   - Blue Ocean
+
+2. **Source Control**
+   - Git
+   - GitHub Integration
+   - BitBucket Integration
+
+3. **Build Tools**
+   - Maven Integration
+   - Gradle
+   - NodeJS
+
+4. **Testing**
+   - JUnit
+   - Cobertura
+   - SonarQube Scanner
+
+5. **Deployment**
+   - Docker
+   - Kubernetes
+   - AWS

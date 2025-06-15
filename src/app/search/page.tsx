@@ -2,9 +2,26 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
-import { Search as SearchIcon, Loader2, Tag, Star, BarChart2 } from 'lucide-react';
+import { Search as SearchIcon, Loader2, Tag, Star, BarChart2, Activity, Box, Cloud, Shield, GitBranch, Server, Network, BarChart } from 'lucide-react';
 import { Cheatsheet, getAllCheatsheets } from '@/data/cheatsheets';
 import { motion } from "framer-motion";
+
+// Helper function to get the icon component
+const getIconComponent = (iconString: string) => {
+  const iconMap = {
+    '<Activity />': Activity,
+    '<Box />': Box,
+    '<Cloud />': Cloud,
+    '<Shield />': Shield,
+    '<GitBranch />': GitBranch,
+    '<Server />': Server,
+    '<Network />': Network,
+    '<BarChart />': BarChart,
+  };
+  
+  const IconComponent = iconMap[iconString as keyof typeof iconMap];
+  return IconComponent ? <IconComponent className="w-8 h-8 text-blue-600 dark:text-blue-400" /> : null;
+};
 
 function highlightText(text: string, query: string) {
   if (!query.trim()) return text;
@@ -148,8 +165,8 @@ export default function SearchPage() {
                   className="block bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 p-6 hover:shadow-md transition-all duration-200 group"
                 >
                   <div className="flex items-start gap-4">
-                    <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center text-2xl">
-                      {cheatsheet.icon}
+                    <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center">
+                      {getIconComponent(cheatsheet.icon)}
                     </div>
                     <div className="flex-1">
                       <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">

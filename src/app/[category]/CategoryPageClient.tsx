@@ -2,11 +2,28 @@
 
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Activity, Box, Cloud, Shield, GitBranch, Server, Network, BarChart } from 'lucide-react';
 import { categoryData } from '@/utils/categoryData';
 import { CategoryIcon } from '@/components/CategoryIcon';
 import { getAllCheatsheets, type Cheatsheet } from '@/data/cheatsheets';
 import { useEffect, useState } from 'react';
+
+// Helper function to get the icon component
+const getIconComponent = (iconString: string) => {
+  const iconMap = {
+    '<Activity />': Activity,
+    '<Box />': Box,
+    '<Cloud />': Cloud,
+    '<Shield />': Shield,
+    '<GitBranch />': GitBranch,
+    '<Server />': Server,
+    '<Network />': Network,
+    '<BarChart />': BarChart,
+  };
+  
+  const IconComponent = iconMap[iconString as keyof typeof iconMap];
+  return IconComponent ? <IconComponent className="w-8 h-8 text-blue-600 dark:text-blue-400" /> : null;
+};
 
 interface Props {
   params: {
@@ -115,9 +132,9 @@ export function CategoryPageClient({ params }: Props) {
             >
               <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 p-6 border border-gray-100 dark:border-gray-800">
                 <div className="flex flex-col sm:flex-row items-start gap-4">
-                  {/* Tool Icon */}
-                  <div className="w-12 h-12 rounded-lg bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center text-2xl shrink-0">
-                    {cheatsheet.icon}
+                  {/* Icon */}
+                  <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center">
+                    {getIconComponent(cheatsheet.icon)}
                   </div>
 
                   {/* Tool Content */}

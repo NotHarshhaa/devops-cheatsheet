@@ -6,6 +6,8 @@ import { marked } from 'marked';
 import { type Cheatsheet } from '@/data/cheatsheets';
 import { useEffect, useState } from 'react';
 import { type Category } from '@/utils/categoryData';
+import { AlertTriangle } from 'lucide-react';
+import Link from 'next/link';
 
 interface Props {
   params: {
@@ -27,7 +29,7 @@ type CheatsheetContent = {
 export function CheatsheetPageClient({ params }: Props) {
   const [content, setContent] = useState<CheatsheetContent | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -40,14 +42,16 @@ export function CheatsheetPageClient({ params }: Props) {
         const response = await fetch(`${baseUrl}/api/cheatsheets/${params.category}/${params.slug}`);
         
         if (!response.ok) {
+          if (response.status === 404) {
+            throw new Error('Cheatsheet not found');
+          }
           throw new Error('Failed to fetch cheatsheet');
         }
         
         const cheatsheet = await response.json();
         
         if (!cheatsheet || !cheatsheet.content) {
-          setError(true);
-          return;
+          throw new Error('Invalid cheatsheet data');
         }
 
         const parsedContent = await marked(cheatsheet.content);
@@ -63,7 +67,7 @@ export function CheatsheetPageClient({ params }: Props) {
         });
       } catch (error) {
         console.error('Error fetching cheatsheet:', error);
-        setError(true);
+        setError(error instanceof Error ? error.message : 'An unexpected error occurred');
       } finally {
         setLoading(false);
       }
@@ -71,12 +75,6 @@ export function CheatsheetPageClient({ params }: Props) {
 
     fetchContent();
   }, [params.category, params.slug]);
-
-  useEffect(() => {
-    if (error) {
-      router.push('/404');
-    }
-  }, [error, router]);
 
   if (loading) {
     return (
@@ -88,6 +86,38 @@ export function CheatsheetPageClient({ params }: Props) {
             {[1, 2, 3, 4, 5].map((i) => (
               <div key={i} className="h-4 w-full bg-gray-200 dark:bg-gray-700 rounded"></div>
             ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center px-4">
+        <div className="flex flex-col items-center text-center max-w-2xl mx-auto">
+          <AlertTriangle className="w-16 h-16 text-red-500 mb-6" />
+          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
+            {error === 'Cheatsheet not found' ? 'Cheatsheet not found!' : 'Something went wrong!'}
+          </h1>
+          <p className="text-lg text-gray-600 dark:text-gray-300 mb-8">
+            {error === 'Cheatsheet not found'
+              ? "We couldn't find the cheatsheet you're looking for. It might have been moved or deleted."
+              : "We couldn't load the cheatsheet you requested. Please try again later."}
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4">
+            <button
+              onClick={() => window.location.reload()}
+              className="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors"
+            >
+              Try again
+            </button>
+            <Link
+              href="/"
+              className="px-6 py-3 bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+            >
+              Go back home
+            </Link>
           </div>
         </div>
       </div>

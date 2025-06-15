@@ -3,6 +3,18 @@ import path from 'path';
 import fs from 'fs/promises';
 import { Category, categories } from './categoryData';
 
+// Map categories to their default icons
+const categoryDefaultIcons: Record<Category, string> = {
+  'CI-CD': '<Activity />',
+  'Containerization': '<Box />',
+  'Cloud': '<Cloud />',
+  'Infrastructure-Management': '<Server />',
+  'Version-Control': '<GitBranch />',
+  'Security': '<Shield />',
+  'Networking': '<Network />',
+  'Monitoring': '<BarChart />',
+};
+
 export interface CheatsheetMeta {
   title: string;
   description: string;
@@ -46,7 +58,7 @@ export async function getCheatsheetBySlug(category: string, slug: string): Promi
       title: data.title || firstLine || slug,
       description: data.description || 'A comprehensive guide and cheatsheet',
       category: category as Category,
-      icon: data.icon || '📄',
+      icon: data.icon || categoryDefaultIcons[category as Category] || '<Activity />',
       slug: slug,
       content: content,
       difficulty: data.difficulty || 'Beginner',
@@ -87,7 +99,7 @@ export async function getAllCheatsheets(category: string | '' = '', page = 1, li
               description: data.description || 'A comprehensive guide and cheatsheet',
               category: cat as Category,
               slug: file.replace('.md', ''),
-              icon: data.icon || '📄',
+              icon: data.icon || categoryDefaultIcons[cat as Category] || '<Activity />',
               content: content,
               difficulty: data.difficulty || 'Beginner',
               popularity: data.popularity || 95,

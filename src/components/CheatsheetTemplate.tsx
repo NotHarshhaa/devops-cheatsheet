@@ -1,10 +1,11 @@
 'use client';
 
-import { motion } from 'framer-motion';
-import { Copy, Share2, Bookmark, Clock, Star } from 'lucide-react';
-import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Copy, Share2, Bookmark, Clock, Star, ChevronRight, ChevronLeft, Activity, Box, Cloud, Shield, GitBranch, Server, Network, BarChart } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
 import DOMPurify from 'isomorphic-dompurify';
+import { MarkdownContent } from '@/components/MarkdownContent';
 
 // Define the CSS for dark mode and scrollbars
 const darkModeStyles = `
@@ -91,13 +92,18 @@ const darkModeStyles = `
     position: absolute;
     top: 8px;
     right: 8px;
-    opacity: 0;
-    transition: opacity 0.2s;
+    background-color: rgba(229, 231, 235, 0.1);
+    border-radius: 6px;
+    padding: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
     z-index: 10;
   }
 
-  pre:hover .copy-button {
-    opacity: 1;
+  .copy-button:hover {
+    background-color: rgba(229, 231, 235, 0.2);
   }
 
   .dark .copy-button {
@@ -131,6 +137,23 @@ interface CheatsheetTemplateProps {
   sections: CheatsheetSection[];
 }
 
+// Helper function to get the icon component
+const getIconComponent = (iconString: string) => {
+  const iconMap = {
+    '<Activity />': Activity,
+    '<Box />': Box,
+    '<Cloud />': Cloud,
+    '<Shield />': Shield,
+    '<GitBranch />': GitBranch,
+    '<Server />': Server,
+    '<Network />': Network,
+    '<BarChart />': BarChart,
+  };
+  
+  const IconComponent = iconMap[iconString as keyof typeof iconMap];
+  return IconComponent ? <IconComponent className="w-8 h-8 text-blue-600 dark:text-blue-400" /> : null;
+};
+
 export function CheatsheetTemplate({
   title,
   category,
@@ -143,6 +166,21 @@ export function CheatsheetTemplate({
 }: CheatsheetTemplateProps) {
   const [currentSection, setCurrentSection] = useState(0);
   const [isSaved, setIsSaved] = useState(false);
+  const [scrollProgress, setScrollProgress] = useState(0);
+
+  // Handle scroll progress
+  useEffect(() => {
+    const handleScroll = () => {
+      const windowHeight = window.innerHeight;
+      const documentHeight = document.documentElement.scrollHeight - windowHeight;
+      const scrolled = window.scrollY;
+      const progress = (scrolled / documentHeight) * 100;
+      setScrollProgress(progress);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   // Only show sections that have content
   const filteredSections = sections.filter(section => {
@@ -191,182 +229,207 @@ export function CheatsheetTemplate({
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-black dark:to-gray-900">
-      {/* Include the style tag for dark mode styles */}
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-950 dark:to-gray-900">
+      {/* Progress bar */}
+      <div className="fixed top-0 left-0 w-full h-1 z-50">
+        <div
+          className="h-full bg-gradient-to-r from-blue-500 to-purple-500"
+          style={{ width: `${scrollProgress}%` }}
+        />
+      </div>
+
       <style dangerouslySetInnerHTML={{ __html: darkModeStyles }} />
       
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {/* Hero Section without banner */}
-        <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 shadow-sm border border-gray-100 dark:border-gray-800 mb-8">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-2xl">
-              {icon}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        {/* Hero Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="relative bg-white dark:bg-gray-900 rounded-2xl p-8 shadow-lg border border-gray-100 dark:border-gray-800 mb-8 overflow-hidden"
+        >
+          {/* Background Pattern */}
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-purple-500/5 dark:from-blue-500/10 dark:to-purple-500/10" />
+          
+          <div className="relative">
+            <div className="flex items-center gap-4 mb-6">
+              <motion.div
+                whileHover={{ scale: 1.05, rotate: 5 }}
+                className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-500 p-0.5"
+              >
+                <div className="w-full h-full rounded-2xl bg-white dark:bg-gray-900 flex items-center justify-center">
+                  {getIconComponent(icon)}
+                </div>
+              </motion.div>
+              <div className="flex-1">
+                <motion.h1 
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  className="text-4xl font-black bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400"
+                >
+                  {title}
+                </motion.h1>
+                <p className="text-gray-600 dark:text-gray-400 mt-2 text-lg">{description}</p>
+              </div>
             </div>
-            <div className="flex-1">
-              <h1 className="text-4xl font-bold dark:text-white">{title}</h1>
-              <p className="text-gray-600 dark:text-gray-400 mt-1">{description}</p>
+
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="px-4 py-1.5 bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 rounded-full text-sm font-medium">
+                {category}
+              </span>
+              <span className={`px-4 py-1.5 rounded-full text-sm font-medium ${
+                difficulty === 'Beginner' ? 'bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300' :
+                difficulty === 'Intermediate' ? 'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-700 dark:text-yellow-300' :
+                'bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300'
+              }`}>
+                {difficulty}
+              </span>
+              <span className="flex items-center gap-2 px-4 py-1.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-full text-sm font-medium">
+                <Clock className="w-4 h-4" />
+                {readingTime}
+              </span>
+              <span className="flex items-center gap-2 px-4 py-1.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-full text-sm font-medium">
+                <Star className="w-4 h-4 text-yellow-500" />
+                {popularity}+ uses
+              </span>
             </div>
           </div>
-          <div className="flex flex-wrap items-center gap-4">
-            <span className="px-3 py-1 bg-blue-500/20 dark:bg-blue-500/30 rounded-full text-sm dark:text-blue-300">
-              {category}
-            </span>
-            <span className={`px-3 py-1 rounded-full text-sm ${
-              difficulty === 'Beginner' ? 'bg-green-500/20 dark:bg-green-500/30 dark:text-green-300' :
-              difficulty === 'Intermediate' ? 'bg-yellow-500/20 dark:bg-yellow-500/30 dark:text-yellow-300' :
-              'bg-red-500/20 dark:bg-red-500/30 dark:text-red-300'
-            }`}>
-              {difficulty}
-            </span>
-            <span className="flex items-center gap-2 text-sm dark:text-gray-300">
-              <Clock className="w-4 h-4" />
-              {readingTime}
-            </span>
-            <span className="flex items-center gap-2 text-sm dark:text-gray-300">
-              <Star className="w-4 h-4" />
-              {popularity}+ uses
-            </span>
-          </div>
-        </div>
+        </motion.div>
 
         {/* Action Buttons */}
         <div className="flex flex-wrap gap-4 mb-8">
           <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-xl shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30 transition-all"
             onClick={() => handleCopyCode('example-code')}
-            className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 dark:text-white rounded-lg shadow-sm hover:shadow-md transition-all border border-gray-200 dark:border-gray-700"
           >
-            <Copy className="w-4 h-4" />
+            <Copy className="w-5 h-5" />
             Copy Code
           </motion.button>
           <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            className="flex items-center gap-2 px-6 py-3 bg-white dark:bg-gray-800 text-gray-700 dark:text-white rounded-xl shadow-lg hover:shadow-xl transition-all border border-gray-200 dark:border-gray-700"
             onClick={handleShare}
-            className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 dark:text-white rounded-lg shadow-sm hover:shadow-md transition-all border border-gray-200 dark:border-gray-700"
           >
-            <Share2 className="w-4 h-4" />
+            <Share2 className="w-5 h-5" />
             Share
           </motion.button>
           <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
             onClick={handleSave}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg shadow-sm hover:shadow-md transition-all border ${
-              isSaved ? 'bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400' : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 dark:text-white'
+            className={`flex items-center gap-2 px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all ${
+              isSaved 
+                ? 'bg-blue-50 dark:bg-blue-900/30 border-2 border-blue-500 text-blue-600 dark:text-blue-400' 
+                : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-white'
             }`}
           >
-            <Bookmark className={`w-4 h-4 ${isSaved ? 'fill-current' : ''}`} />
+            <Bookmark className={`w-5 h-5 ${isSaved ? 'fill-current' : ''}`} />
             {isSaved ? 'Saved' : 'Save'}
           </motion.button>
         </div>
 
         {/* Content */}
         <div className="prose prose-lg max-w-none dark:prose-invert">
-          {filteredSections.map((section, index) => (
-            <section 
-              key={section.id} 
-              id={`section-${index}`}
-              className="bg-white dark:bg-gray-900 rounded-2xl p-8 shadow-sm border border-gray-100 dark:border-gray-800 mb-8"
-            >
-              <h2 className="flex items-center gap-3 text-2xl font-bold text-gray-900 dark:text-white mb-6">
-                <span className="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center">
-                  {index + 1}
-                </span>
-                {section.title}
-              </h2>
-              <div className="space-y-6">
-                {section.content.map((item, i) => (
-                  <div key={i} className="mt-4">
-                    {item.type === 'text' && item.value && (
-                      <div 
-                        className="prose max-w-none dark:prose-invert"
-                        dangerouslySetInnerHTML={{ 
-                          __html: DOMPurify.sanitize(item.value as string) 
-                        }} 
-                        style={{ color: 'inherit' }}
-                        ref={(el) => {
-                          // Add copy buttons to code blocks rendered within HTML content
-                          if (el) {
-                            const codeBlocks = el.querySelectorAll('pre code');
-                            codeBlocks.forEach((codeBlock, index) => {
-                              const pre = codeBlock.parentElement;
-                              if (pre && !pre.querySelector('.copy-button')) {
-                                // Create container for position relative
-                                pre.style.position = 'relative';
-                                
-                                // Create copy button
-                                const copyButton = document.createElement('button');
-                                copyButton.className = 'copy-button p-2 bg-white/90 dark:bg-gray-700/90 rounded-md hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors text-gray-700 dark:text-gray-200 absolute top-2 right-2';
-                                copyButton.setAttribute('aria-label', 'Copy code');
-                                copyButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>';
-                                
-                                // Add click event
-                                copyButton.addEventListener('click', () => {
-                                  const code = codeBlock.textContent || '';
-                                  navigator.clipboard.writeText(code);
-                                  toast.success('Code copied to clipboard!');
-                                });
-                                
-                                // Append button to pre element
-                                pre.appendChild(copyButton);
-                              }
-                            });
-                          }
-                        }}
-                      />
-                    )}
-                    {item.type === 'code' && item.value && (
-                      <div className="relative mt-4">
-                        <div className="bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
-                          <pre className="p-4 overflow-x-auto text-gray-900 dark:text-gray-100" style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(156, 163, 175, 0.5) transparent' }}>
-                            <code className="text-sm leading-relaxed font-mono">{item.value as string}</code>
-                          </pre>
-                          <div className="absolute top-2 right-2">
-                            <button
-                              onClick={() => handleCopyCode(item.value as string)}
-                              className="p-2 bg-white/90 dark:bg-gray-700/90 rounded-md hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors text-gray-700 dark:text-gray-200"
-                              aria-label="Copy code"
-                            >
-                              <Copy className="w-4 h-4" />
-                            </button>
+          <AnimatePresence mode="wait">
+            {filteredSections.map((section, index) => (
+              <motion.section
+                key={section.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                id={`section-${index}`}
+                className="group bg-white dark:bg-gray-900 rounded-2xl p-8 shadow-lg border border-gray-100 dark:border-gray-800 mb-8 hover:shadow-xl transition-all"
+              >
+                <div className="flex items-center gap-4 mb-6">
+                  <span className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-500 text-white flex items-center justify-center font-bold text-lg">
+                    {index + 1}
+                  </span>
+                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                    {section.title}
+                  </h2>
+                </div>
+
+                <div className="space-y-6">
+                  {section.content.map((item, i) => (
+                    <div key={i} className="mt-4">
+                      {item.type === 'text' && item.value && (
+                        <MarkdownContent content={item.value as string} />
+                      )}
+                      {item.type === 'code' && item.value && (
+                        <div className="relative mt-6 group">
+                          <div className="absolute -inset-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl opacity-0 group-hover:opacity-100 blur transition duration-500" />
+                          <div className="relative bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+                            <div className="flex items-center justify-between px-4 py-2 bg-gray-200/50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-600">
+                              <div className="flex space-x-2">
+                                <div className="w-3 h-3 rounded-full bg-red-500" />
+                                <div className="w-3 h-3 rounded-full bg-yellow-500" />
+                                <div className="w-3 h-3 rounded-full bg-green-500" />
+                              </div>
+                              <button
+                                onClick={() => handleCopyCode(item.value as string)}
+                                className="copy-button"
+                                aria-label="Copy code"
+                              >
+                                <Copy className="w-4 h-4 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300" />
+                              </button>
+                            </div>
+                            <pre className="p-4 overflow-x-auto text-gray-900 dark:text-gray-100 relative">
+                              <code className="text-sm leading-relaxed font-mono">{item.value as string}</code>
+                            </pre>
                           </div>
                         </div>
-                      </div>
-                    )}
-                    {item.type === 'list' && Array.isArray(item.value) && item.value.length > 0 && (
-                      <ul className="list-disc pl-6 dark:text-gray-300">
-                        {item.value.map((tag: string, j: number) => (
-                          <li key={j} className="text-gray-800 dark:text-gray-300 mb-1">{tag}</li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </section>
-          ))}
+                      )}
+                      {item.type === 'list' && Array.isArray(item.value) && item.value.length > 0 && (
+                        <ul className="space-y-2">
+                          {item.value.map((tag: string, j: number) => (
+                            <li 
+                              key={j}
+                              className="flex items-center gap-2 text-gray-800 dark:text-gray-300"
+                            >
+                              <span className="w-2 h-2 rounded-full bg-blue-500" />
+                              {tag}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </motion.section>
+            ))}
+          </AnimatePresence>
         </div>
 
         {/* Navigation Buttons */}
         <div className="fixed bottom-8 right-8 flex gap-4">
-          {currentSection > 0 && (
-            <button
-              onClick={() => handleNavigation('prev')}
-              className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 rounded-lg shadow-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-            >
-              Previous
-            </button>
-          )}
-          {currentSection < filteredSections.length - 1 && (
-            <button
-              onClick={() => handleNavigation('next')}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg shadow-lg hover:bg-blue-700 transition-colors"
-            >
-              Next Section
-            </button>
-          )}
+          <AnimatePresence>
+            {currentSection > 0 && (
+              <motion.button
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                onClick={() => handleNavigation('prev')}
+                className="flex items-center gap-2 px-6 py-3 bg-white dark:bg-gray-800 text-gray-700 dark:text-white rounded-xl shadow-lg hover:shadow-xl transition-all border border-gray-200 dark:border-gray-700"
+              >
+                <ChevronLeft className="w-5 h-5" />
+                Previous
+              </motion.button>
+            )}
+            {currentSection < filteredSections.length - 1 && (
+              <motion.button
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                onClick={() => handleNavigation('next')}
+                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-xl shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30 transition-all"
+              >
+                Next Section
+                <ChevronRight className="w-5 h-5" />
+              </motion.button>
+            )}
+          </AnimatePresence>
         </div>
       </main>
     </div>

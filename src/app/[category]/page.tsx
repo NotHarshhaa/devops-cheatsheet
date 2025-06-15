@@ -1,5 +1,6 @@
 import { categoryData } from '@/utils/categoryData';
 import { CategoryPageClient } from './CategoryPageClient';
+import { categories } from "@/utils/categoryData";
 
 interface Props {
   params: {
@@ -7,17 +8,10 @@ interface Props {
   };
 }
 
-export async function generateStaticParams() {
-  // Include both the category paths and the 404 path
-  const paths = [
-    ...Object.keys(categoryData).map((category) => ({
-      category: category,
-    })),
-    {
-      category: '404',
-    },
-  ];
-  return paths;
+export function generateStaticParams() {
+  return categories.map((category) => ({
+    category: category,
+  }));
 }
 
 export default function CategoryPage({ params }: Props) {
