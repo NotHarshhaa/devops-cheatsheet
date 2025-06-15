@@ -1,9 +1,14 @@
 import { getAllCheatsheets } from '@/utils/markdown';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
-export function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const cheatsheets = getAllCheatsheets();
+    const searchParams = request.nextUrl.searchParams;
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '10');
+    const category = searchParams.get('category') || '';
+
+    const cheatsheets = await getAllCheatsheets(category, page, limit);
     return NextResponse.json(cheatsheets);
   } catch (error) {
     console.error('Error fetching cheatsheets:', error);

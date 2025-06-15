@@ -18,6 +18,13 @@ export interface Cheatsheet extends CheatsheetMeta {
   content: string;
 }
 
+export interface PaginatedResponse {
+  cheatsheets: Cheatsheet[];
+  total: number;
+  page: number;
+  totalPages: number;
+}
+
 export async function getCheatsheetBySlug(category: string, slug: string): Promise<Cheatsheet | null> {
   try {
     const fullPath = path.join(process.cwd(), category, `${slug}.md`);
@@ -41,13 +48,14 @@ export async function getCheatsheetBySlug(category: string, slug: string): Promi
   }
 }
 
-export async function getAllCheatsheets(): Promise<Cheatsheet[]> {
+export async function getAllCheatsheets(category = '', page = 1, limit = 10): Promise<PaginatedResponse> {
   try {
     const cheatsheets: Cheatsheet[] = [];
+    const categoriesToProcess = category ? [category] : categories;
 
     // Process each category
-    for (const category of categories) {
-      const categoryPath = path.join(process.cwd(), category);
+    for (const cat of categoriesToProcess) {
+      const categoryPath = path.join(process.cwd(), cat);
       
       try {
         const files = await fs.readdir(categoryPath);
@@ -57,32 +65,48 @@ export async function getAllCheatsheets(): Promise<Cheatsheet[]> {
           if (file.endsWith('.md')) {
             const filePath = path.join(categoryPath, file);
             const fileContent = await fs.readFile(filePath, 'utf-8');
-            const { data, content } = matter(fileContent);
+            const { data } = matter(fileContent);
             
+            // Only load metadata initially, not the full content
             cheatsheets.push({
               title: data.title || '',
               description: data.description || '',
-              category: category,
+              category: cat,
               slug: file.replace('.md', ''),
               icon: data.icon || '',
-              content: content,
-              difficulty: 'Beginner',
-              popularity: 0,
-              tags: undefined
+              content: '', // Don't load content initially
+              difficulty: data.difficulty || 'Beginner',
+              popularity: data.popularity || 0,
+              tags: data.tags || []
             });
           }
         }
       } catch (error) {
-        console.error(`Error reading category ${category}:`, error);
-        // Continue with other categories even if one fails
+        console.error(`Error reading category ${cat}:`, error);
         continue;
       }
     }
 
-    return cheatsheets;
+    // Calculate pagination
+    const startIndex = (page - 1) * limit;
+    const endIndex = startIndex + limit;
+    const total = cheatsheets.length;
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      cheatsheets: cheatsheets.slice(startIndex, endIndex),
+      total,
+      page,
+      totalPages
+    };
   } catch (error) {
     console.error('Error getting all cheatsheets:', error);
-    return [];
+    return {
+      cheatsheets: [],
+      total: 0,
+      page: 1,
+      totalPages: 0
+    };
   }
 }
 

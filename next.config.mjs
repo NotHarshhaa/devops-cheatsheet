@@ -33,6 +33,15 @@ const nextConfig = {
 
     return config;
   },
+  // Optimize serverless functions
+  serverComponentsExternalPackages: ['sharp', 'gray-matter'],
+  outputFileTracing: true,
+  generateBuildId: async () => 'build',
+  // Cache optimization
+  onDemandEntries: {
+    maxInactiveAge: 60 * 60 * 1000,
+    pagesBufferLength: 2,
+  },
 };
 
 export default nextConfig; 
