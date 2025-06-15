@@ -18,7 +18,7 @@ import {
   Activity,
   Zap,
 } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, Variants, Transition } from "framer-motion";
 
 export default function AboutPage() {
   const [activeTab, setActiveTab] = useState("about");
@@ -28,40 +28,41 @@ export default function AboutPage() {
     setIsVisible(true);
   }, []);
 
-  const fadeIn = {
+  const fadeIn: Variants = {
     hidden: { opacity: 0, y: 20 },
     visible: {
       opacity: 1,
       y: 0,
-      transition: { duration: 0.6 },
+      transition: { type: "tween", duration: 0.6 } as Transition,
     },
   };
 
-  const staggerContainer = {
+  const staggerContainer: Variants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
       transition: {
+        type: "tween",
         staggerChildren: 0.1,
-      },
+      } as Transition,
     },
   };
 
-  const fadeInUp = {
+  const fadeInUp: Variants = {
     hidden: { opacity: 0, y: 20 },
     visible: {
       opacity: 1,
       y: 0,
-      transition: { duration: 0.4 },
+      transition: { type: "tween", duration: 0.4 } as Transition,
     },
   };
 
-  const scaleIn = {
+  const scaleIn: Variants = {
     hidden: { opacity: 0, scale: 0.9 },
     visible: {
       opacity: 1,
       scale: 1,
-      transition: { type: "spring", stiffness: 100, duration: 0.5 },
+      transition: { type: "tween", duration: 0.5 } as Transition
     },
   };
 
