@@ -45,34 +45,34 @@ export default function HomePage() {
         />
 
         {/* Content Container */}
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-40">
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 sm:pt-24 pb-24 sm:pb-40">
           {/* Supercharge Badge */}
-          <div className="flex justify-center mb-12">
+          <div className="flex justify-center mb-8 sm:mb-12">
             <div className="relative">
               <div className="absolute inset-0 blur-lg bg-yellow-200/30 rounded-full"></div>
-              <div className="relative flex items-center gap-2 bg-white/10 backdrop-blur-md px-6 py-2 rounded-full border border-white/20">
-                <Sparkles className="h-5 w-5 text-yellow-300" />
-                <span className="text-sm font-medium text-white">Supercharge your DevOps workflow</span>
+              <div className="relative flex items-center gap-2 bg-white/10 backdrop-blur-md px-4 sm:px-6 py-1.5 sm:py-2 rounded-full border border-white/20">
+                <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-300" />
+                <span className="text-xs sm:text-sm font-medium text-white">Supercharge your DevOps workflow</span>
               </div>
             </div>
           </div>
 
           {/* Main Title */}
-          <h1 className="text-center text-7xl sm:text-8xl font-black mb-8 text-white">
+          <h1 className="text-center text-5xl sm:text-7xl md:text-8xl font-black mb-4 sm:mb-8 text-white">
             DevOps Tools<br />Cheatsheet
           </h1>
 
-          <p className="text-center text-xl text-white/90 max-w-3xl mx-auto mb-12 leading-relaxed font-light">
+          <p className="text-center text-lg sm:text-xl text-white/90 max-w-3xl mx-auto mb-8 sm:mb-12 leading-relaxed font-light px-4">
             A comprehensive collection of DevOps tools, best practices, and
             resources for modern software development and operations.
           </p>
 
           {/* Search Bar Component with enhanced styling */}
-          <div className="relative max-w-2xl mx-auto mb-24">
+          <div className="relative max-w-2xl mx-auto mb-16 sm:mb-24 px-2 sm:px-0">
             <div className="absolute -inset-1 bg-white/20 rounded-2xl blur-xl opacity-50"></div>
             <Suspense
               fallback={
-                <div className="h-14 bg-white/20 animate-pulse rounded-2xl"></div>
+                <div className="h-12 sm:h-14 bg-white/20 animate-pulse rounded-2xl"></div>
               }
             >
               <SearchBar />
@@ -80,7 +80,7 @@ export default function HomePage() {
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto relative z-20">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-6 max-w-4xl mx-auto relative z-20">
             {[
               { label: "Tools", value: "200+" },
               { label: "Categories", value: "8" },
@@ -92,11 +92,11 @@ export default function HomePage() {
                 className="group relative"
               >
                 <div className="absolute -inset-0.5 bg-white/20 rounded-2xl opacity-0 group-hover:opacity-100 transition-all duration-300 blur-lg"></div>
-                <div className="relative bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20">
-                  <div className="text-4xl font-black text-white mb-2">
+                <div className="relative bg-white/10 backdrop-blur-md rounded-2xl p-3 sm:p-6 border border-white/20">
+                  <div className="text-2xl sm:text-4xl font-black text-white mb-1 sm:mb-2">
                     {stat.value}
                   </div>
-                  <div className="text-white/80">{stat.label}</div>
+                  <div className="text-sm sm:text-base text-white/80">{stat.label}</div>
                 </div>
               </div>
             ))}
