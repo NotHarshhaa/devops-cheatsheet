@@ -20,16 +20,6 @@ const Particle = ({ className = "" }) => (
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900">
-      {/* Floating Navigation */}
-      <div className="fixed bottom-8 right-8 z-50">
-        <a
-          href="#top"
-          className="flex items-center justify-center w-12 h-12 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg hover:shadow-xl transform hover:scale-110 transition-all duration-300"
-        >
-          <ChevronUp className="w-6 h-6" />
-        </a>
-      </div>
-
       {/* Hero Section with Search */}
       <div id="top" className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-blue-700 to-purple-700 text-white">
         {/* Animated Particles */}

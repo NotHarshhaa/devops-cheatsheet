@@ -1,17 +1,34 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { ScrollToTop } from "@/components/ScrollToTop";
+import { GlobalLoader } from "@/components/GlobalLoader";
 import { Toaster } from "react-hot-toast";
 import { ThemeProvider } from "@/context/ThemeContext";
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({
+  subsets: ["latin"],
+  display: "swap",
+  preload: true,
+  fallback: ["system-ui", "sans-serif"],
+});
 
 // Force static generation
-export const dynamic = 'force-static';
+export const dynamic = "force-static";
 export const revalidate = false;
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  userScalable: true,
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#000000" },
+  ],
+};
 
 export const metadata: Metadata = {
   title: "DevOps Cheatsheet Hub",
@@ -74,37 +91,29 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="h-full">
-      <head>
-        <link rel="icon" href="/favicon.ico" sizes="any" />
-        <link
-          rel="icon"
-          href="/favicon-16x16.png"
-          type="image/png"
-          sizes="16x16"
-        />
-        <link
-          rel="icon"
-          href="/favicon-32x32.png"
-          type="image/png"
-          sizes="32x32"
-        />
-        <link
-          rel="apple-touch-icon"
-          href="/apple-touch-icon.png"
-          sizes="180x180"
-        />
-        <link rel="manifest" href="/site.webmanifest" />
-        <meta name="theme-color" content="#000000" />
-      </head>
+      <head />
       <body
-        className={`${inter.className} min-h-screen bg-gray-50 dark:bg-black flex flex-col`}
+        className={`${inter.className} min-h-screen bg-gray-50 dark:bg-black flex flex-col overflow-x-hidden`}
       >
         <ThemeProvider>
+          <GlobalLoader />
           <Header />
           <main className="flex-grow pt-24">{children}</main>
           <Footer />
           <ScrollToTop />
-          <Toaster position="bottom-right" />
+          <Toaster
+            position="bottom-right"
+            toastOptions={{
+              duration: 3000,
+              className: "text-sm font-medium",
+              style: {
+                background: "var(--toast-bg, #fff)",
+                color: "var(--toast-color, #000)",
+                boxShadow: "0 4px 12px rgba(0, 0, 0, 0.08)",
+                borderRadius: "0.5rem",
+              },
+            }}
+          />
         </ThemeProvider>
       </body>
     </html>

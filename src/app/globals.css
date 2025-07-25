@@ -3,12 +3,81 @@
 @tailwind utilities;
 
 @layer base {
-  :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-  }
+    :root {
+        --background: 0 0% 100%;
+        --foreground: 222.2 84% 4.9%;
+        --toast-bg: #ffffff;
+        --toast-color: #111827;
+        --animation-duration: 1;
+    }
 
-  body {
-    @apply bg-white text-gray-900;
-  }
-} 
+    .dark {
+        --toast-bg: #1f2937;
+        --toast-color: #f9fafb;
+        --animation-duration: 0.8;
+    }
+
+    body {
+        @apply bg-white text-gray-900 dark:bg-black dark:text-gray-100 overflow-x-hidden;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* Improve touch target size on mobile */
+    a,
+    button {
+        @apply touch-callout-none;
+    }
+
+    /* Optimize animations for reduced motion preferences */
+    @media (prefers-reduced-motion: reduce) {
+        :root {
+            --animation-duration: 0;
+        }
+
+        *,
+        ::before,
+        ::after {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.01ms !important;
+            scroll-behavior: auto !important;
+        }
+    }
+}
+
+/* Custom animations */
+@layer utilities {
+    .animate-reverse {
+        animation-direction: reverse;
+    }
+
+    .animate-delay-150 {
+        animation-delay: 150ms;
+    }
+
+    /* Hardware acceleration for animations */
+    .backface-hidden {
+        backface-visibility: hidden;
+        transform: translateZ(0);
+    }
+
+    /* Optimize scrolling */
+    .scroll-optimize {
+        -webkit-overflow-scrolling: touch;
+        scroll-behavior: smooth;
+    }
+
+    /* Mobile-specific optimizations */
+    @media (max-width: 640px) {
+        .mobile-optimize {
+            will-change: transform;
+        }
+
+        /* Prevent text size adjustment on orientation change */
+        html,
+        body {
+            -webkit-text-size-adjust: 100%;
+        }
+    }
+}
