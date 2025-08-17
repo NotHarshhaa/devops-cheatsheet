@@ -12,7 +12,7 @@ export function useIsLowEndDevice() {
     const checkDeviceCapabilities = () => {
       // Device memory API (Chrome only)
       const hasLowMemory =
-        // @ts-ignore - deviceMemory is not in all browsers
+        // @ts-expect-error - deviceMemory is not in all browsers
         typeof navigator.deviceMemory !== 'undefined' && navigator.deviceMemory < 4;
 
       // Low end processors typically have fewer logical cores
@@ -23,13 +23,13 @@ export function useIsLowEndDevice() {
       // Check for battery info (some browsers)
       const checkBattery = async () => {
         try {
-          // @ts-ignore - battery API is not standard
+          // @ts-expect-error - battery API is not standard
           if (navigator.getBattery) {
-            // @ts-ignore
+            // @ts-expect-error - Battery API is not standard
             const battery = await navigator.getBattery();
             return battery.charging === false && battery.level < 0.3;
           }
-        } catch (e) {
+        } catch {
           // Ignore errors
         }
         return false;
@@ -86,9 +86,9 @@ export function useOptimizedAnimation(
       return () => mediaQuery.removeEventListener('change', handleChange);
     } else {
       // For older browsers
-      // @ts-ignore
+      // @ts-expect-error - Legacy browser support
       mediaQuery.addListener(handleChange);
-      // @ts-ignore
+      // @ts-expect-error - Legacy browser support
       return () => mediaQuery.removeListener(handleChange);
     }
   }, []);

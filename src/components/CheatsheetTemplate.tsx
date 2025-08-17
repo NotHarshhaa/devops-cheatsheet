@@ -4,7 +4,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Copy, Share2, Bookmark, Clock, Star, ChevronRight, ChevronLeft, Activity, Box, Cloud, Shield, GitBranch, Server, Network, BarChart } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
-import DOMPurify from 'isomorphic-dompurify';
 import { MarkdownContent } from '@/components/MarkdownContent';
 
 // Define the CSS for dark mode and scrollbars
@@ -203,7 +202,7 @@ export function CheatsheetTemplate({
           text: description,
           url: window.location.href,
         });
-      } catch (error) {
+      } catch {
         navigator.clipboard.writeText(window.location.href);
         toast.success('Link copied to clipboard!');
       }

@@ -8,7 +8,7 @@
  * @param fn The function to debounce
  * @param delay The delay in milliseconds
  */
-export function debounce<T extends (...args: any[]) => any>(
+export function debounce<T extends (...args: unknown[]) => unknown>(
   fn: T,
   delay: number
 ): (...args: Parameters<T>) => void {
@@ -27,7 +27,7 @@ export function debounce<T extends (...args: any[]) => any>(
  * @param fn The function to throttle
  * @param limit The time limit in milliseconds
  */
-export function throttle<T extends (...args: any[]) => any>(
+export function throttle<T extends (...args: unknown[]) => unknown>(
   fn: T,
   limit: number
 ): (...args: Parameters<T>) => void {
@@ -75,9 +75,9 @@ export function isLowEndDevice(): boolean {
 
   // Low memory (less than 4GB, Chrome only)
   const hasLowMemory =
-    // @ts-ignore - deviceMemory is not in all browsers
+    // @ts-expect-error - deviceMemory is not in all browsers
     typeof navigator.deviceMemory !== 'undefined' &&
-    // @ts-ignore
+    // @ts-expect-error - Device memory API is not standard
     navigator.deviceMemory < 4;
 
   // Low CPU (fewer than 4 cores)
@@ -156,9 +156,9 @@ export function prefersReducedMotion(): boolean {
  * @param callback The callback function to optimize
  * @param dependencies The dependencies array
  */
-export function useOptimizedCallback<T extends (...args: any[]) => any>(
+export function useOptimizedCallback<T extends (...args: unknown[]) => unknown>(
   callback: T,
-  dependencies: any[] = []
+  dependencies: unknown[] = []
 ): T {
   // This is a simplified version of useCallback
   // In a real app, use React's useCallback instead
@@ -197,7 +197,7 @@ export function addPassiveEventListener(
  * RAF (Request Animation Frame) throttle for smooth animations
  * @param callback The callback function to throttle
  */
-export function rafThrottle<T extends (...args: any[]) => any>(
+export function rafThrottle<T extends (...args: unknown[]) => unknown>(
   callback: T
 ): (...args: Parameters<T>) => void {
   let requestId: number | null = null;
@@ -222,7 +222,7 @@ export function rafThrottle<T extends (...args: any[]) => any>(
  * @param fn The function to memoize
  * @param getKey A function that generates a cache key from the arguments
  */
-export function memoize<T extends (...args: any[]) => any>(
+export function memoize<T extends (...args: unknown[]) => unknown>(
   fn: T,
   getKey: (...args: Parameters<T>) => string = (...args) => JSON.stringify(args)
 ): T {

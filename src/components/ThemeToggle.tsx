@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useIsLowEndDevice } from "@/hooks/useOptimizedAnimation";
 
 export function ThemeToggleComponent() {
-  const { theme, toggleTheme, isDarkMode } = useTheme();
+  const { toggleTheme, isDarkMode } = useTheme();
   const isLowEnd = useIsLowEndDevice();
 
   const handleToggle = useCallback(() => {

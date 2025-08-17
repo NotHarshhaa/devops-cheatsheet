@@ -3,8 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { Search as SearchIcon, Loader2, Tag, Star, BarChart2, Activity, Box, Cloud, Shield, GitBranch, Server, Network, BarChart } from 'lucide-react';
-import { Cheatsheet, getAllCheatsheets } from '@/data/cheatsheets';
-import { motion } from "framer-motion";
+import { Cheatsheet } from '@/data/cheatsheets';
 
 // Helper function to get the icon component
 const getIconComponent = (iconString: string) => {
@@ -156,7 +155,7 @@ export default function SearchPage() {
             <div className="space-y-6">
               <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
                 Found {filteredCheatsheets.length} results
-                {searchTerm && ` for "${searchTerm}"`}
+                {searchTerm && ` for &ldquo;${searchTerm}&rdquo;`}
               </p>
               {filteredCheatsheets.map((cheatsheet) => (
                 <Link
@@ -196,7 +195,7 @@ export default function SearchPage() {
             </div>
           ) : (
             <div className="text-center py-12">
-              <p className="text-gray-600 dark:text-gray-400">No results found for "{searchTerm}"</p>
+              <p className="text-gray-600 dark:text-gray-400">No results found for &ldquo;{searchTerm}&rdquo;</p>
               <p className="text-gray-500 dark:text-gray-500 mt-2">Try different keywords or browse our categories</p>
             </div>
           )}

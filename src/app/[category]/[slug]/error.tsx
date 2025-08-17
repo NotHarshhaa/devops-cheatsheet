@@ -23,7 +23,7 @@ export default function Error({
           Something went wrong!
         </h1>
         <p className="text-lg text-gray-600 dark:text-gray-300 mb-8">
-          We couldn't load the cheatsheet you requested. Please try again later.
+          We couldn&apos;t load the cheatsheet you requested. Please try again later.
         </p>
         <div className="flex flex-col sm:flex-row gap-4">
           <button

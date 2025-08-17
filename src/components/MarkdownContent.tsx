@@ -2,7 +2,6 @@
 
 import { useEffect } from 'react';
 import { toast } from 'react-hot-toast';
-import { Copy } from 'lucide-react';
 
 export function MarkdownContent({ content }: { content: string }) {
   useEffect(() => {

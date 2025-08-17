@@ -38,10 +38,8 @@ export function CategoryActions({ category }: CategoryActionsProps) {
           url: url,
         });
         toast.success('Shared successfully!');
-      } catch (error) {
-        if ((error as Error).name !== 'AbortError') {
-          handleFallbackShare(url);
-        }
+      } catch {
+        handleFallbackShare(url);
       }
     } else {
       handleFallbackShare(url);
@@ -52,7 +50,7 @@ export function CategoryActions({ category }: CategoryActionsProps) {
     try {
       await navigator.clipboard.writeText(url);
       toast.success('Link copied to clipboard!');
-    } catch (error) {
+    } catch {
       toast.error('Failed to copy link');
     }
   };

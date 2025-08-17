@@ -56,7 +56,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         setTheme("light");
         localStorage.setItem("theme", "light");
       }
-    } catch (e) {
+    } catch {
       setTheme("light");
     }
     setMounted(true);
@@ -91,7 +91,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       mediaQuery.addEventListener("change", handleChange);
       return () => mediaQuery.removeEventListener("change", handleChange);
     } else {
-      // @ts-ignore - For older browsers
+      // @ts-expect-error - For older browsers
       mediaQuery.addListener(handleChange);
       return () => mediaQuery.removeListener(handleChange);
     }
@@ -102,7 +102,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       const newTheme = prevTheme === "light" ? "dark" : "light";
       try {
         localStorage.setItem("theme", newTheme);
-      } catch (e) {
+      } catch {
         // Ignore localStorage errors
       }
       if (newTheme === "dark") {

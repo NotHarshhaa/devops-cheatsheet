@@ -1,4 +1,3 @@
-import { categoryData } from '@/utils/categoryData';
 import { CategoryPageClient } from './CategoryPageClient';
 import { categories } from "@/utils/categoryData";
 

@@ -1,11 +1,10 @@
 import { SearchBar } from "@/components/SearchBar";
 import { HomeFilters } from "@/components/HomeFilters";
 import Link from "next/link";
-import { categories, TOTAL_CATEGORIES, categoryData } from "@/utils/categoryData";
-import { ArrowRight, Sparkles, ChevronUp } from "lucide-react";
+import { categories, categoryData } from "@/utils/categoryData";
+import { ArrowRight, Sparkles } from "lucide-react";
 import { CategoryIcon } from "@/components/CategoryIcon";
-import { Suspense, useEffect, useState } from "react";
-import { ExploreButton } from "@/components/ExploreButton";
+import { Suspense } from "react";
 
 // Force static generation
 export const dynamic = 'force-static';
@@ -258,29 +257,4 @@ export default function HomePage() {
   );
 }
 
-// Add these styles to your global CSS
-const styles = `
-@keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-20px); }
-}
 
-@keyframes shimmer {
-  0% { background-position: -200% center; }
-  100% { background-position: 200% center; }
-}
-
-.animate-float {
-  animation: float 6s ease-in-out infinite;
-}
-
-.animate-gradient {
-  background-size: 200% auto;
-  animation: shimmer 2s linear infinite;
-}
-
-.bg-grid-white\/10 {
-  background-image: linear-gradient(to right, rgba(255, 255, 255, 0.1) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
-}
-`;

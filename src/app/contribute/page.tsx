@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence, Variants, Transition } from "framer-motion";
+import { motion, Variants, Transition } from "framer-motion";
 import Link from "next/link";
+import Image from "next/image";
 import {
   FaGithub,
   FaCode,
@@ -414,14 +415,16 @@ export default function ContributePage() {
                 <div className="mb-6">
                   <FaComment className="w-8 h-8 text-blue-100 dark:text-blue-900 absolute -top-4 -left-4" />
                   <blockquote className="text-gray-700 dark:text-gray-300 italic">
-                    "{testimonial.quote}"
+                    &ldquo;{testimonial.quote}&rdquo;
                   </blockquote>
                 </div>
                 <div className="flex items-center gap-4">
-                  <img
+                  <Image
                     src={testimonial.avatar}
                     alt={testimonial.author}
                     className="w-12 h-12 rounded-full object-cover"
+                    width={48}
+                    height={48}
                   />
                   <div>
                     <div className="font-medium text-gray-900 dark:text-white">
@@ -456,7 +459,7 @@ export default function ContributePage() {
             </h2>
 
             <p className="text-blue-100 mb-8 max-w-2xl mx-auto">
-              Whether you're fixing a typo or adding a new tool guide, every
+              Whether you&apos;re fixing a typo or adding a new tool guide, every
               contribution helps make DevOps Cheatsheet better for everyone.
               Join our growing community today!
             </p>

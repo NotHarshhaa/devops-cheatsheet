@@ -1,4 +1,4 @@
-import { Search, Filter, Tag, ArrowDown, Grid3X3, List } from "lucide-react";
+import { Tag, ArrowDown } from "lucide-react";
 import { categories, categoryData } from "@/utils/categoryData";
 import { CategoryCard } from "@/components/CategoryCard";
 import { cheatsheets } from "@/data/cheatsheets";

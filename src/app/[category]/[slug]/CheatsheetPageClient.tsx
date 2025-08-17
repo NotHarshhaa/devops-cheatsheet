@@ -1,6 +1,6 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+
 import { CheatsheetTemplate } from '@/components/CheatsheetTemplate';
 import { marked } from 'marked';
 import { type Cheatsheet } from '@/data/cheatsheets';
@@ -30,7 +30,6 @@ export function CheatsheetPageClient({ params }: Props) {
   const [content, setContent] = useState<CheatsheetContent | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
 
   useEffect(() => {
     const fetchContent = async () => {
@@ -102,8 +101,8 @@ export function CheatsheetPageClient({ params }: Props) {
           </h1>
           <p className="text-lg text-gray-600 dark:text-gray-300 mb-8">
             {error === 'Cheatsheet not found'
-              ? "We couldn't find the cheatsheet you're looking for. It might have been moved or deleted."
-              : "We couldn't load the cheatsheet you requested. Please try again later."}
+              ? "We couldn&apos;t find the cheatsheet you&apos;re looking for. It might have been moved or deleted."
+              : "We couldn&apos;t load the cheatsheet you requested. Please try again later."}
           </p>
           <div className="flex flex-col sm:flex-row gap-4">
             <button

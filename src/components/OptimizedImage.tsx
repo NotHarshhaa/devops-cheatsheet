@@ -32,7 +32,7 @@ function OptimizedImageComponent({
   const [hasError, setHasError] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
   const ref = React.useRef(null);
-  const inView = useInView(ref, { once: true, margin: lazyBoundary as any });
+  const inView = useInView(ref, { once: true, margin: lazyBoundary as string | number });
 
   // Calculate aspect ratio styles
   const aspectRatioStyle = aspectRatio

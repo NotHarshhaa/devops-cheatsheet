@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
 import {
   Github,
   Globe,
@@ -110,7 +109,7 @@ export default function AboutPage() {
               className="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 mb-4"
               variants={fadeInUp}
             >
-              Hey there! 👋 I'm Harshhaa
+              Hey there! 👋 I&apos;m Harshhaa
             </motion.h1>
 
             <motion.p
@@ -195,7 +194,7 @@ export default function AboutPage() {
                 </h2>
                 <div className="space-y-4 text-gray-700 dark:text-gray-300">
                   <p>
-                    I'm a seasoned DevOps Engineer passionate about building
+                    I&apos;m a seasoned DevOps Engineer passionate about building
                     efficient, scalable systems. My journey began with a
                     curiosity about how things work behind the scenes in
                     software development.
@@ -207,7 +206,7 @@ export default function AboutPage() {
                   </p>
                   <p>
                     I believe in sharing knowledge and creating resources that
-                    help others grow in their DevOps journey. That's why I've
+                    help others grow in their DevOps journey. That&apos;s why I&apos;ve
                     built this DevOps Cheatsheet Hub!
                   </p>
                 </div>
@@ -453,7 +452,7 @@ export default function AboutPage() {
                 DevOps Learning Ecosystem
               </h2>
               <p className="text-gray-700 dark:text-gray-300 mb-8">
-                I've created an ecosystem for DevOps enthusiasts, job-seekers,
+                I&apos;ve created an ecosystem for DevOps enthusiasts, job-seekers,
                 and practitioners — designed to make learning practical and
                 accessible:
               </p>
@@ -490,7 +489,7 @@ export default function AboutPage() {
                     url: "https://cloud.prodevopsguytech.com",
                     desc: "Cloud-focused tutorials and insights",
                   },
-                ].map((resource, index) => (
+                ].map((resource) => (
                   <motion.a
                     key={resource.title}
                     href={resource.url}
@@ -558,8 +557,8 @@ export default function AboutPage() {
               <CheckCircle2 className="w-12 h-12 text-green-500 dark:text-green-400 mx-auto" />
             </div>
             <blockquote className="text-2xl md:text-3xl font-medium text-gray-800 dark:text-gray-200 max-w-3xl mx-auto mb-6">
-              "DevOps is not a goal, but a never-ending process of continual
-              improvement."
+              &ldquo;DevOps is not a goal, but a never-ending process of continual
+              improvement.&rdquo;
             </blockquote>
             <p className="text-gray-600 dark:text-gray-400">— Jez Humble</p>
           </motion.div>

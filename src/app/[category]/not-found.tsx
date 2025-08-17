@@ -9,7 +9,7 @@ export default function NotFound() {
             Category Not Found
           </h2>
           <p className="mt-4 text-lg text-gray-600 dark:text-gray-300">
-            Sorry, we couldn't find the category you're looking for.
+            Sorry, we couldn&apos;t find the category you&apos;re looking for.
           </p>
           <div className="mt-8">
             <Link

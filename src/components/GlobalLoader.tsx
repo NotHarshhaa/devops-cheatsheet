@@ -21,9 +21,8 @@ export function GlobalLoader({
 
   useEffect(() => {
     // Simulate loading progress to provide better user feedback
-    let startTime = Date.now();
-    let progressInterval: NodeJS.Timeout;
-
+    const startTime = Date.now();
+    
     const updateProgress = () => {
       const elapsedTime = Date.now() - startTime;
       // Logarithmic progress that speeds up over time
@@ -44,8 +43,9 @@ export function GlobalLoader({
       }
     };
 
-    // Start progress animation
-    progressInterval = setInterval(updateProgress, 50);
+    const progressInterval: NodeJS.Timeout = setInterval(updateProgress, 50);
+
+
 
     // Use DOMContentLoaded and load events to properly time the loader
     const handleLoad = () => {

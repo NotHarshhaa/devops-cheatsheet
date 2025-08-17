@@ -8,12 +8,11 @@ import {
   BookOpen, 
   ArrowRight, 
   TrendingUp,
-  Award,
   Shield,
   Building2,
   Code
 } from 'lucide-react';
-import { Cheatsheet, getAllCheatsheets } from '@/data/cheatsheets';
+import { Cheatsheet } from '@/data/cheatsheets';
 
 type FilterType = 'popular' | 'latest' | 'getting-started' | 'trending' | 'enterprise' | 'security' | null;
 

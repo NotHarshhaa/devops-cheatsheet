@@ -665,7 +665,7 @@ export default function GettingStartedPage() {
 
           <div className="mt-12 text-center">
             <p className="text-gray-700 dark:text-gray-300 mb-4">
-              Still have questions? We're here to help!
+              Still have questions? We&apos;re here to help!
             </p>
             <Link
               href="/about"
