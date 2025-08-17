@@ -10,7 +10,7 @@
  */
 export function debounce<T extends (...args: unknown[]) => unknown>(
   fn: T,
-  delay: number
+  delay: number,
 ): (...args: Parameters<T>) => void {
   let timer: NodeJS.Timeout | null = null;
 
@@ -29,7 +29,7 @@ export function debounce<T extends (...args: unknown[]) => unknown>(
  */
 export function throttle<T extends (...args: unknown[]) => unknown>(
   fn: T,
-  limit: number
+  limit: number,
 ): (...args: Parameters<T>) => void {
   let inThrottle = false;
   let lastArgs: Parameters<T> | null = null;
@@ -55,11 +55,12 @@ export function throttle<T extends (...args: unknown[]) => unknown>(
  * Detects if the device is mobile based on screen size and user agent
  */
 export function isMobileDevice(): boolean {
-  if (typeof window === 'undefined') return false;
+  if (typeof window === "undefined") return false;
 
-  const isMobileByUserAgent = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-    navigator.userAgent
-  );
+  const isMobileByUserAgent =
+    /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+      navigator.userAgent,
+    );
 
   const isMobileBySize = window.innerWidth < 768;
 
@@ -71,18 +72,17 @@ export function isMobileDevice(): boolean {
  * Uses various signals like memory, cpu cores, battery, etc.
  */
 export function isLowEndDevice(): boolean {
-  if (typeof window === 'undefined') return false;
+  if (typeof window === "undefined") return false;
 
   // Low memory (less than 4GB, Chrome only)
   const hasLowMemory =
-    // @ts-expect-error - deviceMemory is not in all browsers
-    typeof navigator.deviceMemory !== 'undefined' &&
-    // @ts-expect-error - Device memory API is not standard
-    navigator.deviceMemory < 4;
+    typeof (navigator as Navigator & { deviceMemory?: number }).deviceMemory !==
+      "undefined" &&
+    (navigator as Navigator & { deviceMemory?: number }).deviceMemory! < 4;
 
   // Low CPU (fewer than 4 cores)
   const hasLowCPU =
-    typeof navigator.hardwareConcurrency !== 'undefined' &&
+    typeof navigator.hardwareConcurrency !== "undefined" &&
     navigator.hardwareConcurrency < 4;
 
   // Simple CPU performance test
@@ -92,18 +92,15 @@ export function isLowEndDevice(): boolean {
     // Intentionally empty loop to test CPU performance
   }
   const end = performance.now();
-  poorPerformance = (end - start) > 50; // If it takes more than 50ms, it's a slow device
+  poorPerformance = end - start > 50; // If it takes more than 50ms, it's a slow device
 
   // Mobile device check
   const isMobile = isMobileDevice();
 
   // We consider it low-end if at least two conditions are met
-  const factors = [
-    hasLowMemory,
-    hasLowCPU,
-    poorPerformance,
-    isMobile
-  ].filter(Boolean);
+  const factors = [hasLowMemory, hasLowCPU, poorPerformance, isMobile].filter(
+    Boolean,
+  );
 
   return factors.length >= 2;
 }
@@ -115,14 +112,14 @@ export function isLowEndDevice(): boolean {
  */
 export function lazyLoadImage(
   imageRef: HTMLImageElement | null,
-  src: string
+  src: string,
 ): void {
-  if (!imageRef || !src || typeof window === 'undefined') return;
+  if (!imageRef || !src || typeof window === "undefined") return;
 
-  if ('IntersectionObserver' in window) {
+  if ("IntersectionObserver" in window) {
     const observer = new IntersectionObserver(
       (entries) => {
-        entries.forEach(entry => {
+        entries.forEach((entry) => {
           if (entry.isIntersecting) {
             imageRef.src = src;
             observer.unobserve(imageRef);
@@ -130,9 +127,9 @@ export function lazyLoadImage(
         });
       },
       {
-        rootMargin: '200px', // Load images 200px before they appear
-        threshold: 0.01
-      }
+        rootMargin: "200px", // Load images 200px before they appear
+        threshold: 0.01,
+      },
     );
 
     observer.observe(imageRef);
@@ -146,9 +143,9 @@ export function lazyLoadImage(
  * Detects if the user prefers reduced motion
  */
 export function prefersReducedMotion(): boolean {
-  if (typeof window === 'undefined') return false;
+  if (typeof window === "undefined") return false;
 
-  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
 /**
@@ -158,7 +155,7 @@ export function prefersReducedMotion(): boolean {
  */
 export function useOptimizedCallback<T extends (...args: unknown[]) => unknown>(
   callback: T,
-  dependencies: unknown[] = []
+  dependencies: unknown[] = [],
 ): T {
   // This is a simplified version of useCallback
   // In a real app, use React's useCallback instead
@@ -184,7 +181,7 @@ export function useOptimizedCallback<T extends (...args: unknown[]) => unknown>(
 export function addPassiveEventListener(
   element: HTMLElement | Window | Document,
   eventType: string,
-  callback: EventListenerOrEventListenerObject
+  callback: EventListenerOrEventListenerObject,
 ): () => void {
   element.addEventListener(eventType, callback, { passive: true });
 
@@ -198,7 +195,7 @@ export function addPassiveEventListener(
  * @param callback The callback function to throttle
  */
 export function rafThrottle<T extends (...args: unknown[]) => unknown>(
-  callback: T
+  callback: T,
 ): (...args: Parameters<T>) => void {
   let requestId: number | null = null;
   let lastArgs: Parameters<T> | null = null;
@@ -224,7 +221,8 @@ export function rafThrottle<T extends (...args: unknown[]) => unknown>(
  */
 export function memoize<T extends (...args: unknown[]) => unknown>(
   fn: T,
-  getKey: (...args: Parameters<T>) => string = (...args) => JSON.stringify(args)
+  getKey: (...args: Parameters<T>) => string = (...args) =>
+    JSON.stringify(args),
 ): T {
   const cache = new Map<string, ReturnType<T>>();
 
@@ -235,7 +233,7 @@ export function memoize<T extends (...args: unknown[]) => unknown>(
       return cache.get(key) as ReturnType<T>;
     }
 
-    const result = fn(...args);
+    const result = fn(...args) as ReturnType<T>;
     cache.set(key, result);
 
     // Limit cache size to prevent memory leaks

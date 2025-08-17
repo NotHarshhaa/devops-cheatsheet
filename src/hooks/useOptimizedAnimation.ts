@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useCallback } from 'react';
-import { Variants as FramerVariants } from 'framer-motion';
+import { useState, useEffect, useCallback } from "react";
+import { Variants as FramerVariants } from "framer-motion";
 
 // Performance optimization: Check if running on a low-end device
 export function useIsLowEndDevice() {
@@ -12,21 +12,24 @@ export function useIsLowEndDevice() {
     const checkDeviceCapabilities = () => {
       // Device memory API (Chrome only)
       const hasLowMemory =
-        // @ts-expect-error - deviceMemory is not in all browsers
-        typeof navigator.deviceMemory !== 'undefined' && navigator.deviceMemory < 4;
+        typeof (navigator as Navigator & { deviceMemory?: number })
+          .deviceMemory !== "undefined" &&
+        (navigator as Navigator & { deviceMemory?: number }).deviceMemory! < 4;
 
       // Low end processors typically have fewer logical cores
       const hasLowCPU =
-        typeof navigator.hardwareConcurrency !== 'undefined' &&
+        typeof navigator.hardwareConcurrency !== "undefined" &&
         navigator.hardwareConcurrency < 4;
 
       // Check for battery info (some browsers)
       const checkBattery = async () => {
         try {
-          // @ts-expect-error - battery API is not standard
-          if (navigator.getBattery) {
-            // @ts-expect-error - Battery API is not standard
-            const battery = await navigator.getBattery();
+          if ("getBattery" in navigator) {
+            const battery = await (
+              navigator as Navigator & {
+                getBattery(): Promise<{ charging: boolean; level: number }>;
+              }
+            ).getBattery();
             return battery.charging === false && battery.level < 0.3;
           }
         } catch {
@@ -36,7 +39,7 @@ export function useIsLowEndDevice() {
       };
 
       // Calculate final result
-      checkBattery().then(isLowBattery => {
+      checkBattery().then((isLowBattery) => {
         // Mark as low-end if at least two conditions are met
         const conditions = [
           window.innerWidth < 768, // Mobile screens
@@ -44,7 +47,7 @@ export function useIsLowEndDevice() {
           hasLowCPU,
           isLowBattery,
           // Check if the browser lags when performing simple animations
-          typeof window.requestAnimationFrame !== 'function'
+          typeof window.requestAnimationFrame !== "function",
         ];
 
         setIsLowEnd(conditions.filter(Boolean).length >= 2);
@@ -66,14 +69,15 @@ export interface OptimizedVariants {
 // Hook to get the appropriate animation variant based on device capabilities
 export function useOptimizedAnimation(
   variants: OptimizedVariants,
-  prefersReducedMotion = false
+  prefersReducedMotion = false,
 ) {
   const isLowEnd = useIsLowEndDevice();
-  const [shouldUseReducedMotion, setShouldUseReducedMotion] = useState(prefersReducedMotion);
+  const [shouldUseReducedMotion, setShouldUseReducedMotion] =
+    useState(prefersReducedMotion);
 
   useEffect(() => {
     // Check if user prefers reduced motion
-    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
     const handleChange = (e: MediaQueryListEvent) => {
       setShouldUseReducedMotion(e.matches);
     };
@@ -81,15 +85,21 @@ export function useOptimizedAnimation(
     setShouldUseReducedMotion(mediaQuery.matches);
 
     // Add listener for changes
-    if (mediaQuery.addEventListener) {
-      mediaQuery.addEventListener('change', handleChange);
-      return () => mediaQuery.removeEventListener('change', handleChange);
+    if ("addEventListener" in mediaQuery) {
+      mediaQuery.addEventListener("change", handleChange);
+      return () => mediaQuery.removeEventListener("change", handleChange);
     } else {
-      // For older browsers
-      // @ts-expect-error - Legacy browser support
-      mediaQuery.addListener(handleChange);
-      // @ts-expect-error - Legacy browser support
-      return () => mediaQuery.removeListener(handleChange);
+      // For older browsers that use the deprecated API
+      const mql = mediaQuery as MediaQueryList & {
+        addListener(
+          listener: (this: MediaQueryList, ev: MediaQueryListEvent) => void,
+        ): void;
+        removeListener(
+          listener: (this: MediaQueryList, ev: MediaQueryListEvent) => void,
+        ): void;
+      };
+      mql.addListener(handleChange);
+      return () => mql.removeListener(handleChange);
     }
   }, []);
 
@@ -104,46 +114,48 @@ export function useOptimizedAnimation(
   return {
     optimizedVariants: getOptimizedVariant(),
     isLowEndDevice: isLowEnd,
-    prefersReducedMotion: shouldUseReducedMotion
+    prefersReducedMotion: shouldUseReducedMotion,
   };
 }
 
 // Default lightweight variant creators for common animations
-export const createFadeInVariants = (duration: number = 0.5): OptimizedVariants => ({
+export const createFadeInVariants = (
+  duration: number = 0.5,
+): OptimizedVariants => ({
   full: {
     hidden: { opacity: 0, y: 20 },
     visible: {
       opacity: 1,
       y: 0,
       transition: {
-        type: 'spring',
+        type: "spring",
         duration,
-        bounce: 0.3
-      }
-    }
+        bounce: 0.3,
+      },
+    },
   },
   light: {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
       transition: {
-        type: 'tween',
-        duration: duration * 0.8
-      }
-    }
-  }
+        type: "tween",
+        duration: duration * 0.8,
+      },
+    },
+  },
 });
 
 export const createSlideInVariants = (
-  direction: 'left' | 'right' | 'up' | 'down' = 'up',
+  direction: "left" | "right" | "up" | "down" = "up",
   distance: number = 50,
-  duration: number = 0.5
+  duration: number = 0.5,
 ): OptimizedVariants => {
   const directionMap = {
     left: { x: -distance, y: 0 },
     right: { x: distance, y: 0 },
     up: { x: 0, y: -distance },
-    down: { x: 0, y: distance }
+    down: { x: 0, y: distance },
   };
 
   const { x, y } = directionMap[direction];
@@ -156,28 +168,28 @@ export const createSlideInVariants = (
         x: 0,
         y: 0,
         transition: {
-          type: 'spring',
+          type: "spring",
           duration,
-          bounce: 0.3
-        }
-      }
+          bounce: 0.3,
+        },
+      },
     },
     light: {
       hidden: { opacity: 0 },
       visible: {
         opacity: 1,
         transition: {
-          type: 'tween',
-          duration: duration * 0.8
-        }
-      }
-    }
+          type: "tween",
+          duration: duration * 0.8,
+        },
+      },
+    },
   };
 };
 
 export const createScaleVariants = (
   startScale: number = 0.95,
-  duration: number = 0.5
+  duration: number = 0.5,
 ): OptimizedVariants => ({
   full: {
     hidden: { opacity: 0, scale: startScale },
@@ -185,22 +197,22 @@ export const createScaleVariants = (
       opacity: 1,
       scale: 1,
       transition: {
-        type: 'spring',
+        type: "spring",
         duration,
-        bounce: 0.3
-      }
-    }
+        bounce: 0.3,
+      },
+    },
   },
   light: {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
       transition: {
-        type: 'tween',
-        duration: duration * 0.7
-      }
-    }
-  }
+        type: "tween",
+        duration: duration * 0.7,
+      },
+    },
+  },
 });
 
 export default useOptimizedAnimation;

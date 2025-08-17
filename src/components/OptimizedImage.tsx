@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect, memo } from 'react';
-import Image, { ImageProps } from 'next/image';
-import { useInView } from 'framer-motion';
+import React, { useState, useEffect, memo } from "react";
+import Image, { ImageProps } from "next/image";
+import { useInView } from "framer-motion";
 
-interface OptimizedImageProps extends Omit<ImageProps, 'onLoad' | 'onError'> {
+interface OptimizedImageProps extends Omit<ImageProps, "onLoad" | "onError"> {
   fallbackSrc?: string;
   blurhash?: string;
   lazyBoundary?: string;
@@ -17,10 +17,10 @@ function OptimizedImageComponent({
   alt,
   width,
   height,
-  className = '',
-  fallbackSrc = '/placeholder.svg',
+  className = "",
+  fallbackSrc = "/placeholder.svg",
   blurhash,
-  lazyBoundary = '200px',
+  lazyBoundary = "200px",
   lowResSrc,
   aspectRatio,
   priority = false,
@@ -32,13 +32,14 @@ function OptimizedImageComponent({
   const [hasError, setHasError] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
   const ref = React.useRef(null);
-  const inView = useInView(ref, { once: true, margin: lazyBoundary as string | number });
+  // @ts-expect-error - Framer Motion types expect MarginType but string works fine
+  const inView = useInView(ref, { once: true, margin: lazyBoundary });
 
   // Calculate aspect ratio styles
   const aspectRatioStyle = aspectRatio
     ? {
         aspectRatio: `${aspectRatio}`,
-        objectFit: 'cover' as const,
+        objectFit: "cover" as const,
       }
     : {};
 
@@ -52,19 +53,19 @@ function OptimizedImageComponent({
   // Get the actual src to display
   const displaySrc = hasError
     ? fallbackSrc
-    : (!isLoaded && lowResSrc)
+    : !isLoaded && lowResSrc
       ? lowResSrc
       : src;
 
   // Create blur placeholder if provided
-  const placeholder = blurhash ? 'blur' : 'empty';
+  const placeholder = blurhash ? "blur" : "empty";
   const blurDataURL = blurhash || undefined;
 
   // Only use sizes if provided
   const sizesValue = sizes || undefined;
 
   // Calculate loading strategy
-  const loadingStrategy = priority ? 'eager' : 'lazy';
+  const loadingStrategy = priority ? "eager" : "lazy";
 
   // Set default width and height for svg fallback if not provided
   const finalWidth = width || 100;
@@ -81,8 +82,8 @@ function OptimizedImageComponent({
         <div
           className="absolute inset-0 bg-gray-200 dark:bg-gray-800 animate-pulse"
           style={{
-            backdropFilter: 'blur(8px)',
-            WebkitBackdropFilter: 'blur(8px)'
+            backdropFilter: "blur(8px)",
+            WebkitBackdropFilter: "blur(8px)",
           }}
         />
       )}
@@ -97,7 +98,7 @@ function OptimizedImageComponent({
           onLoadingComplete={() => setIsLoaded(true)}
           onError={() => setHasError(true)}
           className={`transition-opacity duration-300 ${
-            isLoaded ? 'opacity-100' : 'opacity-0'
+            isLoaded ? "opacity-100" : "opacity-0"
           } backface-hidden`}
           placeholder={placeholder}
           blurDataURL={blurDataURL}

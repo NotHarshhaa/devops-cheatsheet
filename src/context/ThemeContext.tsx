@@ -45,7 +45,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     try {
       const storedTheme = localStorage.getItem("theme") as Theme | null;
-      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+      const prefersDark = window.matchMedia(
+        "(prefers-color-scheme: dark)",
+      ).matches;
 
       if (storedTheme) {
         setTheme(storedTheme);
@@ -87,13 +89,21 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       }
     };
 
-    if (mediaQuery.addEventListener) {
+    if ("addEventListener" in mediaQuery) {
       mediaQuery.addEventListener("change", handleChange);
       return () => mediaQuery.removeEventListener("change", handleChange);
     } else {
-      // @ts-expect-error - For older browsers
-      mediaQuery.addListener(handleChange);
-      return () => mediaQuery.removeListener(handleChange);
+      // For older browsers that use the deprecated API
+      const mql = mediaQuery as MediaQueryList & {
+        addListener(
+          listener: (this: MediaQueryList, ev: MediaQueryListEvent) => void,
+        ): void;
+        removeListener(
+          listener: (this: MediaQueryList, ev: MediaQueryListEvent) => void,
+        ): void;
+      };
+      mql.addListener(handleChange);
+      return () => mql.removeListener(handleChange);
     }
   }, []);
 
