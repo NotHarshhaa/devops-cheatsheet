@@ -4,8 +4,27 @@ import { categoryData, type Category } from '@/utils/categoryData';
 import { getAllCheatsheets } from '@/data/cheatsheets';
 import { CheatsheetPageClient } from './CheatsheetPageClient';
 
-export async function generateMetadata({ params }: any): Promise<Metadata> {
-  const cheatsheet = await getCheatsheetBySlug(params.category as Category, params.slug);
+type RouteParams = {
+  category: string;
+  slug: string;
+};
+
+async function resolveParams(
+  paramsOrPromise: RouteParams | Promise<RouteParams>
+): Promise<RouteParams> {
+  return await paramsOrPromise;
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: RouteParams | Promise<RouteParams>;
+}): Promise<Metadata> {
+  const resolved = await resolveParams(params);
+  const cheatsheet = await getCheatsheetBySlug(
+    resolved.category as Category,
+    resolved.slug
+  );
   if (!cheatsheet) return {};
 
   return {
@@ -14,7 +33,7 @@ export async function generateMetadata({ params }: any): Promise<Metadata> {
   };
 }
 
-export async function generateStaticParams(): Promise<any> {
+export async function generateStaticParams(): Promise<RouteParams[]> {
   // Get all categories
   const categories = Object.keys(categoryData) as Category[];
   
@@ -30,22 +49,22 @@ export async function generateStaticParams(): Promise<any> {
     })
   );
   
-  // Flatten the array of arrays into a single array of params and add the 404 route
-  return [
-    ...params.flat(),
-    {
-      category: '404',
-      slug: '404',
-    },
-  ];
+  // Flatten the array of arrays into a single array of params
+  return params.flat();
 }
 
-export default function CheatsheetPage({ params }: any) {
-  // If this is the 404 route, return null to trigger the not-found page
-  if (params.category === '404' || params.slug === '404') {
-    return null;
-  }
-  
+export default async function CheatsheetPage({
+  params,
+}: {
+  params: RouteParams | Promise<RouteParams>;
+}) {
+  const resolved = await resolveParams(params);
+
   // Cast the category to Category type since we know it's valid from generateStaticParams
-  return <CheatsheetPageClient params={{ ...params, category: params.category as Category }} />;
+  const safeParams: RouteParams & { category: Category } = {
+    ...resolved,
+    category: resolved.category as Category,
+  };
+
+  return <CheatsheetPageClient params={safeParams} />;
 } 

@@ -40,6 +40,11 @@ export interface PaginatedResponse {
 
 export async function getCheatsheetBySlug(category: string, slug: string): Promise<Cheatsheet | null> {
   try {
+    // Validate input
+    if (!category || !slug) {
+      return null;
+    }
+
     // If the category is '404', return null to trigger the not-found page
     if (category === '404' || slug === '404') {
       return null;
