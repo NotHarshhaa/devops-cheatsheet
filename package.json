@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "next dev --webpack",
     "prebuild": "node scripts/process-markdown.mjs",
-    "build": "next build --webpack",
+    "build": "mkdir -p .next && touch .next/lock && next build --webpack",
     "start": "next start",
     "lint": "eslint ."
   },
