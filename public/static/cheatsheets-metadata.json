@@ -8,7 +8,7 @@
     "difficulty": "Beginner",
     "popularity": 0,
     "tags": [],
-    "updatedAt": "2025-12-18T11:21:59.021Z"
+    "updatedAt": "2025-12-18T11:35:54.815Z"
   },
   "CI-CD/GitHub-Actions": {
     "title": "GitHub-Actions",
@@ -19,7 +19,7 @@
     "difficulty": "Beginner",
     "popularity": 0,
     "tags": [],
-    "updatedAt": "2025-12-18T11:21:59.022Z"
+    "updatedAt": "2025-12-18T11:35:54.816Z"
   },
   "CI-CD/GitLab-CI": {
     "title": "GitLab-CI",
@@ -30,7 +30,7 @@
     "difficulty": "Beginner",
     "popularity": 0,
     "tags": [],
-    "updatedAt": "2025-12-18T11:21:59.023Z"
+    "updatedAt": "2025-12-18T11:35:54.818Z"
   },
   "CI-CD/Jenkins": {
     "title": "Jenkins",
@@ -41,7 +41,7 @@
     "difficulty": "Beginner",
     "popularity": 0,
     "tags": [],
-    "updatedAt": "2025-12-18T11:21:59.024Z"
+    "updatedAt": "2025-12-18T11:35:54.819Z"
   },
   "Containerization/CRI-O": {
     "title": "CRI-O",
@@ -52,7 +52,7 @@
     "difficulty": "Beginner",
     "popularity": 0,
     "tags": [],
-    "updatedAt": "2025-12-18T11:21:59.025Z"
+    "updatedAt": "2025-12-18T11:35:54.820Z"
   },
   "Containerization/Docker": {
     "title": "Docker",
@@ -63,7 +63,7 @@
     "difficulty": "Beginner",
     "popularity": 0,
     "tags": [],
-    "updatedAt": "2025-12-18T11:21:59.026Z"
+    "updatedAt": "2025-12-18T11:35:54.821Z"
   },
   "Containerization/Helm": {
     "title": "Helm",
@@ -74,7 +74,7 @@
     "difficulty": "Beginner",
     "popularity": 0,
     "tags": [],
-    "updatedAt": "2025-12-18T11:21:59.026Z"
+    "updatedAt": "2025-12-18T11:35:54.822Z"
   },
   "Containerization/Kubernetes": {
     "title": "Kubernetes",
@@ -85,7 +85,7 @@
     "difficulty": "Beginner",
     "popularity": 0,
     "tags": [],
-    "updatedAt": "2025-12-18T11:21:59.027Z"
+    "updatedAt": "2025-12-18T11:35:54.823Z"
   },
   "Containerization/OpenShift": {
     "title": "OpenShift",
@@ -96,7 +96,7 @@
     "difficulty": "Beginner",
     "popularity": 0,
     "tags": [],
-    "updatedAt": "2025-12-18T11:21:59.028Z"
+    "updatedAt": "2025-12-18T11:35:54.823Z"
   },
   "Containerization/Podman": {
     "title": "Podman",
@@ -107,7 +107,7 @@
     "difficulty": "Beginner",
     "popularity": 0,
     "tags": [],
-    "updatedAt": "2025-12-18T11:21:59.029Z"
+    "updatedAt": "2025-12-18T11:35:54.824Z"
   },
   "Cloud/AWS": {
     "title": "AWS",
@@ -118,7 +118,7 @@
     "difficulty": "Beginner",
     "popularity": 0,
     "tags": [],
-    "updatedAt": "2025-12-18T11:21:59.030Z"
+    "updatedAt": "2025-12-18T11:35:54.825Z"
   },
   "Cloud/Azure": {
     "title": "Azure",
@@ -129,7 +129,7 @@
     "difficulty": "Beginner",
     "popularity": 0,
     "tags": [],
-    "updatedAt": "2025-12-18T11:21:59.030Z"
+    "updatedAt": "2025-12-18T11:35:54.826Z"
   },
   "Cloud/GCP": {
     "title": "GCP",
@@ -140,7 +140,7 @@
     "difficulty": "Beginner",
     "popularity": 0,
     "tags": [],
-    "updatedAt": "2025-12-18T11:21:59.031Z"
+    "updatedAt": "2025-12-18T11:35:54.826Z"
   },
   "Cloud/Kubernetes-on-AWS": {
     "title": "Kubernetes-on-AWS",
@@ -151,7 +151,7 @@
     "difficulty": "Beginner",
     "popularity": 0,
     "tags": [],
-    "updatedAt": "2025-12-18T11:21:59.031Z"
+    "updatedAt": "2025-12-18T11:35:54.827Z"
   },
   "Cloud/Terraform-on-AWS": {
     "title": "Terraform-on-AWS",
@@ -162,7 +162,7 @@
     "difficulty": "Beginner",
     "popularity": 0,
     "tags": [],
-    "updatedAt": "2025-12-18T11:21:59.032Z"
+    "updatedAt": "2025-12-18T11:35:54.828Z"
   },
   "Infrastructure-Management/Ansible": {
     "title": "Ansible",
@@ -173,7 +173,7 @@
     "difficulty": "Beginner",
     "popularity": 0,
     "tags": [],
-    "updatedAt": "2025-12-18T11:21:59.033Z"
+    "updatedAt": "2025-12-18T11:35:54.829Z"
   },
   "Infrastructure-Management/Chef": {
     "title": "Chef",
@@ -184,7 +184,7 @@
     "difficulty": "Beginner",
     "popularity": 0,
     "tags": [],
-    "updatedAt": "2025-12-18T11:21:59.033Z"
+    "updatedAt": "2025-12-18T11:35:54.829Z"
   },
   "Infrastructure-Management/Puppet": {
     "title": "Puppet",
@@ -195,7 +195,7 @@
     "difficulty": "Beginner",
     "popularity": 0,
     "tags": [],
-    "updatedAt": "2025-12-18T11:21:59.034Z"
+    "updatedAt": "2025-12-18T11:35:54.830Z"
   },
   "Infrastructure-Management/Terraform": {
     "title": "Terraform",
@@ -206,7 +206,7 @@
     "difficulty": "Beginner",
     "popularity": 0,
     "tags": [],
-    "updatedAt": "2025-12-18T11:21:59.034Z"
+    "updatedAt": "2025-12-18T11:35:54.830Z"
   },
   "Version-Control/Bitbucket": {
     "title": "Bitbucket",
@@ -217,7 +217,7 @@
     "difficulty": "Beginner",
     "popularity": 0,
     "tags": [],
-    "updatedAt": "2025-12-18T11:21:59.035Z"
+    "updatedAt": "2025-12-18T11:35:54.831Z"
   },
   "Version-Control/GitHub": {
     "title": "GitHub",
@@ -228,7 +228,7 @@
     "difficulty": "Beginner",
     "popularity": 0,
     "tags": [],
-    "updatedAt": "2025-12-18T11:21:59.036Z"
+    "updatedAt": "2025-12-18T11:35:54.832Z"
   },
   "Version-Control/GitLab": {
     "title": "GitLab",
@@ -239,7 +239,7 @@
     "difficulty": "Beginner",
     "popularity": 0,
     "tags": [],
-    "updatedAt": "2025-12-18T11:21:59.036Z"
+    "updatedAt": "2025-12-18T11:35:54.833Z"
   },
   "Security/AquaSec": {
     "title": "AquaSec",
@@ -250,7 +250,7 @@
     "difficulty": "Beginner",
     "popularity": 0,
     "tags": [],
-    "updatedAt": "2025-12-18T11:21:59.037Z"
+    "updatedAt": "2025-12-18T11:35:54.834Z"
   },
   "Security/HashiCorp-Vault": {
     "title": "HashiCorp-Vault",
@@ -261,7 +261,7 @@
     "difficulty": "Beginner",
     "popularity": 0,
     "tags": [],
-    "updatedAt": "2025-12-18T11:21:59.037Z"
+    "updatedAt": "2025-12-18T11:35:54.834Z"
   },
   "Security/SonarQube": {
     "title": "SonarQube",
@@ -272,7 +272,7 @@
     "difficulty": "Beginner",
     "popularity": 0,
     "tags": [],
-    "updatedAt": "2025-12-18T11:21:59.038Z"
+    "updatedAt": "2025-12-18T11:35:54.835Z"
   },
   "Security/Trivy": {
     "title": "Trivy",
@@ -283,7 +283,7 @@
     "difficulty": "Beginner",
     "popularity": 0,
     "tags": [],
-    "updatedAt": "2025-12-18T11:21:59.038Z"
+    "updatedAt": "2025-12-18T11:35:54.835Z"
   },
   "Networking/Consul": {
     "title": "Consul",
@@ -294,7 +294,7 @@
     "difficulty": "Beginner",
     "popularity": 0,
     "tags": [],
-    "updatedAt": "2025-12-18T11:21:59.039Z"
+    "updatedAt": "2025-12-18T11:35:54.837Z"
   },
   "Networking/Envoy": {
     "title": "Envoy",
@@ -305,7 +305,7 @@
     "difficulty": "Beginner",
     "popularity": 0,
     "tags": [],
-    "updatedAt": "2025-12-18T11:21:59.040Z"
+    "updatedAt": "2025-12-18T11:35:54.837Z"
   },
   "Networking/Istio": {
     "title": "Istio",
@@ -316,7 +316,7 @@
     "difficulty": "Beginner",
     "popularity": 0,
     "tags": [],
-    "updatedAt": "2025-12-18T11:21:59.040Z"
+    "updatedAt": "2025-12-18T11:35:54.838Z"
   },
   "Networking/Linkerd": {
     "title": "Linkerd",
@@ -327,7 +327,7 @@
     "difficulty": "Beginner",
     "popularity": 0,
     "tags": [],
-    "updatedAt": "2025-12-18T11:21:59.041Z"
+    "updatedAt": "2025-12-18T11:35:54.839Z"
   },
   "Monitoring/CloudWatch": {
     "title": "CloudWatch",
@@ -338,7 +338,7 @@
     "difficulty": "Beginner",
     "popularity": 0,
     "tags": [],
-    "updatedAt": "2025-12-18T11:21:59.042Z"
+    "updatedAt": "2025-12-18T11:35:54.840Z"
   },
   "Monitoring/ELK-Stack": {
     "title": "ELK-Stack",
@@ -349,7 +349,7 @@
     "difficulty": "Beginner",
     "popularity": 0,
     "tags": [],
-    "updatedAt": "2025-12-18T11:21:59.042Z"
+    "updatedAt": "2025-12-18T11:35:54.840Z"
   },
   "Monitoring/Grafana": {
     "title": "Grafana",
@@ -360,7 +360,7 @@
     "difficulty": "Beginner",
     "popularity": 0,
     "tags": [],
-    "updatedAt": "2025-12-18T11:21:59.043Z"
+    "updatedAt": "2025-12-18T11:35:54.841Z"
   },
   "Monitoring/Nagios": {
     "title": "Nagios",
@@ -371,7 +371,7 @@
     "difficulty": "Beginner",
     "popularity": 0,
     "tags": [],
-    "updatedAt": "2025-12-18T11:21:59.043Z"
+    "updatedAt": "2025-12-18T11:35:54.841Z"
   },
   "Monitoring/Prometheus": {
     "title": "Prometheus",
@@ -382,6 +382,6 @@
     "difficulty": "Beginner",
     "popularity": 0,
     "tags": [],
-    "updatedAt": "2025-12-18T11:21:59.044Z"
+    "updatedAt": "2025-12-18T11:35:54.842Z"
   }
 }
