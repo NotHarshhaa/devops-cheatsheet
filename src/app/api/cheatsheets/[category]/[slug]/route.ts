@@ -25,10 +25,10 @@ export async function generateStaticParams() {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { category: string; slug: string } }
+  context: any
 ) {
   try {
-    const { category, slug } = params;
+    const { category, slug } = context.params;
     const cheatsheet = await getCheatsheetBySlug(category, slug);
 
     if (!cheatsheet) {

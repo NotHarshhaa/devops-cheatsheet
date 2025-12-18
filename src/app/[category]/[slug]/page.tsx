@@ -4,14 +4,7 @@ import { categoryData, type Category } from '@/utils/categoryData';
 import { getAllCheatsheets } from '@/data/cheatsheets';
 import { CheatsheetPageClient } from './CheatsheetPageClient';
 
-interface Props {
-  params: {
-    category: string;
-    slug: string;
-  };
-}
-
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata({ params }: any): Promise<Metadata> {
   const cheatsheet = await getCheatsheetBySlug(params.category as Category, params.slug);
   if (!cheatsheet) return {};
 
@@ -21,7 +14,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export async function generateStaticParams() {
+export async function generateStaticParams(): Promise<any> {
   // Get all categories
   const categories = Object.keys(categoryData) as Category[];
   
@@ -47,7 +40,7 @@ export async function generateStaticParams() {
   ];
 }
 
-export default function CheatsheetPage({ params }: Props) {
+export default function CheatsheetPage({ params }: any) {
   // If this is the 404 route, return null to trigger the not-found page
   if (params.category === '404' || params.slug === '404') {
     return null;

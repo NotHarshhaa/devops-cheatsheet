@@ -4,7 +4,6 @@ const nextConfig = {
   compiler: {
     removeConsole: process.env.NODE_ENV === "production",
     reactRemoveProperties: process.env.NODE_ENV === "production",
-    swcMinify: true,
   },
   // Optimize images
   images: {
@@ -75,7 +74,6 @@ const nextConfig = {
   },
   // Disable unnecessary features
   productionBrowserSourceMaps: false,
-  optimizeFonts: true,
   poweredByHeader: false,
   // Enable static compression
   compress: true,
@@ -102,17 +100,12 @@ const nextConfig = {
     },
   },
   // Output file tracing for serverless
-  experimental: {
-    outputFileTracingExcludes: {
-      "*": [
-        "node_modules/@swc/core-linux-x64-gnu",
-        "node_modules/@swc/core-linux-x64-musl",
-        "node_modules/esbuild-linux-64/bin",
-      ],
-    },
-    optimizeCss: true,
-    scrollRestoration: true,
-    optimizePackageImports: ["react-icons", "lucide-react", "framer-motion"],
+  outputFileTracingExcludes: {
+    "*": [
+      "node_modules/@swc/core-linux-x64-gnu",
+      "node_modules/@swc/core-linux-x64-musl",
+      "node_modules/esbuild-linux-64/bin",
+    ],
   },
 };
 

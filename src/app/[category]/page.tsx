@@ -1,22 +1,18 @@
 import { CategoryPageClient } from './CategoryPageClient';
 import { categories } from "@/utils/categoryData";
 
-interface Props {
-  params: {
-    category: string;
-  };
-}
-
-export function generateStaticParams() {
+export function generateStaticParams(): Promise<any> | any {
   return categories.map((category) => ({
     category: category,
   }));
 }
 
-export default function CategoryPage({ params }: Props) {
+export default async function CategoryPage({ params }: any) {
+  const resolvedParams = await params;
+
   // If the category is 404, show the NotFound component
-  if (params.category === '404') {
+  if (resolvedParams.category === '404') {
     return null; // This will trigger the not-found.tsx page
   }
-  return <CategoryPageClient params={params} />;
+  return <CategoryPageClient params={resolvedParams} />;
 }
