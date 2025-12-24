@@ -227,9 +227,7 @@
     aws apigateway create-rest-api --name 'My API'
     ```
 
-**7. Best
-
- Practices:**
+**7. Best Practices:**
 
 - **Security:**
   - Use IAM Roles and Policies, enable MFA, encrypt data at rest and in transit, monitor with CloudTrail, and apply the Principle of Least Privilege.
