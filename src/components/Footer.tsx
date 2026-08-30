@@ -19,6 +19,8 @@ import {
 import { HiChevronRight } from "react-icons/hi";
 import { useState } from "react";
 import { motion, Variants, Transition } from "framer-motion";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 export function Footer() {
   const [email, setEmail] = useState("");
@@ -123,21 +125,21 @@ export function Footer() {
                   onSubmit={handleSubscribe}
                   className="flex flex-col sm:flex-row gap-2 sm:gap-3"
                 >
-                  <input
+                  <Input
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="Enter your email"
-                    className="flex-grow px-3 sm:px-4 py-2 sm:py-2.5 text-sm rounded-lg bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="flex-grow h-10 px-3 sm:px-4 text-sm rounded-xl"
                     required
                   />
-                  <button
+                  <Button
                     type="submit"
-                    className="px-4 py-2 sm:py-2.5 text-sm bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium rounded-lg transition-all duration-200 flex items-center justify-center gap-2 whitespace-nowrap active:translate-y-0.5"
+                    className="h-10 px-4 text-sm font-medium gap-2 whitespace-nowrap"
                   >
                     Subscribe
                     <FaArrowRight className="w-3 h-3" />
-                  </button>
+                  </Button>
                 </form>
               ) : (
                 <div className="bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 p-2 sm:p-3 rounded-lg text-center text-sm">

@@ -2,6 +2,7 @@
 
 import { ArrowRight } from 'lucide-react';
 import { CategoryActions } from '@/components/CategoryActions';
+import { Button } from '@/components/ui/button';
 
 interface ExploreButtonProps {
   category: string;
@@ -10,16 +11,18 @@ interface ExploreButtonProps {
 export function ExploreButton({ category }: ExploreButtonProps) {
   return (
     <div className="flex items-center justify-between relative z-10">
-      <div
-        className="group inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-100 dark:bg-blue-900/70 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-800/70 transition-all duration-300 border border-blue-200 dark:border-blue-800"
+      <Button
+        variant="secondary"
+        size="sm"
+        className="group gap-2 font-medium"
         onClick={(e) => e.stopPropagation()}
       >
-        <span className="font-medium">Explore tools</span>
-        <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" />
-      </div>
+        <span>Explore tools</span>
+        <ArrowRight className="w-3.5 h-3.5 transform group-hover:translate-x-0.5 transition-transform" />
+      </Button>
 
       {/* Quick Actions */}
       <CategoryActions category={category} />
     </div>
   );
-} 
+}

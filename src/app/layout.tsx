@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Manrope } from "next/font/google";
 import "./globals.css";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
@@ -7,6 +7,10 @@ import { ScrollToTop } from "@/components/ScrollToTop";
 import { GlobalLoader } from "@/components/GlobalLoader";
 import { Toaster } from "react-hot-toast";
 import { ThemeProvider } from "@/context/ThemeContext";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
+
+const manrope = Manrope({subsets:['latin'],variable:'--font-sans'});
 
 const inter = Inter({
   subsets: ["latin"],
@@ -90,30 +94,32 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="h-full">
+    <html lang="en" className={cn("h-full", "font-sans", manrope.variable)}>
       <head />
       <body
         className={`${inter.className} min-h-screen bg-gray-50 dark:bg-black flex flex-col overflow-x-hidden`}
       >
         <ThemeProvider>
-          <GlobalLoader />
-          <Header />
-          <main className="flex-grow pt-24">{children}</main>
-          <Footer />
-          <ScrollToTop />
-          <Toaster
-            position="bottom-right"
-            toastOptions={{
-              duration: 3000,
-              className: "text-sm font-medium",
-              style: {
-                background: "var(--toast-bg, #fff)",
-                color: "var(--toast-color, #000)",
-                boxShadow: "0 4px 12px rgba(0, 0, 0, 0.08)",
-                borderRadius: "0.5rem",
-              },
-            }}
-          />
+          <TooltipProvider>
+            <GlobalLoader />
+            <Header />
+            <main className="flex-grow pt-24">{children}</main>
+            <Footer />
+            <ScrollToTop />
+            <Toaster
+              position="bottom-right"
+              toastOptions={{
+                duration: 3000,
+                className: "text-sm font-medium",
+                style: {
+                  background: "var(--toast-bg, #fff)",
+                  color: "var(--toast-color, #000)",
+                  boxShadow: "0 4px 12px rgba(0, 0, 0, 0.08)",
+                  borderRadius: "0.5rem",
+                },
+              }}
+            />
+          </TooltipProvider>
         </ThemeProvider>
       </body>
     </html>

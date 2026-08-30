@@ -1,35 +1,40 @@
 'use client';
 
-import { Search } from 'lucide-react'
-import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { Search } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 
 export function SearchBar() {
-  const router = useRouter()
-  const [query, setQuery] = useState('')
+  const router = useRouter();
+  const [query, setQuery] = useState('');
 
   const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     if (query.trim()) {
-      router.push(`/search?q=${encodeURIComponent(query)}`)
+      router.push(`/search?q=${encodeURIComponent(query)}`);
     }
-  }
+  };
 
   return (
-    <form onSubmit={handleSearch} className="max-w-2xl mx-auto relative">
-      <input
+    <form onSubmit={handleSearch} className="max-w-2xl mx-auto relative flex items-center">
+      <Input
         type="text"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         placeholder="Search tools, practices, or resources..."
-        className="w-full px-6 py-4 rounded-full bg-white/10 dark:bg-black/20 border border-white/20 text-white placeholder-blue-100 dark:placeholder-blue-200 focus:outline-none focus:ring-2 focus:ring-white/50 dark:focus:ring-blue-400/50"
+        className="h-14 pl-6 pr-14 rounded-full bg-white/10 dark:bg-black/20 border-white/20 text-white placeholder:text-blue-100 dark:placeholder:text-blue-200 focus-visible:ring-white/50 dark:focus-visible:ring-blue-400/50 backdrop-blur-md text-base"
       />
-      <button 
+      <Button
         type="submit"
-        className="absolute right-3 top-1/2 -translate-y-1/2 p-2 hover:bg-white/10 dark:hover:bg-blue-400/10 rounded-full transition-colors"
+        variant="ghost"
+        size="icon"
+        className="absolute right-2 text-white hover:bg-white/20 hover:text-white rounded-full size-10"
+        aria-label="Search"
       >
-        <Search className="w-6 h-6 text-white" />
-      </button>
+        <Search className="w-5 h-5" />
+      </Button>
     </form>
-  )
-} 
+  );
+}

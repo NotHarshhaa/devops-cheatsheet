@@ -7,12 +7,16 @@ import {
   Clock, 
   BookOpen, 
   ArrowRight, 
-  TrendingUp,
-  Shield,
-  Building2,
-  Code
+  TrendingUp, 
+  Shield, 
+  Building2, 
+  Code 
 } from 'lucide-react';
 import { Cheatsheet } from '@/data/cheatsheets';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 
 type FilterType = 'popular' | 'latest' | 'getting-started' | 'trending' | 'enterprise' | 'security' | null;
 
@@ -20,11 +24,6 @@ interface FilterOption {
   id: FilterType;
   label: string;
   icon: JSX.Element;
-  bgColor: string;
-  darkBgColor: string;
-  activeColor: string;
-  textColor: string;
-  darkTextColor: string;
   description: string;
 }
 
@@ -32,67 +31,37 @@ const filterOptions: FilterOption[] = [
   {
     id: 'popular',
     label: 'Popular Tools',
-    icon: <Star className="w-5 h-5" />,
-    bgColor: 'bg-blue-50',
-    darkBgColor: 'dark:bg-blue-900/30',
-    activeColor: 'bg-blue-600',
-    textColor: 'text-blue-600',
-    darkTextColor: 'dark:text-blue-400',
+    icon: <Star className="w-4 h-4" />,
     description: 'Most widely used DevOps tools'
   },
   {
     id: 'latest',
     label: 'Latest Updates',
-    icon: <Clock className="w-5 h-5" />,
-    bgColor: 'bg-purple-50',
-    darkBgColor: 'dark:bg-purple-900/30',
-    activeColor: 'bg-purple-600',
-    textColor: 'text-purple-600',
-    darkTextColor: 'dark:text-purple-400',
+    icon: <Clock className="w-4 h-4" />,
     description: 'Recently updated tools'
   },
   {
     id: 'getting-started',
     label: 'Getting Started',
-    icon: <BookOpen className="w-5 h-5" />,
-    bgColor: 'bg-green-50',
-    darkBgColor: 'dark:bg-green-900/30',
-    activeColor: 'bg-green-600',
-    textColor: 'text-green-600',
-    darkTextColor: 'dark:text-green-400',
+    icon: <BookOpen className="w-4 h-4" />,
     description: 'Beginner-friendly tools'
   },
   {
     id: 'trending',
     label: 'Trending Now',
-    icon: <TrendingUp className="w-5 h-5" />,
-    bgColor: 'bg-orange-50',
-    darkBgColor: 'dark:bg-orange-900/30',
-    activeColor: 'bg-orange-600',
-    textColor: 'text-orange-600',
-    darkTextColor: 'dark:text-orange-400',
+    icon: <TrendingUp className="w-4 h-4" />,
     description: 'Trending DevOps tools'
   },
   {
     id: 'enterprise',
     label: 'Enterprise Ready',
-    icon: <Building2 className="w-5 h-5" />,
-    bgColor: 'bg-indigo-50',
-    darkBgColor: 'dark:bg-indigo-900/30',
-    activeColor: 'bg-indigo-600',
-    textColor: 'text-indigo-600',
-    darkTextColor: 'dark:text-indigo-400',
+    icon: <Building2 className="w-4 h-4" />,
     description: 'Enterprise-grade tools'
   },
   {
     id: 'security',
     label: 'Security Focus',
-    icon: <Shield className="w-5 h-5" />,
-    bgColor: 'bg-red-50',
-    darkBgColor: 'dark:bg-red-900/30',
-    activeColor: 'bg-red-600',
-    textColor: 'text-red-600',
-    darkTextColor: 'dark:text-red-400',
+    icon: <Shield className="w-4 h-4" />,
     description: 'Security-focused tools'
   }
 ];
@@ -153,126 +122,129 @@ export function HomeFilters() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      {/* Filter Buttons - Mobile Friendly */}
-      <div className="flex flex-col space-y-3 sm:flex-row sm:flex-wrap sm:space-y-0 sm:gap-3">
-        {filterOptions.map((filter) => (
-          <button
-            key={filter.id}
-            onClick={() => setActiveFilter(activeFilter === filter.id ? null : filter.id)}
-            className={`
-              flex items-center gap-2 px-4 py-3 sm:py-2 rounded-full
-              transition-all duration-200 ease-in-out
-              ${filter.bgColor} ${filter.darkBgColor} ${filter.textColor} ${filter.darkTextColor}
-              ${activeFilter === filter.id ? `${filter.activeColor} text-white` : ''}
-              text-sm font-medium
-              hover:opacity-90 active:scale-95
-              w-full sm:w-auto
-              justify-start
-            `}
-          >
-            <span className="flex items-center justify-center w-8 h-8 sm:w-5 sm:h-5">
+      {/* Filter Buttons */}
+      <div className="flex flex-wrap gap-2 sm:gap-3 items-center justify-start">
+        {filterOptions.map((filter) => {
+          const isActive = activeFilter === filter.id;
+          return (
+            <Button
+              key={filter.id}
+              variant={isActive ? 'default' : 'secondary'}
+              size="default"
+              onClick={() => setActiveFilter(isActive ? null : filter.id)}
+              className="gap-2 rounded-full font-medium transition-all"
+            >
               {filter.icon}
-            </span>
-            <span className="flex-1 sm:flex-initial">{filter.label}</span>
-          </button>
-        ))}
+              <span>{filter.label}</span>
+            </Button>
+          );
+        })}
       </div>
 
-      {/* Updated Filtered Results */}
+      {/* Filtered Results */}
       {activeFilter && (
         <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {isLoading ? (
-            // Loading skeletons
             Array(6)
               .fill(null)
               .map((_, i) => (
-                <div
-                  key={i}
-                  className="bg-gray-100 dark:bg-gray-800 animate-pulse h-24 rounded-lg"
-                />
+                <Card key={i} className="p-6">
+                  <div className="flex items-center gap-3 mb-4">
+                    <Skeleton className="w-10 h-10 rounded-xl" />
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-28" />
+                      <Skeleton className="h-3 w-16" />
+                    </div>
+                  </div>
+                  <Skeleton className="h-4 w-full mb-2" />
+                  <Skeleton className="h-4 w-3/4 mb-4" />
+                  <div className="flex justify-between items-center pt-4 border-t">
+                    <Skeleton className="h-4 w-20" />
+                    <Skeleton className="h-4 w-16" />
+                  </div>
+                </Card>
               ))
           ) : filteredTools.length > 0 ? (
             filteredTools.map((tool) => (
-              <div
+              <Card
                 key={tool.title}
-                className="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-6 hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-800"
+                className="group hover:shadow-md hover:border-primary/40 transition-all duration-300 flex flex-col justify-between"
               >
-                {/* Tool Header with Icon and Category */}
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-gray-50 dark:bg-gray-800 flex items-center justify-center text-gray-600 dark:text-gray-300">
-                      {tool.icon || <Code className="w-6 h-6" />}
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-                        {tool.title}
-                      </h3>
-                      <span className="text-sm text-gray-500 dark:text-gray-400">
-                        {tool.category}
-                      </span>
+                <CardContent className="p-6 flex flex-col flex-1">
+                  {/* Tool Header */}
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center text-base group-hover:scale-105 transition-transform">
+                        {tool.icon || <Code className="w-5 h-5" />}
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold text-foreground group-hover:text-primary transition-colors">
+                          {tool.title}
+                        </h3>
+                        <span className="text-xs text-muted-foreground">
+                          {tool.category}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Tool Description */}
-                <p className="text-gray-600 dark:text-gray-300 mb-4 line-clamp-2">
-                  {tool.description}
-                </p>
+                  {/* Tool Description */}
+                  <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+                    {tool.description}
+                  </p>
 
-                {/* Tool Metadata */}
-                <div className="space-y-3 mb-4">
-                  {/* Popularity and Difficulty */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Star className="w-4 h-4 text-yellow-500" />
-                      <span className="text-sm text-gray-600 dark:text-gray-300">
-                        Popularity: {tool.popularity || 'Medium'}
-                      </span>
-                    </div>
-                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      tool.difficulty === 'Beginner' ? 'bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-300' :
-                      tool.difficulty === 'Intermediate' ? 'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-800 dark:text-yellow-300' :
-                      'bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-300'
-                    }`}>
-                      {tool.difficulty}
-                    </span>
-                  </div>
-
-                  {/* Tags */}
-                  <div className="flex flex-wrap gap-2">
-                    {(tool.tags || []).map((tag, index) => (
-                      <span
-                        key={index}
-                        className="px-2 py-1 rounded-md text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300"
+                  {/* Tool Metadata */}
+                  <div className="space-y-3 mb-4 mt-auto">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <Star className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500" />
+                        <span>Popularity: {tool.popularity || 'Medium'}</span>
+                      </div>
+                      <Badge 
+                        variant={tool.difficulty === 'Beginner' ? 'secondary' : tool.difficulty === 'Advanced' ? 'destructive' : 'outline'}
+                        className="text-[10px]"
                       >
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                </div>
+                        {tool.difficulty}
+                      </Badge>
+                    </div>
 
-                {/* Tool Actions */}
-                <div className="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-700">
-                  <div className="flex items-center gap-2">
-                    <span className={`w-2 h-2 rounded-full ${
-                      tool.status === 'active' ? 'bg-green-500' :
-                      tool.status === 'maintenance' ? 'bg-yellow-500' :
-                      'bg-gray-500'
-                    }`}></span>
-                    <span className="text-sm text-gray-500 dark:text-gray-400">{tool.status || 'Active'}</span>
+                    {/* Tags */}
+                    <div className="flex flex-wrap gap-1.5">
+                      {(tool.tags || []).map((tag, index) => (
+                        <Badge
+                          key={index}
+                          variant="outline"
+                          className="text-[10px] font-normal"
+                        >
+                          {tag}
+                        </Badge>
+                      ))}
+                    </div>
                   </div>
-                  <Link
-                    href={`/${tool.category.toLowerCase()}/${tool.slug}`}
-                    className="inline-flex items-center gap-1 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium text-sm group"
-                  >
-                    Learn more
-                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                  </Link>
-                </div>
-              </div>
+
+                  {/* Tool Actions */}
+                  <div className="flex items-center justify-between pt-4 border-t border-border">
+                    <div className="flex items-center gap-2">
+                      <span className={`w-2 h-2 rounded-full ${
+                        tool.status === 'active' ? 'bg-green-500' :
+                        tool.status === 'maintenance' ? 'bg-yellow-500' :
+                        'bg-gray-500'
+                      }`}></span>
+                      <span className="text-xs text-muted-foreground">{tool.status || 'Active'}</span>
+                    </div>
+                    <Link
+                      href={`/${tool.category.toLowerCase()}/${tool.slug}`}
+                      className="inline-flex items-center gap-1 text-primary hover:underline font-medium text-xs group/link"
+                    >
+                      Learn more
+                      <ArrowRight className="w-3 h-3 group-hover/link:translate-x-0.5 transition-transform" />
+                    </Link>
+                  </div>
+                </CardContent>
+              </Card>
             ))
           ) : (
-            <div className="col-span-full text-center text-gray-600 dark:text-gray-400">
+            <div className="col-span-full text-center text-muted-foreground py-12">
               No tools found for this filter.
             </div>
           )}
@@ -280,4 +252,4 @@ export function HomeFilters() {
       )}
     </div>
   );
-} 
+}

@@ -5,6 +5,7 @@ import { FaMoon, FaSun } from "react-icons/fa";
 import { useTheme } from "@/context/ThemeContext";
 import { motion, AnimatePresence } from "framer-motion";
 import { useIsLowEndDevice } from "@/hooks/useOptimizedAnimation";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 
 export function ThemeToggleComponent() {
   const { toggleTheme, isDarkMode } = useTheme();
@@ -30,29 +31,38 @@ export function ThemeToggleComponent() {
       };
 
   return (
-    <motion.button
-      onClick={handleToggle}
-      className="relative p-2 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors shadow-sm touch-callout-none"
-      whileTap={isLowEnd ? undefined : { scale: 0.9 }}
-      whileHover={isLowEnd ? undefined : { scale: 1.05 }}
-      aria-label={`Switch to ${isDarkMode ? "light" : "dark"} mode`}
-    >
-      <AnimatePresence mode="wait" initial={false}>
-        {isDarkMode ? (
-          <motion.div
-            key="moon"
-            {...animationProps}
-            className="text-yellow-400"
-          >
-            <FaMoon className="w-4 h-4 sm:w-5 sm:h-5" />
-          </motion.div>
-        ) : (
-          <motion.div key="sun" {...animationProps} className="text-indigo-600">
-            <FaSun className="w-4 h-4 sm:w-5 sm:h-5" />
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.button>
+    <Tooltip>
+      <TooltipTrigger
+        render={
+          <motion.button
+            onClick={handleToggle}
+            className="relative p-2 rounded-full bg-secondary hover:bg-muted text-foreground transition-colors shadow-sm cursor-pointer"
+            whileTap={isLowEnd ? undefined : { scale: 0.9 }}
+            whileHover={isLowEnd ? undefined : { scale: 1.05 }}
+            aria-label={`Switch to ${isDarkMode ? "light" : "dark"} mode`}
+          />
+        }
+      >
+        <AnimatePresence mode="wait" initial={false}>
+          {isDarkMode ? (
+            <motion.div
+              key="moon"
+              {...animationProps}
+              className="text-yellow-400"
+            >
+              <FaMoon className="w-4 h-4 sm:w-5 sm:h-5" />
+            </motion.div>
+          ) : (
+            <motion.div key="sun" {...animationProps} className="text-primary">
+              <FaSun className="w-4 h-4 sm:w-5 sm:h-5" />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </TooltipTrigger>
+      <TooltipContent>
+        <p>Switch to {isDarkMode ? "light" : "dark"} mode</p>
+      </TooltipContent>
+    </Tooltip>
   );
 }
 

@@ -4,6 +4,9 @@ import Link from "next/link";
 import { categories, categoryData } from "@/utils/categoryData";
 import { ArrowRight, Sparkles } from "lucide-react";
 import { CategoryIcon } from "@/components/CategoryIcon";
+import { CategoryActions } from "@/components/CategoryActions";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Suspense } from "react";
 
 // Force static generation
@@ -137,71 +140,62 @@ export default function HomePage() {
                 <Link
                   key={category}
                   href={`/${category}/`}
-                  className="block"
+                  className="block group"
                 >
-                  <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 border border-gray-100 dark:border-gray-700 transition-all duration-300 h-full hover:shadow-lg relative group">
-                    {/* Top section with icon and badge */}
-                    <div className="flex items-start justify-between mb-6">
-                      {/* Icon */}
-                      <div className="w-12 h-12 rounded-xl bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center">
-                        <div className="w-6 h-6 text-blue-600 dark:text-blue-400">
-                          <CategoryIcon category={category} />
+                  <Card className="transition-all duration-300 h-full hover:shadow-lg hover:border-primary/40 relative overflow-hidden">
+                    <CardContent className="p-8 flex flex-col h-full">
+                      {/* Top section with icon and badge */}
+                      <div className="flex items-start justify-between mb-6">
+                        {/* Icon */}
+                        <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center group-hover:scale-105 transition-transform">
+                          <div className="w-6 h-6">
+                            <CategoryIcon category={category} />
+                          </div>
                         </div>
+                        
+                        {/* Tool Count Badge */}
+                        <Badge variant="secondary" className="font-medium text-xs">
+                          {data.toolCount}+ Tools
+                        </Badge>
                       </div>
-                      
-                      {/* Tool Count Badge */}
-                      <div className="px-3 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full text-sm font-medium">
-                        {data.toolCount}+ Tools
+
+                      {/* Category Title */}
+                      <h2 className="text-xl font-bold text-foreground mb-3 capitalize group-hover:text-primary transition-colors">
+                        {category.replace(/-/g, " ")}
+                      </h2>
+
+                      {/* Description */}
+                      <p className="text-muted-foreground mb-6 text-sm flex-1">
+                        {data.description}
+                      </p>
+
+                      {/* Metadata */}
+                      <div className="flex items-center gap-4 text-xs text-muted-foreground mb-6">
+                        <div className="flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                          <span>Updated recently</span>
+                        </div>
+                        <span>5 min read</span>
                       </div>
-                    </div>
 
-                    {/* Category Title */}
-                    <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-3 capitalize">
-                      {category.replace(/-/g, " ")}
-                    </h2>
-
-                    {/* Description */}
-                    <p className="text-gray-600 dark:text-gray-300 mb-6 text-sm">
-                      {data.description}
-                    </p>
-
-                    {/* Metadata */}
-                    <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400 mb-6">
-                      <div className="flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                        <span>Updated recently</span>
+                      {/* Action Buttons */}
+                      <div className="flex items-center justify-between pt-4 border-t border-border mt-auto">
+                        <span className="flex items-center gap-1.5 text-primary text-sm font-medium group-hover:underline">
+                          Explore tools
+                          <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                        </span>
+                        <CategoryActions category={category} />
                       </div>
-                      <span>5 min read</span>
-                    </div>
 
-                    {/* Action Buttons */}
-                    <div className="flex items-center gap-4">
-                      <button className="flex items-center gap-2 text-blue-600 dark:text-blue-400 font-medium hover:text-blue-700 dark:hover:text-blue-300 transition-colors">
-                        <span>Explore tools</span>
-                        <ArrowRight className="w-4 h-4" />
-                      </button>
-                      <div className="flex items-center gap-2 ml-auto">
-                        <button className="p-2 text-gray-400 hover:text-gray-500 dark:text-gray-500 dark:hover:text-gray-400">
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path>
-                          </svg>
-                        </button>
-                        <button className="p-2 text-gray-400 hover:text-gray-500 dark:text-gray-500 dark:hover:text-gray-400">
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path>
-                          </svg>
-                        </button>
+                      {/* Progress Bar */}
+                      <div className="absolute bottom-0 left-0 right-0 h-1">
+                        <div
+                          className="h-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                          style={{ width: `${Math.min(data.toolCount * 3, 100)}%` }}
+                        />
                       </div>
-                    </div>
-
-                    {/* Progress Bar */}
-                    <div className="absolute bottom-0 left-0 right-0 h-1">
-                      <div
-                        className="h-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                        style={{ width: `${Math.min(data.toolCount * 3, 100)}%` }}
-                      />
-                    </div>
-                  </div>
+                    </CardContent>
+                  </Card>
                 </Link>
               );
             })}

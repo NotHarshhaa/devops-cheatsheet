@@ -5,6 +5,9 @@ import { Copy, Share2, Bookmark, Clock, Star, ChevronRight, ChevronLeft, Activit
 import { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
 import { MarkdownContent } from '@/components/MarkdownContent';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Card } from '@/components/ui/card';
 
 // Define the CSS for dark mode and scrollbars
 const darkModeStyles = `
@@ -272,61 +275,61 @@ export function CheatsheetTemplate({
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
-              <span className="px-4 py-1.5 bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 rounded-full text-sm font-medium">
+              <Badge variant="secondary" className="px-3 py-1 text-sm font-medium">
                 {category}
-              </span>
-              <span className={`px-4 py-1.5 rounded-full text-sm font-medium ${
-                difficulty === 'Beginner' ? 'bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300' :
-                difficulty === 'Intermediate' ? 'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-700 dark:text-yellow-300' :
-                'bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300'
-              }`}>
+              </Badge>
+              <Badge
+                variant={
+                  difficulty === 'Beginner'
+                    ? 'secondary'
+                    : difficulty === 'Advanced'
+                    ? 'destructive'
+                    : 'outline'
+                }
+                className="px-3 py-1 text-sm font-medium"
+              >
                 {difficulty}
-              </span>
-              <span className="flex items-center gap-2 px-4 py-1.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-full text-sm font-medium">
-                <Clock className="w-4 h-4" />
+              </Badge>
+              <Badge variant="outline" className="gap-1.5 px-3 py-1 text-sm font-medium">
+                <Clock className="w-3.5 h-3.5" />
                 {readingTime}
-              </span>
-              <span className="flex items-center gap-2 px-4 py-1.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-full text-sm font-medium">
-                <Star className="w-4 h-4 text-yellow-500" />
+              </Badge>
+              <Badge variant="outline" className="gap-1.5 px-3 py-1 text-sm font-medium">
+                <Star className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500" />
                 {popularity}+ uses
-              </span>
+              </Badge>
             </div>
           </div>
         </motion.div>
 
         {/* Action Buttons */}
-        <div className="flex flex-wrap gap-4 mb-8">
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-xl shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30 transition-all"
-            onClick={() => handleCopyCode('example-code')}
+        <div className="flex flex-wrap gap-3 mb-8">
+          <Button
+            size="lg"
+            className="gap-2 shadow-md cursor-pointer"
+            onClick={() => handleCopyCode(filteredSections[0]?.content.find(c => c.type === 'code')?.value as string || title)}
           >
-            <Copy className="w-5 h-5" />
+            <Copy className="w-4 h-4" />
             Copy Code
-          </motion.button>
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            className="flex items-center gap-2 px-6 py-3 bg-white dark:bg-gray-800 text-gray-700 dark:text-white rounded-xl shadow-lg hover:shadow-xl transition-all border border-gray-200 dark:border-gray-700"
+          </Button>
+          <Button
+            size="lg"
+            variant="outline"
+            className="gap-2 shadow-sm cursor-pointer"
             onClick={handleShare}
           >
-            <Share2 className="w-5 h-5" />
+            <Share2 className="w-4 h-4" />
             Share
-          </motion.button>
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+          </Button>
+          <Button
+            size="lg"
+            variant={isSaved ? "secondary" : "outline"}
+            className="gap-2 shadow-sm cursor-pointer"
             onClick={handleSave}
-            className={`flex items-center gap-2 px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all ${
-              isSaved 
-                ? 'bg-blue-50 dark:bg-blue-900/30 border-2 border-blue-500 text-blue-600 dark:text-blue-400' 
-                : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-white'
-            }`}
           >
-            <Bookmark className={`w-5 h-5 ${isSaved ? 'fill-current' : ''}`} />
+            <Bookmark className={`w-4 h-4 ${isSaved ? 'fill-current text-primary' : ''}`} />
             {isSaved ? 'Saved' : 'Save'}
-          </motion.button>
+          </Button>
         </div>
 
         {/* Content */}
@@ -402,31 +405,28 @@ export function CheatsheetTemplate({
         </div>
 
         {/* Navigation Buttons */}
-        <div className="fixed bottom-8 right-8 flex gap-4">
+        <div className="fixed bottom-8 right-8 flex gap-3 z-40">
           <AnimatePresence>
             {currentSection > 0 && (
-              <motion.button
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20 }}
+              <Button
+                size="lg"
+                variant="outline"
                 onClick={() => handleNavigation('prev')}
-                className="flex items-center gap-2 px-6 py-3 bg-white dark:bg-gray-800 text-gray-700 dark:text-white rounded-xl shadow-lg hover:shadow-xl transition-all border border-gray-200 dark:border-gray-700"
+                className="gap-2 shadow-lg bg-background/95 backdrop-blur-sm cursor-pointer"
               >
-                <ChevronLeft className="w-5 h-5" />
+                <ChevronLeft className="w-4 h-4" />
                 Previous
-              </motion.button>
+              </Button>
             )}
             {currentSection < filteredSections.length - 1 && (
-              <motion.button
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
+              <Button
+                size="lg"
                 onClick={() => handleNavigation('next')}
-                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-xl shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30 transition-all"
+                className="gap-2 shadow-lg cursor-pointer"
               >
                 Next Section
-                <ChevronRight className="w-5 h-5" />
-              </motion.button>
+                <ChevronRight className="w-4 h-4" />
+              </Button>
             )}
           </AnimatePresence>
         </div>

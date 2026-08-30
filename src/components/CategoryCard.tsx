@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { Book, Users } from 'lucide-react';
 import { CategoryIcon } from './CategoryIcon';
 import { Category } from '@/utils/categoryData';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 
 interface CategoryCardProps {
   title: string;
@@ -16,32 +18,34 @@ export function CategoryCard({ title, description, toolCount, category }: Catego
   const href = `/${category}`;
 
   return (
-    <Link href={href} className="block">
-      <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 p-6 border border-gray-100 dark:border-gray-800">
-        <div className="flex items-start gap-4">
-          <div className="w-12 h-12 rounded-lg bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center text-2xl">
-            <CategoryIcon category={category} />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-start justify-between gap-2">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white truncate">
-                {title}
-              </h2>
-              <div className="flex items-center gap-1 px-2.5 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-full text-sm font-medium">
-                <Book className="w-4 h-4" />
-                {toolCount} Tools
+    <Link href={href} className="block group">
+      <Card className="transition-all duration-300 hover:shadow-md hover:border-primary/40">
+        <CardContent className="p-6">
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center text-2xl group-hover:scale-105 transition-transform">
+              <CategoryIcon category={category} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-start justify-between gap-2">
+                <h2 className="text-xl font-semibold text-foreground truncate group-hover:text-primary transition-colors">
+                  {title}
+                </h2>
+                <Badge variant="secondary" className="gap-1 font-medium shrink-0">
+                  <Book className="w-3.5 h-3.5" />
+                  {toolCount} Tools
+                </Badge>
+              </div>
+              <p className="mt-2 text-muted-foreground line-clamp-2 text-sm">{description}</p>
+              <div className="mt-4 flex items-center gap-4">
+                <div className="flex items-center gap-1.5 text-muted-foreground text-xs font-medium">
+                  <Users className="w-3.5 h-3.5" />
+                  <span>Active Community</span>
+                </div>
               </div>
             </div>
-            <p className="mt-1 text-gray-600 dark:text-gray-400 line-clamp-2">{description}</p>
-            <div className="mt-4 flex items-center gap-4">
-              <div className="flex items-center gap-1 text-gray-500 dark:text-gray-400">
-                <Users className="w-4 h-4" />
-                <span className="text-sm">Active Community</span>
-              </div>
-            </div>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </Link>
   );
-} 
+}
