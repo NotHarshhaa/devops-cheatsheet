@@ -1,265 +1,256 @@
-# AWS Cheatsheet
+# ☁️ AWS Cheatsheet
 
 ![text](https://imgur.com/DDbwilK.png)
 
-**1. Introduction:**
+**Amazon Web Services (AWS)** is the world's most comprehensive and broadly adopted cloud platform, offering over 200 fully featured services from data centers globally. It powers compute, storage, databases, networking, machine learning, and security for millions of customers.
 
-- **Amazon Web Services (AWS)** is a comprehensive cloud platform offering over 200 fully featured services from data centers globally. AWS provides cloud solutions for compute, storage, databases, machine learning, security, and more.
+---
 
-**2. Core AWS Services:**
+## **1. CLI Setup & Modern Authentication**
 
-- **Compute:**
-  - **EC2 (Elastic Compute Cloud):**
-    - Virtual servers for running applications.
-    - Instance types: General Purpose, Compute Optimized, Memory Optimized, etc.
-    - Key Concepts: AMI, Instance Types, Key Pairs, Security Groups, EBS Volumes.
-    - Example:
+### 🔹 AWS IAM Identity Center (AWS SSO)
 
-      ```bash
-      aws ec2 run-instances --image-id ami-12345678 --instance-type t2.micro --key-name MyKeyPair
-      ```
+The recommended standard for secure, temporary CLI credential generation:
 
-  - **Lambda:**
-    - Serverless computing to run code without provisioning or managing servers.
-    - Key Concepts: Functions, Event Sources, IAM Roles.
-    - Example:
+```bash
+# Configure SSO profile
+aws configure sso
 
-      ```bash
-      aws lambda create-function --function-name my-function --runtime python3.12 --role arn:aws:iam::123456789012:role/execution_role --handler my_function.handler --zip-file fileb://my-deployment-package.zip
-      ```
+# Log in using SSO session
+aws sso login --profile my-dev-profile
 
-  - **ECS/EKS (Elastic Container Service/Elastic Kubernetes Service):**
-    - ECS: Fully managed container orchestration service.
-    - EKS: Managed Kubernetes service for running Kubernetes on AWS.
-    - Key Concepts: Clusters, Tasks, Services, Fargate.
-    - Example:
+# Verify active caller identity
+aws sts get-caller-identity
+```
 
-      ```bash
-      aws ecs create-cluster --cluster-name my-cluster
-      ```
+---
 
-- **Storage:**
-  - **S3 (Simple Storage Service):**
-    - Scalable object storage service.
-    - Key Concepts: Buckets, Objects, Storage Classes, Lifecycle Policies.
-    - Example:
+## **2. Core Compute Services**
 
-      ```bash
-      aws s3 mb s3://my-bucket
-      aws s3 cp my-file.txt s3://my-bucket/
-      ```
+### 🔹 Amazon EC2 (Elastic Compute Cloud)
 
-  - **EBS (Elastic Block Store):**
-    - Block storage for use with EC2 instances.
-    - Key Concepts: Volumes, Snapshots, Volume Types (gp3, io1, st1, etc.).
-    - Example:
+Scalable virtual servers running across Intel, AMD, and AWS Graviton (ARM64) processors.
 
-      ```bash
-      aws ec2 create-volume --size 10 --region us-east-1 --availability-zone us-east-1a --volume-type gp3
-      ```
+```bash
+# Launch an EC2 Graviton instance (t4g.micro) with Launch Template
+aws ec2 run-instances \
+  --launch-template LaunchTemplateName=my-web-template,Version=1 \
+  --count 1
 
-  - **Glacier:**
-    - Long-term, secure, and durable storage for data archiving and backup.
-    - Key Concepts: Vaults, Archives, Retrieval Policies.
-    - Example:
+# List running instances with IDs and public IPs
+aws ec2 describe-instances \
+  --filters "Name=instance-state-name,Values=running" \
+  --query "Reservations[*].Instances[*].[InstanceId,InstanceType,PublicIpAddress,Tags[?Key=='Name'].Value|[0]]" \
+  --output table
 
-      ```bash
-      aws glacier create-vault --vault-name my-vault --account-id -
-      ```
+# Stop and terminate instances
+aws ec2 stop-instances --instance-ids i-0123456789abcdef0
+aws ec2 terminate-instances --instance-ids i-0123456789abcdef0
+```
 
-- **Database:**
-  - **RDS (Relational Database Service):**
-    - Managed relational database service supporting various engines (MySQL, PostgreSQL, Oracle, SQL Server, etc.).
-    - Key Concepts: DB Instances, Snapshots, Security Groups, Multi-AZ.
-    - Example:
+### 🔹 AWS Lambda (Serverless Compute)
 
-      ```bash
-      aws rds create-db-instance --db-instance-identifier mydbinstance --db-instance-class db.t2.micro --engine mysql --master-username admin --master-user-password password --allocated-storage 20
-      ```
+Execute code in response to events without provisioning or managing servers:
 
-  - **DynamoDB:**
-    - Managed NoSQL database service.
-    - Key Concepts: Tables, Items, Attributes, Primary Key, Global/Local Secondary Indexes.
-    - Example:
+```bash
+# Deploy a Lambda function using modern Python 3.12 runtime
+aws lambda create-function \
+  --function-name order-processor \
+  --runtime python3.12 \
+  --role arn:aws:iam::123456789012:role/lambda-execution-role \
+  --handler index.handler \
+  --zip-file fileb://function.zip
 
-      ```bash
-      aws dynamodb create-table --table-name MyTable --attribute-definitions AttributeName=Id,AttributeType=N --key-schema AttributeName=Id,KeyType=HASH --provisioned-throughput ReadCapacityUnits=5,WriteCapacityUnits=5
-      ```
+# Invoke a function synchronously and output payload
+aws lambda invoke \
+  --function-name order-processor \
+  --payload '{"orderId": "12345"}' \
+  --cli-binary-format raw-in-base64-out \
+  response.json
+```
 
-  - **Aurora:**
-    - MySQL and PostgreSQL-compatible relational database built for the cloud, providing high performance and availability.
-    - Key Concepts: Clusters, Replicas, Global Databases.
-    - Example:
+### 🔹 Amazon ECS & EKS (Containers)
 
-      ```bash
-      aws rds create-db-cluster --db-cluster-identifier my-cluster --engine aurora-mysql --master-username admin --master-user-password password
-      ```
+* **ECS (Elastic Container Service)**: Highly scalable container orchestration using AWS Fargate or EC2.
+* **EKS (Elastic Kubernetes Service)**: Managed certified Kubernetes with native VPC CNI and IAM integration.
 
-  - **Aurora Serverless v2 & DynamoDB On-Demand:**
-    - Aurora Serverless v2 scales compute capacity instantly in fine-grained increments (ACUs).
-    - DynamoDB On-Demand (`PAY_PER_REQUEST`) handles unpredictable workloads without capacity planning.
-    - Example:
+```bash
+# Update local kubeconfig for EKS cluster
+aws eks update-kubeconfig --name my-cluster --region us-east-1
+```
 
-      ```bash
-      aws dynamodb create-table --table-name ModernUsers --attribute-definitions AttributeName=UserId,AttributeType=S --key-schema AttributeName=UserId,KeyType=HASH --billing-mode PAY_PER_REQUEST
-      ```
+---
 
-**3. Networking:**
+## **3. Storage Services**
 
-- **VPC (Virtual Private Cloud):**
-  - Isolated network environment to launch AWS resources.
-  - Key Concepts: Subnets, Route Tables, Internet Gateways, NAT Gateways, Security Groups, NACLs.
-  - Example:
+### 🔹 Amazon S3 (Simple Storage Service)
 
-    ```bash
-    aws ec2 create-vpc --cidr-block 10.0.0.0/16
-    aws ec2 create-subnet --vpc-id vpc-12345678 --cidr-block 10.0.1.0/24
-    ```
+High-durability (99.999999999%) object storage:
 
-- **Route 53:**
-  - Scalable DNS and domain name registration service.
-  - Key Concepts: Hosted Zones, Record Sets, Health Checks, Traffic Policies.
-  - Example:
+```bash
+# Create an S3 bucket with Bucket Owner Enforced (disables ACLs)
+aws s3api create-bucket \
+  --bucket my-company-data-prod \
+  --region us-east-1
 
-    ```bash
-    aws route53 create-hosted-zone --name example.com --caller-reference unique-string
-    ```
+# Enable default AES-256 server-side encryption
+aws s3api put-bucket-encryption \
+  --bucket my-company-data-prod \
+  --server-side-encryption-configuration '{"Rules": [{"ApplyServerSideEncryptionByDefault": {"SSEAlgorithm": "AES256"}}]}'
 
-- **CloudFront:**
-  - Content delivery network (CDN) for delivering content globally with low latency.
-  - Key Concepts: Distributions, Origins, Behaviors, Edge Locations.
-  - Example:
+# Sync local directory to S3
+aws s3 sync ./dist s3://my-company-data-prod/dist --delete
+```
 
-    ```bash
-    aws cloudfront create-distribution --origin-domain-name mybucket.s3.amazonaws.com
-    ```
+### 🔹 Amazon EBS (Elastic Block Store)
 
-- **Elastic Load Balancing (ELB):**
-  - Distributes incoming traffic across multiple targets, such as EC2 instances.
-  - Key Concepts: Load Balancers (ALB, NLB, CLB), Target Groups, Listeners.
-  - Example:
+Persistent block storage for EC2 instances. Always prefer **gp3** volumes for independent baseline IOPS and throughput provisioning without size scaling.
 
-    ```bash
-    aws elbv2 create-load-balancer --name my-load-balancer --subnets subnet-12345678 subnet-87654321 --security-groups sg-12345678
-    ```
+```bash
+# Create a 50GB gp3 volume with 3000 IOPS and 125 MB/s throughput
+aws ec2 create-volume \
+  --size 50 \
+  --volume-type gp3 \
+  --iops 3000 \
+  --throughput 125 \
+  --availability-zone us-east-1a
+```
 
-**4. Security and Identity:**
+---
 
-- **IAM (Identity and Access Management):**
-  - Manages users, groups, roles, and permissions.
-  - Key Concepts: Users, Groups, Roles, Policies, MFA, Access Keys.
-  - Example:
+## **4. Databases: Relational, NoSQL & Serverless**
 
-    ```bash
-    aws iam create-user --user-name myuser
-    aws iam attach-user-policy --user-name myuser --policy-arn arn:aws:iam::aws:policy/AmazonS3FullAccess
-    ```
+### 🔹 Amazon RDS & Aurora Serverless v2
 
-- **KMS (Key Management Service):**
-  - Managed service for creating and controlling encryption keys.
-  - Key Concepts: CMKs (Customer Master Keys), Aliases, Grants, Key Policies.
-  - Example:
+* **Aurora Serverless v2**: Automatically scales compute in fine-grained increments (ACUs) within fraction-of-a-second intervals.
 
-    ```bash
-    aws kms create-key --description "My CMK"
-    ```
+```bash
+# Create Aurora PostgreSQL cluster with Aurora Serverless v2 scaling configuration
+aws rds create-db-cluster \
+  --db-cluster-identifier prod-cluster \
+  --engine aurora-postgresql \
+  --master-username pgadmin \
+  --master-user-password "MasterPassword123!" \
+  --serverless-v2-scaling-configuration MinCapacity=0.5,MaxCapacity=16
+```
 
-- **CloudTrail:**
-  - Tracks user activity and API usage across AWS accounts.
-  - Key Concepts: Trails, Logs, S3 Buckets, Insights.
-  - Example:
+### 🔹 Amazon DynamoDB (NoSQL)
 
-    ```bash
-    aws cloudtrail create-trail --name MyTrail --s3-bucket-name my-bucket
-    ```
+Managed key-value and document database with single-digit millisecond latency:
 
-  - **AWS Secrets Manager & SSM Parameter Store:**
-    - Securely store, rotate, and retrieve API keys, credentials, and configuration parameters.
-    - Example:
+```bash
+# Create DynamoDB table with On-Demand billing (PAY_PER_REQUEST)
+aws dynamodb create-table \
+  --table-name Users \
+  --attribute-definitions AttributeName=UserId,AttributeType=S \
+  --key-schema AttributeName=UserId,KeyType=HASH \
+  --billing-mode PAY_PER_REQUEST
+```
 
-      ```bash
-      aws secretsmanager create-secret --name "prod/app/db" --secret-string '{"username":"admin","password":"SecurePass123!"}'
-      aws secretsmanager get-secret-value --secret-id "prod/app/db" --query SecretString --output text
-      ```
+---
 
-**5. Management Tools:**
+## **5. Networking & Content Delivery**
 
-- **CloudFormation:**
-  - Infrastructure as Code service for modeling and setting up AWS resources.
-  - Key Concepts: Templates, Stacks, Resources, Outputs, Parameters.
-  - Example:
+### 🔹 Amazon VPC (Virtual Private Cloud)
 
-    ```bash
-    aws cloudformation create-stack --stack-name my-stack --template-body file://template.json
-    ```
+Logically isolated virtual network for AWS resources:
 
-- **CloudWatch:**
-  - Monitoring and observability service for AWS resources and applications.
-  - Key Concepts: Metrics, Alarms, Logs, Events, Dashboards.
-  - Example:
+```bash
+# Create VPC
+aws ec2 create-vpc --cidr-block 10.0.0.0/16
 
-    ```bash
-    aws cloudwatch put-metric-alarm --alarm-name my-alarm --metric-name CPUUtilization --namespace AWS/EC2 --statistic Average --period 300 --threshold 80 --comparison-operator GreaterThanOrEqualToThreshold --evaluation-periods 1 --alarm-actions arn:aws:sns:us-east-1:123456789012:my-topic
-    ```
+# Create public subnet
+aws ec2 create-subnet --vpc-id vpc-0123456789abcdef0 --cidr-block 10.0.1.0/24 --availability-zone us-east-1a
+```
 
-- **AWS Config:**
-  - Service for assessing, auditing, and evaluating the configurations of AWS resources.
-  - Key Concepts: Rules, Resources, Aggregators, Config Recorder.
-  - Example:
+### 🔹 Elastic Load Balancing (ALB / NLB)
 
-    ```bash
-    aws configservice put-configuration-recorder --configuration-recorder name=my-recorder,roleARN=arn:aws:iam::123456789012:role/my-role
-    ```
+* **Application Load Balancer (ALB)**: Layer 7 load balancer with path, host, and HTTP header routing.
+* **Network Load Balancer (NLB)**: Layer 4 ultra-high performance load balancer handling millions of requests per second.
 
-- **Trusted Advisor:**
-  - Provides real-time guidance to help you provision your resources following AWS best practices.
-  - Key Concepts: Checks, Recommendations.
-  - Example:
-    - Access via AWS Management Console.
+```bash
+# Create an internet-facing Application Load Balancer
+aws elbv2 create-load-balancer \
+  --name web-alb \
+  --subnets subnet-0123456789abcdef0 subnet-0987654321fedcba0 \
+  --security-groups sg-0123456789abcdef0 \
+  --scheme internet-facing \
+  --type application
+```
 
-**6. Advanced Topics:**
+---
 
-- **Cost Management:**
-  - Use AWS Cost Explorer, Budgets, and Cost & Usage Reports to monitor and optimize spending.
-  - Example:
+## **6. Security, Identity & Secrets**
 
-    ```bash
-    aws ce get-cost-and-usage --time-period Start=2024-08-01,End=2024-08-31 --granularity MONTHLY --metrics "BlendedCost"
-    ```
+### 🔹 IAM Roles & Least Privilege
 
-- **Auto Scaling:**
-  - Automatically adjust the capacity of your resources based on demand.
-  - Key Concepts: Auto Scaling Groups, Scaling Policies, Launch Configurations.
-  - Example:
+```bash
+# Attach managed policy to role
+aws iam attach-role-policy \
+  --role-name EC2-App-Role \
+  --policy-arn arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess
+```
 
-    ```bash
-    aws autoscaling create-auto-scaling-group --auto-scaling-group-name my-asg --launch-configuration-name my-lc --min-size 1 --max-size 10 --desired-capacity 2 --vpc-zone-identifier subnet-12345678
-    ```
+### 🔹 AWS Secrets Manager
 
-- **Serverless Architectures:**
-  - Use AWS Lambda, API Gateway, and DynamoDB to build serverless applications.
-  - Key Concepts: Functions, APIs, Tables, Events, Triggers.
-  - Example:
+Securely store and automatically rotate database credentials and API keys:
 
-    ```bash
-    aws apigateway create-rest-api --name 'My API'
-    ```
+```bash
+# Create secret
+aws secretsmanager create-secret \
+  --name "prod/app/db" \
+  --secret-string '{"username":"admin","password":"StrongPassword123!"}'
 
-**7. Best
+# Retrieve secret value
+aws secretsmanager get-secret-value \
+  --secret-id "prod/app/db" \
+  --query SecretString \
+  --output text
+```
 
- Practices:**
+---
 
-- **Security:**
-  - Use IAM Roles and Policies, enable MFA, encrypt data at rest and in transit, monitor with CloudTrail, and apply the Principle of Least Privilege.
-  
-- **Reliability:**
-  - Design for failure, use multiple Availability Zones (AZs), implement backups, and set up auto-scaling.
+## **7. Modern Auto Scaling with Launch Templates**
 
-- **Performance Efficiency:**
-  - Right-size instances, use appropriate storage classes, and leverage managed services.
+> [!IMPORTANT]
+> **Deprecation Notice**: Launch Configurations are deprecated by AWS. Always use **EC2 Launch Templates** for Auto Scaling Groups.
 
-- **Cost Optimization:**
-  - Use Reserved Instances (RIs), Spot Instances, and review billing regularly.
+```bash
+# Create Launch Template
+aws ec2 create-launch-template \
+  --launch-template-name web-template \
+  --version-description "v1-production" \
+  --launch-template-data '{
+    "ImageId": "ami-0c55b159cbfafe1f0",
+    "InstanceType": "t3.medium",
+    "SecurityGroupIds": ["sg-0123456789abcdef0"]
+  }'
 
-- **Operational Excellence:**
-  - Automate processes, monitor operations, and use infrastructure as code (IaC).
+# Create Auto Scaling Group using Launch Template
+aws autoscaling create-auto-scaling-group \
+  --auto-scaling-group-name web-asg \
+  --launch-template LaunchTemplateName=web-template,Version='$Latest' \
+  --min-size 2 \
+  --max-size 10 \
+  --desired-capacity 2 \
+  --vpc-zone-identifier "subnet-0123456789abcdef0,subnet-0987654321fedcba0"
+```
+
+---
+
+## **8. Best Practices (AWS Well-Architected Framework)**
+
+1. **Security**: Enforce MFA, disallow root account usage, use IAM Roles with temporary credentials, and enable AWS CloudTrail across all regions.
+2. **Reliability**: Architect for multi-AZ redundancy, use Auto Scaling groups, and back up data using AWS Backup or automated snapshots.
+3. **Performance Efficiency**: Adopt AWS Graviton instances for up to 40% better price-performance and use gp3 storage over gp2.
+4. **Cost Optimization**: Right-size compute, leverage Savings Plans / Reserved Instances for steady workloads, and configure S3 Lifecycle policies to transition cold data to Glacier Flexible/Deep Archive.
+5. **Operational Excellence**: Define everything in Infrastructure as Code (Terraform / AWS CDK) and automate observability via CloudWatch dashboards and composite alarms.
+
+---
+
+## 📚 **Learning Resources**
+
+* 🔗 [Official AWS Documentation](https://docs.aws.amazon.com/)
+* 🏛️ [AWS Well-Architected Framework](https://aws.amazon.com/architecture/well-architected/)
+* 💻 [AWS CLI Command Reference](https://awscli.amazonaws.com/v2/documentation/api/latest/index.html)
+* 🎓 [AWS Skill Builder Free Training](https://explore.skillbuilder.aws/)

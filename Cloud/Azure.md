@@ -1,277 +1,277 @@
-# Azure Cheatsheet
+# 🔷 Azure Cheatsheet
 
 ![text](https://imgur.com/f7RWwnx.png)
 
-**1. Introduction:**
+**Microsoft Azure** is an enterprise cloud computing platform offering hundreds of integrated services across compute, analytics, storage, networking, AI, and security.
 
-- **Microsoft Azure** is a cloud computing platform offering a wide range of services, including compute, analytics, storage, and networking.
+---
 
-**2. Core Azure Services:**
+## **1. CLI Setup & Authentication**
 
-- **Compute:**
-  - **Azure Virtual Machines:**
-    - Scalable virtual servers for running applications.
-    - Key Concepts: VM Sizes, Resource Groups, Virtual Networks, Disks.
-    - Example:
+```bash
+# Log in interactively via browser
+az login
 
-      ```bash
-      az vm create --resource-group myResourceGroup --name myVM --image UbuntuLTS --admin-username azureuser --generate-ssh-keys
-      ```
+# Set active subscription
+az account set --subscription "My-Subscription-ID"
 
-  - **Azure Container Apps (Serverless Containers):**
-    - Built on Kubernetes, KEDA, and Envoy. Ideal for microservices, background jobs, and event-driven APIs without managing Kubernetes clusters.
-    - Example:
+# List resource groups in table format
+az group list --output table
+```
 
-      ```bash
-      az containerapp env create --name my-env --resource-group myResourceGroup --location eastus
-      az containerapp create --name web-api --resource-group myResourceGroup --environment my-env \
-        --image mcr.microsoft.com/azuredocs/aci-helloworld:latest --target-port 80 --ingress external
-      ```
+---
 
-  - **Azure Functions:**
-    - Serverless compute service for running event-driven code.
-    - Key Concepts: Functions, Triggers, Bindings.
-    - Example:
+## **2. Core Compute Services**
 
-      ```bash
-      func init MyFunctionProj --dotnet
-      func new --name MyHttpTrigger --template "HTTP trigger" --authlevel "anonymous"
-      ```
+### 🔹 Azure Virtual Machines (VMs)
 
-  - **Azure Kubernetes Service (AKS):**
-    - Managed Kubernetes service for running containerized applications.
-    - Key Concepts: Clusters, Nodes, Pods, Services.
-    - Example:
+```bash
+# Create a Resource Group
+az group create --name rg-production --location eastus
 
-      ```bash
-      az aks create --resource-group myResourceGroup --name myAKSCluster --node-count 1 --enable-addons monitoring --generate-ssh-keys
-      ```
+# Deploy an Ubuntu Linux VM with SSH key generation
+az vm create \
+  --resource-group rg-production \
+  --name web-vm-01 \
+  --image Ubuntu2204 \
+  --size Standard_B2s \
+  --admin-username azureuser \
+  --generate-ssh-keys
 
-- **Storage:**
-  - **Azure Blob Storage:**
-    - Object storage solution for the cloud.
-    - Key Concepts: Storage Accounts, Containers, Blobs, Access Tiers.
-    - Example:
+# Open HTTP port in Network Security Group (NSG)
+az vm open-port --resource-group rg-production --name web-vm-01 --port 80
+```
 
-      ```bash
-      az storage account create --name mystorageaccount --resource-group myResourceGroup --location eastus --sku Standard_LRS
-      az storage container create --name mycontainer --account-name mystorageaccount
-      az storage blob upload --container-name mycontainer --file myfile.txt --name myfile.txt --account-name mystorageaccount
-      ```
+### 🔹 Azure Container Apps (Serverless Containers)
 
-  - **Azure Files:**
-    - Managed file shares in the cloud using the SMB protocol.
-    - Key Concepts: File Shares, Directories, Snapshots.
-    - Example:
+Built on Kubernetes, KEDA, and Envoy. Run microservices and background jobs without managing Kubernetes clusters:
 
-      ```bash
-      az storage share create --name myshare --account-name mystorageaccount
-      ```
+```bash
+# Create container apps managed environment
+az containerapp env create \
+  --name my-env \
+  --resource-group rg-production \
+  --location eastus
 
-  - **Azure Disk Storage:**
-    - High-performance disk storage for VMs.
-    - Key Concepts: Managed Disks, Disk Types (Standard HDD, Standard SSD, Premium SSD).
-    - Example:
+# Deploy a serverless container with external HTTP ingress
+az containerapp create \
+  --name api-service \
+  --resource-group rg-production \
+  --environment my-env \
+  --image mcr.microsoft.com/azuredocs/aci-helloworld:latest \
+  --target-port 80 \
+  --ingress external \
+  --min-replicas 1 \
+  --max-replicas 10
+```
 
-      ```bash
-      az disk create --resource-group myResourceGroup --name myDisk --size-gb 128 --sku Premium_LRS
-      ```
+### 🔹 Azure Kubernetes Service (AKS)
 
-- **Database:**
-  - **Azure SQL Database:**
-    - Managed relational database service.
-    - Key Concepts: Databases, Servers, Elastic Pools, DTUs/vCores.
-    - Example:
+```bash
+# Create an AKS cluster with managed system identity and Azure CNI
+az aks create \
+  --resource-group rg-production \
+  --name prod-aks-cluster \
+  --node-count 3 \
+  --node-vm-size Standard_D2s_v5 \
+  --enable-managed-identity \
+  --network-plugin azure \
+  --generate-ssh-keys
 
-      ```bash
-      az sql db create --resource-group myResourceGroup --server myServer --name myDatabase --service-objective S0
-      ```
+# Get credentials for kubectl
+az aks get-credentials --resource-group rg-production --name prod-aks-cluster
+```
 
-  - **Cosmos DB:**
-    - Globally distributed, multi-model database service.
-    - Key Concepts: Databases, Containers, Partition Keys, Consistency Levels.
-    - Example:
+---
 
-      ```bash
-      az cosmosdb create --name myCosmosDBAccount --resource-group myResourceGroup --kind MongoDB --locations regionName=eastus
-      ```
+## **3. Storage Services**
 
-  - **Azure Database for MySQL/PostgreSQL (Flexible Server):**
-    - Fully managed Flexible Server architecture provides zone redundancy, burstable compute, and fine-grained maintenance windows.
-    - Example:
+### 🔹 Azure Blob Storage
 
-      ```bash
-      az postgres flexible-server create --resource-group myResourceGroup --name pg-prod-flex --location eastus --tier GeneralPurpose --sku-name Standard_D2ds_v4
-      az mysql flexible-server create --resource-group myResourceGroup --name mysql-prod-flex --location eastus --tier Burstable --sku-name Standard_B2s
-      ```
+Scalable object storage for unstructured data:
 
-  - **Azure Database for MySQL/PostgreSQL (Legacy Single Server):**
-    - Managed MySQL/PostgreSQL service.
-    - Key Concepts: Servers, Databases, Backup Retention, Performance Tiers.
-    - Example:
+```bash
+# Create a storage account with TLS 1.2 minimum
+az storage account create \
+  --name mystorageacct2026 \
+  --resource-group rg-production \
+  --location eastus \
+  --sku Standard_LRS \
+  --min-tls-version TLS1_2
 
-      ```bash
-      az mysql server create --resource-group myResourceGroup --name mydemoserver --location eastus --admin-user myadmin --admin-password mypassword --sku-name GP_Gen5_2
-      ```
+# Create container
+az storage container create \
+  --name app-backups \
+  --account-name mystorageacct2026 \
+  --auth-mode login
 
-**3. Networking:**
+# Upload a blob using Entra ID authentication
+az storage blob upload \
+  --account-name mystorageacct2026 \
+  --container-name app-backups \
+  --name backup.tar.gz \
+  --file /tmp/backup.tar.gz \
+  --auth-mode login
+```
 
-- **Azure Virtual Network (VNet):**
-  - Provides an isolated network environment in Azure.
-  - Key Concepts: Subnets, Network Security Groups, VPN Gateway, Peering.
-  - Example:
+---
 
-    ```bash
-    az network vnet create --resource-group myResourceGroup --name myVnet --address-prefix 10.0.0.0/16 --subnet-name mySubnet --subnet-prefix 10.0.1.0/24
-    ```
+## **4. Managed Databases**
 
-- **Azure Load Balancer:**
-  - Distributes inbound traffic across multiple VMs.
-  - Key Concepts: Frontend IP, Backend Pools, Load Balancing Rules.
-  - Example:
+### 🔹 Azure Database for PostgreSQL / MySQL (Flexible Server)
 
-    ```bash
-    az network lb create --resource-group myResourceGroup --name myLoadBalancer --frontend-ip-name myFrontEnd --backend-pool-name myBackEndPool
-    ```
+> [!IMPORTANT]
+> **Architecture Note**: Azure Single Server is retired. Always deploy **Flexible Server** for zone-redundant high availability, burstable compute, and custom maintenance windows.
 
-- **Azure Application Gateway:**
-  - Web traffic load balancer for managing HTTP and HTTPS traffic.
-  - Key Concepts: Listener, Rules, HTTP Settings, SSL Certificates.
-  - Example:
+```bash
+# Create PostgreSQL Flexible Server
+az postgres flexible-server create \
+  --resource-group rg-production \
+  --name pg-prod-flex \
+  --location eastus \
+  --tier GeneralPurpose \
+  --sku-name Standard_D2ds_v4 \
+  --storage-size 128 \
+  --version 16 \
+  --admin-user dbadmin \
+  --admin-password "StrongP@ssw0rd123!"
+```
 
-    ```bash
-    az network application-gateway create --name myAppGateway --resource-group myResourceGroup --capacity 2 --sku Standard_v2 --vnet-name myVnet --subnet mySubnet
-    ```
+### 🔹 Azure Cosmos DB (Multi-Model Globally Distributed DB)
 
-- **Azure DNS:**
-  - Hosts your DNS domains and provides name resolution using Microsoft Azure infrastructure.
-  - Key Concepts: DNS Zones, Records, NS Records, A Records.
-  - Example:
+```bash
+# Create Cosmos DB account with serverless capacity mode
+az cosmosdb create \
+  --name cosmos-app-prod \
+  --resource-group rg-production \
+  --capabilities EnableServerless \
+  --default-consistency-level Session \
+  --locations regionName=eastus
+```
 
-    ```bash
-    az network dns zone create --resource-group myResourceGroup --name mydomain.com
-    az network dns record-set a add-record --resource-group myResourceGroup --zone-name mydomain.com --record-set-name www --ipv4-address 10.0.0.4
-    ```
+---
 
-**4. Security and Identity:**
+## **5. Networking: VNet, Peering & Load Balancing**
 
-- **Azure Active Directory (AAD):**
-  - Identity and access management service.
-  - Key Concepts: Users, Groups, Roles, Managed Identities, Conditional Access.
-  - Example:
+```bash
+# Create Virtual Network with custom subnets
+az network vnet create \
+  --resource-group rg-production \
+  --name prod-vnet \
+  --address-prefix 10.0.0.0/16 \
+  --subnet-name web-subnet \
+  --subnet-prefix 10.0.1.0/24
 
-    ```bash
-    az ad user create --display-name "My User" --user-principal-name myuser@mydomain.com --password "P@ssw0rd!"
-    ```
+# Create Network Security Group (NSG) and allow HTTPS
+az network nsg create --resource-group rg-production --name web-nsg
+az network nsg rule create \
+  --resource-group rg-production \
+  --nsg-name web-nsg \
+  --name AllowHTTPS \
+  --priority 100 \
+  --direction Inbound \
+  --access Allow \
+  --protocol Tcp \
+  --destination-port-ranges 443
+```
 
-- **Azure Key Vault:**
-  - Securely store and access secrets, keys, and certificates.
-  - Key Concepts: Vaults, Secrets, Keys, Certificates, Access Policies.
-  - Example:
+---
 
-    ```bash
-    az keyvault create --name myKeyVault --resource-group myResourceGroup --location eastus
-    az keyvault secret set --vault-name myKeyVault --name MySecret --value "MySecretValue"
-    ```
+## **6. Identity, Security & Governance**
 
-- **Azure Security Center:**
-  - Unified infrastructure security management system.
-  - Key Concepts: Security Posture, Recommendations, Secure Score, Just-in-Time VM Access.
-  - Example:
+### 🔹 Microsoft Entra ID (Formerly Azure Active Directory / AAD)
 
-    ```bash
-    az security assessment create --name myAssessment --status "Healthy" --description "This is a custom assessment."
-    ```
+Microsoft's enterprise cloud identity and access management service.
 
-- **Azure Policy:**
-  - Enforce organizational standards and assess compliance at-scale.
-  - Key Concepts: Definitions, Initiatives, Assignments.
-  - Example:
+```bash
+# Create a new user
+az ad user create \
+  --display-name "Jane DevOps" \
+  --user-principal-name "jane@mydomain.onmicrosoft.com" \
+  --password "SecureP@ssw0rd!"
 
-    ```bash
-    az policy assignment create --name myPolicyAssignment --scope /subscriptions/{subscription-id}/resourceGroups/{resource-group-name} --policy /subscriptions/{subscription-id}/providers/Microsoft.Authorization/policyDefinitions/{policyDefinitionName}
-    ```
+# Assign Contributor role to a managed identity on a resource group
+az role assignment create \
+  --assignee "<MANAGED_IDENTITY_PRINCIPAL_ID>" \
+  --role "Contributor" \
+  --resource-group rg-production
+```
 
-**5. Management Tools:**
+### 🔹 Managed Identities (Zero Credential Leaks)
 
-- **Azure Resource Manager (ARM):**
-  - Azure’s deployment and management service.
-  - Key Concepts: ARM Templates, Resources, Resource Groups, Deployments.
-  - Example:
+Enable a System-Assigned Managed Identity on a VM so it can access Azure Key Vault without hardcoded credentials:
 
-    ```bash
-    az group create --name myResourceGroup --location eastus
-    az deployment group create --resource-group myResourceGroup --template-file azuredeploy.json
-    ```
+```bash
+# Enable system-assigned identity on VM
+az vm identity assign --resource-group rg-production --name web-vm-01
 
-- **Azure Monitor:**
-  - Comprehensive monitoring service for collecting, analyzing, and acting on telemetry data.
-  - Key Concepts: Metrics, Logs, Alerts, Application Insights, Log Analytics.
-  - Example:
+# Grant VM identity access to read Key Vault secrets
+az keyvault set-policy \
+  --name prod-keyvault \
+  --object-id $(az vm show -g rg-production -n web-vm-01 --query identity.principalId -o tsv) \
+  --secret-permissions get list
+```
 
-    ```bash
-    az monitor alert create --name myAlert --resource-group myResourceGroup --target /subscriptions/{subscription-id}/resourceGroups/{resource-group-name}/providers/Microsoft.Compute/virtualMachines/{vm-name} --condition "avg Percentage CPU > 75"
-    ```
+### 🔹 Microsoft Defender for Cloud (Formerly Azure Security Center)
 
-- **Azure Automation:**
-  - Automate frequent, time-consuming, and error-prone cloud management tasks.
-  - Key Concepts: Runbooks, Desired State Configuration (DSC), Hybrid Worker Groups.
-  - Example:
+Continuously assesses cloud resource posture and generates Secure Score recommendations.
 
-    ```bash
-    az automation account create --name myAutomationAccount --resource-group myResourceGroup --location eastus
-    az automation runbook create --name myRunbook --automation-account-name myAutomationAccount --resource-group myResourceGroup --type PowerShellWorkflow
-    ```
+---
 
-- **Azure Advisor:**
-  - Personalized cloud consultant that helps you follow best practices to optimize your Azure deployments.
-  - Key Concepts: Recommendations, Cost, Performance, Security, High Availability.
-  - Example:
-    - Access via Azure Portal.
+## **7. Infrastructure as Code: Bicep & ARM**
 
-**6. Advanced Topics:**
+Azure Bicep is the modern, clean domain-specific language replacing verbose ARM JSON templates.
 
-- **Cost Management:**
-  - Monitor and optimize your Azure costs using Cost Management + Billing.
-  - Example:
+File: `main.bicep`:
 
-    ```bash
-    az consumption budget create --amount 1000 --time-grain Monthly --start-date 2024-08-
+```bicep
+param location string = resourceGroup().location
+param storageAccountName string = 'stg${uniqueString(resourceGroup().id)}'
 
-01 --end-date 2024-08-31 --name myBudget --resource-group myResourceGroup
-    ```
+resource storageAccount 'Microsoft.Storage/storageAccounts@2023-01-01' = {
+  name: storageAccountName
+  location: location
+  sku: {
+    name: 'Standard_LRS'
+  }
+  kind: 'StorageV2'
+  properties: {
+    minimumTlsVersion: 'TLS1_2'
+    supportsHttpsTrafficOnly: true
+  }
+}
 
-- **Auto Scaling:**
-  - Automatically adjust the number of VM instances based on demand.
-  - Key Concepts: Scale Sets, Scaling Rules, Metrics.
-  - Example:
+output storageId string = storageAccount.id
+```
 
-    ```bash
-    az vmss create --resource-group myResourceGroup --name myScaleSet --image UbuntuLTS --upgrade-policy-mode automatic --admin-username azureuser --generate-ssh-keys
-    ```
+Deploy Bicep file:
 
-- **Serverless Architectures:**
-  - Utilize Azure Functions, Logic Apps, and Event Grid for serverless solutions.
-  - Key Concepts: Triggers, Bindings, Workflows, Event Subscriptions.
-  - Example:
+```bash
+az deployment group create \
+  --resource-group rg-production \
+  --template-file main.bicep
+```
 
-    ```bash
-    az eventgrid event-subscription create --name myEventSubscription --source-resource-id /subscriptions/{subscription-id}/resourceGroups/{resource-group}/providers/Microsoft.Storage/storageAccounts/{storage-account-name} --endpoint https://myfunction.azurewebsites.net/runtime/webhooks/eventgrid?functionName=myfunction
-    ```
+---
 
-**7. Best Practices:**
+## **8. Monitoring & Cost Budgets**
 
-- **Security:**
-  - Use Azure Security Center, encrypt data, apply RBAC, monitor with Azure Monitor, and implement secure coding practices.
-  
-- **Reliability:**
-  - Use Availability Sets, Availability Zones, configure backups, and utilize disaster recovery services.
+```bash
+# Create a monthly spending budget with email notifications
+az consumption budget create \
+  --name MonthlyDevOpsBudget \
+  --resource-group rg-production \
+  --amount 1000 \
+  --time-grain Monthly \
+  --start-date 2026-01-01 \
+  --end-date 2026-12-31
+```
 
-- **Performance Efficiency:**
-  - Choose appropriate VM sizes, use caching services, and optimize databases.
+---
 
-- **Cost Optimization:**
-  - Use Reserved Instances (RIs), monitor spend, and optimize resources.
+## 📚 **Learning Resources**
 
-- **Operational Excellence:**
-  - Automate deployments with ARM, monitor operations, and use infrastructure as code (IaC).
+* 🔗 [Official Microsoft Azure Documentation](https://learn.microsoft.com/azure/)
+* 📦 [Azure Architecture Center](https://learn.microsoft.com/azure/architecture/)
+* 💻 [Azure CLI Command Reference](https://learn.microsoft.com/cli/azure/)
+* 🔷 [Azure Bicep Documentation](https://learn.microsoft.com/azure/azure-resource-manager/bicep/)

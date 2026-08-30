@@ -1,407 +1,87 @@
-# Kubernetes on AWS Cheatsheet
+# ☸️ Kubernetes on AWS (Amazon EKS) Cheatsheet
 
 ![text](https://imgur.com/lWOk4cE.png)
 
-## 1. Introduction to Kubernetes on AWS
-
-### What is Kubernetes?
-
-- **Kubernetes** is an open-source platform for automating containerized application deployment, scaling, and management.
-
-### Kubernetes on AWS
-
-- AWS offers managed Kubernetes services through **Amazon EKS** (Elastic Kubernetes Service), which simplifies the process of running Kubernetes clusters on AWS infrastructure.
+**Amazon Elastic Kubernetes Service (Amazon EKS)** is a managed certified Kubernetes service running across multiple AWS Availability Zones. It automates control plane provisioning, scaling, patching, and natively integrates with AWS VPC networking, IAM security, and Elastic Load Balancing.
 
 ---
 
-## 2. Setting Up Kubernetes on AWS
+## **1. EKS Cluster Creation & Setup**
 
-### Amazon EKS Overview
+### 🔹 Creating an EKS Cluster with AWS CLI
 
-- **Amazon EKS** is a managed service that simplifies running Kubernetes on AWS by handling the control plane and providing integration with AWS services.
+```bash
+# Create IAM role for EKS control plane
+aws iam create-role \
+  --role-name EKS-Cluster-Role \
+  --assume-role-policy-document file://cluster-trust-policy.json
 
-### Creating an EKS Cluster
+aws iam attach-role-policy \
+  --role-name EKS-Cluster-Role \
+  --policy-arn arn:aws:iam::aws:policy/AmazonEKSClusterPolicy
 
-- **Using AWS Management Console**:
-  1. Go to the Amazon EKS console.
-  2. Click **Create cluster**.
-  3. Follow the wizard to configure cluster settings, including VPC, subnets, and IAM roles.
+# Create EKS cluster
+aws eks create-cluster \
+  --name prod-cluster \
+  --role-arn arn:aws:iam::123456789012:role/EKS-Cluster-Role \
+  --resources-vpc-config subnetIds=subnet-0123456789abcdef0,subnet-0987654321fedcba0 \
+  --kubernetes-version 1.30
+```
 
-- **Using AWS CLI**:
+### 🔹 Updating Local `kubeconfig`
 
-  ```bash
-  aws eks create-cluster --name my-cluster --role-arn arn:aws:iam::123456789012:role/EKS-Cluster-Role --resources-vpc-config subnetIds=subnet-0bb1c79de4EXAMPLE,subnet-0bb1c79de4EXAMPLE
-  ```
-
-### Configuring kubectl
-
-- **Update kubeconfig**:
-
-  ```bash
-  aws eks update-kubeconfig --name my-cluster
-  ```
-
----
-
-## 3. EKS Cluster Configuration
-
-### Node Groups
-
-- **Create Node Group Using Console**:
-  1. Go to the Amazon EKS console.
-  2. Select your cluster.
-  3. Navigate to the **Compute** tab and click **Add Node Group**.
-  4. Configure settings such as instance types, scaling options, and IAM roles.
-
-- **Create Node Group Using AWS CLI**:
-
-  ```bash
-  aws eks create-nodegroup --cluster-name my-cluster --nodegroup-name my-node-group --scaling-config minSize=1,maxSize=3,desiredSize=2 --disk-size 20 --subnets subnet-0bb1c79de4EXAMPLE,subnet-0bb1c79de4EXAMPLE --instance-types t3.medium --node-role arn:aws:iam::123456789012:role/EKS-Node-Role
-  ```
-
-### IAM Roles and Policies
-
-- **Create IAM Roles**:
-  - **EKS Cluster Role**: Grants EKS permissions to interact with AWS services.
-  - **Node Instance Role**: Grants permissions for the worker nodes.
-
-- **Attach Policies**:
-  - **AmazonEKSClusterPolicy**
-  - **AmazonEKSWorkerNodePolicy**
-  - **AmazonEC2ContainerRegistryReadOnly**
+```bash
+aws eks update-kubeconfig --name prod-cluster --region us-east-1
+kubectl get nodes
+```
 
 ---
 
-### Modern Cluster Access: EKS Access Entries
+## **2. Modern Cluster Authentication: EKS Access Entries**
 
 > [!IMPORTANT]
-> AWS EKS has deprecated managing access through the `aws-auth` ConfigMap. Always use **EKS Access Entries** for declarative, IAM-managed access.
+> **Deprecation Notice**: AWS EKS has officially deprecated managing cluster permissions via the `aws-auth` ConfigMap. Always use **EKS Access Entries** for declarative, IAM-managed access.
 
 ```bash
-# Enable Access Entries authentication mode
-aws eks update-cluster-config --name my-cluster --access-config authenticationMode=API_AND_CONFIG_MAP
+# 1. Enable Access Entries authentication mode on the cluster
+aws eks update-cluster-config \
+  --name prod-cluster \
+  --access-config authenticationMode=API_AND_CONFIG_MAP
 
-# Grant an IAM Role cluster admin access
-aws eks create-access-entry --cluster-name my-cluster --principal-arn arn:aws:iam::123456789012:role/DevOpsAdmin --type STANDARD
-aws eks associate-access-policy --cluster-name my-cluster --principal-arn arn:aws:iam::123456789012:role/DevOpsAdmin \
-  --policy-arn arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy --access-scope type=cluster
+# 2. Grant an IAM Role cluster administrator access
+aws eks create-access-entry \
+  --cluster-name prod-cluster \
+  --principal-arn arn:aws:iam::123456789012:role/DevOpsAdmin \
+  --type STANDARD
+
+aws eks associate-access-policy \
+  --cluster-name prod-cluster \
+  --principal-arn arn:aws:iam::123456789012:role/DevOpsAdmin \
+  --policy-arn arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy \
+  --access-scope type=cluster
 ```
 
-## 4. Networking
-
-### VPC and Subnet Configuration
-
-- **Create VPC**:
-
-  ```bash
-  aws ec2 create-vpc --cidr-block 10.0.0.0/16
-  ```
-
-- **Create Subnets**:
-
-  ```bash
-  aws ec2 create-subnet --vpc-id vpc-0bb1c79de4EXAMPLE --cidr-block 10.0.1.0/24 --availability-zone us-west-2a
-  ```
-
-- **Configure Security Groups**:
-  - Allow inbound traffic on port 443 (Kubernetes API server).
-  - Allow outbound traffic for node communication.
-
-### Cluster Networking
-
-- **Use Amazon VPC CNI Plugin**:
-  - Ensures that Kubernetes pods get IP addresses from the VPC network.
-
-  ```bash
-  kubectl apply -f https://raw.githubusercontent.com/aws/amazon-vpc-cni-k8s/master/config/v1.12/aws-k8s-cni.yaml
-  ```
-
 ---
 
-## 5. Deploying Applications
+## **3. Node Provisioning: Managed Node Groups & Karpenter**
 
-### Deploying with kubectl
-
-- **Create a Deployment**:
-
-  ```yaml
-  apiVersion: apps/v1
-  kind: Deployment
-  metadata:
-    name: my-deployment
-  spec:
-    replicas: 2
-    selector:
-      matchLabels:
-        app: my-app
-    template:
-      metadata:
-        labels:
-          app: my-app
-      spec:
-        containers:
-        - name: my-container
-          image: my-image:latest
-          ports:
-          - containerPort: 80
-  ```
-
-- **Apply the Deployment**:
-
-  ```bash
-  kubectl apply -f deployment.yaml
-  ```
-
-### Managing Services
-
-- **Create a Service**:
-
-  ```yaml
-  apiVersion: v1
-  kind: Service
-  metadata:
-    name: my-service
-  spec:
-    selector:
-      app: my-app
-    ports:
-    - protocol: TCP
-      port: 80
-      targetPort: 80
-    type: LoadBalancer
-  ```
-
-- **Apply the Service**:
-
-  ```bash
-  kubectl apply -f service.yaml
-  ```
-
-### Ingress Controllers
-
-- **Install NGINX Ingress Controller**:
-
-  ```bash
-  kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/aws/deploy.yaml
-  ```
-
-- **Create an Ingress Resource**:
-
-  ```yaml
-  apiVersion: networking.k8s.io/v1
-  kind: Ingress
-  metadata:
-    name: my-ingress
-  spec:
-    rules:
-    - host: myapp.example.com
-      http:
-        paths:
-        - path: /
-          pathType: Prefix
-          backend:
-            service:
-              name: my-service
-              port:
-                number: 80
-  ```
-
----
-
-## 6. Storage
-
-### EBS Volumes
-
-- **Create and Attach an EBS Volume**:
-  - **Create Volume**:
-
-    ```bash
-    aws ec2 create-volume --size 10 --availability-zone us-west-2a --volume-type gp3
-    ```
-
-  - **Attach Volume**:
-
-    ```bash
-    aws ec2 attach-volume --volume-id vol-0bb1c79de4EXAMPLE --instance-id i-0bb1c79de4EXAMPLE --device /dev/xvdf
-    ```
-
-### Persistent Volumes and Claims
-
-- **Create a Persistent Volume**:
-
-  ```yaml
-  apiVersion: v1
-  kind: PersistentVolume
-  metadata:
-    name: my-pv
-  spec:
-    capacity:
-      storage: 10Gi
-    accessModes:
-      - ReadWriteOnce
-    hostPath:
-      path: /mnt/data
-  ```
-
-- **Create a Persistent Volume Claim**:
-
-  ```yaml
-  apiVersion: v1
-  kind: PersistentVolumeClaim
-  metadata:
-    name: my-pvc
-  spec:
-    accessModes:
-      - ReadWriteOnce
-    resources:
-      requests:
-        storage: 10Gi
-  ```
-
----
-
-## 7. Monitoring and Logging
-
-### CloudWatch Integration
-
-- **Install CloudWatch Agent**:
-
-  ```bash
-  kubectl apply -f https://s3.amazonaws.com/amazoncloudwatch-agent-kubernetes/amazon-cloudwatch-agent.yaml
-  ```
-
-- **Configure CloudWatch Logs**:
-  - Create log groups and streams in CloudWatch.
-  - Set up IAM roles to allow Kubernetes to push logs to CloudWatch.
-
-### Prometheus and Grafana
-
-- **Install Prometheus**:
-
-  ```bash
-  kubectl create namespace monitoring
-  kubectl apply -f https://github.com/prometheus/prometheus/releases/download/v2.26.0/prometheus-2.26.0.yaml
-  ```
-
-- **Install Grafana**:
-
-  ```bash
-  kubectl apply -f https://raw.githubusercontent.com/grafana/grafana/main/deploy/kubernetes/grafana-deployment.yaml
-  ```
-
-- **Configure Prometheus and Grafana**:
-  - Set up Prometheus as a data source in Grafana.
-  - Import pre-built dashboards or create custom ones.
-
----
-
-## 8. Security
-
-### EKS Pod Identity (Modern Successor to IRSA)
-
-> [!TIP]
-> **EKS Pod Identity** eliminates OIDC provider thumbprint management and lets you map IAM roles directly to ServiceAccounts with a single AWS command.
+### 🔹 Managed Node Groups
 
 ```bash
-# 1. Install EKS Pod Identity Agent add-on
-aws eks create-addon --cluster-name my-cluster --addon-name eks-pod-identity-agent
-
-# 2. Associate IAM role with ServiceAccount
-aws eks create-pod-identity-association \
-  --cluster-name my-cluster \
-  --namespace default \
-  --service-account s3-reader-sa \
-  --role-arn arn:aws:iam::123456789012:role/S3ReaderRole
+aws eks create-nodegroup \
+  --cluster-name prod-cluster \
+  --nodegroup-name general-nodes \
+  --scaling-config minSize=2,maxSize=10,desiredSize=3 \
+  --instance-types t3.medium \
+  --subnets subnet-0123456789abcdef0 subnet-0987654321fedcba0 \
+  --node-role arn:aws:iam::123456789012:role/EKS-Node-Role
 ```
 
-### IAM Roles for Service Accounts (IRSA)
+### 🔹 Next-Gen Node Autoscaling with Karpenter
 
-- **Create IAM Role for Service Account**:
+Karpenter is AWS's open-source, high-performance node auto-provisioner that rapidly launches right-sized EC2 instances directly in response to pending unschedulable pods.
 
-  ```bash
-  aws iam create-role --role-name my-k8s-role --assume-role-policy-document file://trust-policy.json
-  ```
-
-- **Attach Policies**:
-
-  ```bash
-  aws iam attach-role-policy --role-name my-k8s-role --policy-arn arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess
-  ```
-
-- **Associate IAM Role with Kubernetes Service Account**:
-
-  ```yaml
-  apiVersion: v1
-  kind: ServiceAccount
-  metadata:
-    name: my-service-account
-  annotations:
-    eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/my-k8s-role
-  ```
-
-### Network Policies
-
-- **Create a Network Policy**:
-
-  ```yaml
-  apiVersion: networking.k8s.io/v1
-  kind: NetworkPolicy
-  metadata:
-    name: allow-front-end
-  spec:
-    podSelector:
-      matchLabels:
-        role: front-end
-    ingress:
-    - from:
-      - podSelector:
-          matchLabels:
-            role: back-end
-  ```
-
-### Secrets Management
-
-- **Create a Kubernetes Secret**:
-
-  ```bash
-  kubectl create secret generic my-secret --from-literal=password=my-password
-  ```
-
-- **Access Secret in Pods**:
-
-  ```yaml
-  apiVersion: v1
-  kind: Pod
-  metadata:
-    name: my-pod
-  spec:
-    containers:
-    - name: my-container
-      image: my-image
-      env:
-      - name: MY
-
-_SECRET
-        valueFrom:
-          secretKeyRef:
-            name: my-secret
-            key: password
-
-  ```
-
----
-
-## 9. Auto-scaling and Load Balancing
-
-### Horizontal Pod Autoscaler
-- **Create Horizontal Pod Autoscaler**:
-  ```bash
-  kubectl autoscale deployment my-deployment --cpu-percent=50 --min=1 --max=10
-  ```
-
-### Next-Gen Node Autoscaling with Karpenter
-
-- Karpenter is AWS's open-source, high-performance node auto-provisioner that launches right-sized EC2 instances directly in response to pending pods.
+File: `nodepool.yaml`:
 
 ```yaml
 apiVersion: karpenter.sh/v1beta1
@@ -418,110 +98,119 @@ spec:
         - key: karpenter.sh/capacity-type
           operator: In
           values: ["spot", "on-demand"]
+        - key: karpenter.k8s.aws/instance-category
+          operator: In
+          values: ["c", "m", "r"]
       nodeClassRef:
         name: default
   disruption:
     consolidationPolicy: WhenUnderutilized
+    expireAfter: 720h
+---
+apiVersion: karpenter.k8s.aws/v1beta1
+kind: EC2NodeClass
+metadata:
+  name: default
+spec:
+  amiFamily: AL2023
+  role: "KarpenterNodeRole-prod-cluster"
+  subnetSelectorTerms:
+    - tags:
+        karpenter.sh/discovery: "prod-cluster"
+  securityGroupSelectorTerms:
+    - tags:
+        karpenter.sh/discovery: "prod-cluster"
 ```
 
-### Cluster Autoscaler
+Apply:
 
-- **Install Cluster Autoscaler**:
-
-  ```bash
-  kubectl apply -f https://github.com/kubernetes/autoscaler/releases/download/<version>/cluster-autoscaler-v<version>.yaml
-  ```
-
-### ELB Integration
-
-- **Configure ELB for Load Balancing**:
-  - Ensure the service type is `LoadBalancer`.
-
-  ```yaml
-  apiVersion: v1
-  kind: Service
-  metadata:
-    name: my-service
-  spec:
-    type: LoadBalancer
-    selector:
-      app: my-app
-    ports:
-    - protocol: TCP
-      port: 80
-      targetPort: 80
-  ```
+```bash
+kubectl apply -f nodepool.yaml
+```
 
 ---
 
-## 10. Backup and Recovery
+## **4. Pod Identity & IAM Authentication**
 
-### EBS Snapshots
+### 🔹 EKS Pod Identity (Modern Replacement for IRSA)
 
-- **Create Snapshot**:
+EKS Pod Identity simplifies granting AWS IAM permissions to Kubernetes pods without needing OIDC provider configuration or complex trust policies.
 
-  ```bash
-  aws ec2 create-snapshot --volume-id vol-0bb1c79de4EXAMPLE --description "My snapshot"
-  ```
+```bash
+# 1. Install EKS Pod Identity Agent add-on
+aws eks create-addon \
+  --cluster-name prod-cluster \
+  --addon-name eks-pod-identity-agent
 
-- **Restore from Snapshot**:
+# 2. Associate IAM Role with Kubernetes ServiceAccount
+aws eks create-pod-identity-association \
+  --cluster-name prod-cluster \
+  --role-arn arn:aws:iam::123456789012:role/S3ReaderRole \
+  --namespace default \
+  --service-account s3-reader-sa
+```
 
-  ```bash
-  aws ec2 create-volume --snapshot-id snap-0bb1c79de4EXAMPLE --availability-zone us-west-2a
-  ```
-
-### Backup Strategies
-
-- **Use Velero for Backup and Restore**:
-  - **Install Velero**:
-
-    ```bash
-    velero install --provider aws --bucket <bucket-name> --secret-file <credentials-file> --backup-location-config region=<region>
-    ```
-
-- **Create a Backup**:
-
-  ```bash
-  velero backup create my-backup --include-namespaces my-namespace
-  ```
+Pods using `serviceAccountName: s3-reader-sa` automatically receive temporary AWS credentials!
 
 ---
 
-## 11. Upgrades and Maintenance
+## **5. Ingress & Load Balancing: AWS Load Balancer Controller**
 
-### Upgrading EKS Clusters
+The AWS Load Balancer Controller manages ALBs (Application Load Balancers) and NLBs (Network Load Balancers).
 
-- **Upgrade Control Plane**:
-  - **Using Console**: Select your cluster and choose to upgrade.
-  - **Using CLI**:
+### 🔹 Ingress Manifest (Provisions AWS Application Load Balancer)
 
-    ```bash
-    aws eks update-cluster-version --name my-cluster --kubernetes-version 1.21
-    ```
-
-### Upgrading Node Groups
-
-- **Update Node Groups**:
-
-  ```bash
-  aws eks update-nodegroup-version --cluster-name my-cluster --nodegroup-name my-node-group --release-version 1.21
-  ```
-
-### Regular Maintenance
-
-- **Monitor Cluster Health**: Use AWS CloudWatch and Prometheus for monitoring.
-- **Check for Vulnerabilities**: Regularly scan images and clusters for security vulnerabilities.
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: app-ingress
+  namespace: default
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
+    alb.ingress.kubernetes.io/ssl-redirect: '443'
+spec:
+  ingressClassName: alb
+  rules:
+    - host: app.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: web-service
+                port:
+                  number: 80
+```
 
 ---
 
-## 12. References
+## **6. Cluster Maintenance & Upgrades**
 
-### Official Documentation
+```bash
+# Check available cluster upgrades
+aws eks describe-update --name prod-cluster
 
-- [Amazon EKS Documentation](https://docs.aws.amazon.com/eks/latest/userguide/what-is-eks.html)
-- [Kubernetes Documentation](https://kubernetes.io/docs/)
+# Upgrade EKS control plane to Kubernetes 1.30
+aws eks update-cluster-version \
+  --name prod-cluster \
+  --kubernetes-version 1.30
 
-### Tools and Resources
+# Upgrade managed node groups to match control plane version
+aws eks update-nodegroup-version \
+  --cluster-name prod-cluster \
+  --nodegroup-name general-nodes \
+  --kubernetes-version 1.30
+```
 
-- [AWS CLI Documentation](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-quickstart.html)
-- [Kubectl Documentation](https://kubernetes.io/docs/reference/kubectl/)
+---
+
+## 📚 **Learning Resources**
+
+* 🔗 [Amazon EKS User Guide](https://docs.aws.amazon.com/eks/latest/userguide/what-is-eks.html)
+* 🚀 [Karpenter Official Documentation](https://karpenter.sh/)
+* 📦 [AWS Load Balancer Controller Documentation](https://kubernetes-sigs.github.io/aws-load-balancer-controller/)
+* 🛡️ [EKS Best Practices Guide](https://aws.github.io/aws-eks-best-practices/)

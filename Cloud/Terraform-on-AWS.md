@@ -1,381 +1,232 @@
-# Terraform on AWS Cheatsheet
+# 🏗️ Terraform on AWS Cheatsheet
 
 ![text](https://stratusgrid.com/hubfs/AWS%20Configuration%20Recorder%20Module%20on%20Terraform.webp)
 
-#### **1. Introduction to Terraform**
-
-Terraform is an open-source Infrastructure as Code (IaC) tool developed by HashiCorp. It allows you to define and provision infrastructure using a high-level configuration language. Terraform is cloud-agnostic, meaning it can manage infrastructure across various cloud providers like AWS, Azure, Google Cloud, and on-premise data centers.
-
-**Key Concepts:**
-
-- **IaC (Infrastructure as Code):** Managing and provisioning infrastructure through code rather than manual processes.
-- **HCL (HashiCorp Configuration Language):** The language used to write Terraform configurations.
-- **Providers:** Plugins that interact with APIs of cloud providers and other services.
-- **Resources:** The most basic building blocks of Terraform, representing infrastructure components.
-- **State:** Terraform keeps track of the real-world state of your infrastructure in a state file.
+**Terraform on AWS** enables teams to provision, manage, and version cloud infrastructure using declarative HashiCorp Configuration Language (HCL). This guide covers modern patterns with the **AWS Provider v5.x**, **Terraform 1.5–1.10+**, and production architecture standards.
 
 ---
 
-#### **2. Terraform Basics**
+## **1. Modern Provider Configuration (`default_tags`)**
 
-**2.1. Installing Terraform**
-
-- Terraform can be installed on various operating systems.
-- Download Terraform from the [official site](https://www.terraform.io/downloads.html) and add it to your system's PATH.
-
-**Example:**
-
-```bash
-# On Ubuntu
-sudo apt-get update && sudo apt-get install -y gnupg software-properties-common
-wget -O- https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
-echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
-sudo apt update
-sudo apt install terraform
-```
-
-**2.2. Writing Your First Terraform Configuration**
-
-- Create a directory for your Terraform configuration files.
-- Define the provider and resources in a `.tf` file.
-
-**Example:**
-
-```hcl
-# main.tf
-
-provider "aws" {
-  region = "us-west-2"
-}
-
-resource "aws_instance" "example" {
-  ami           = "ami-0c55b159cbfafe1f0"
-  instance_type = "t2.micro"
-
-  tags = {
-    Name = "TerraformExample"
-  }
-}
-```
-
-**2.3. Initializing Terraform**
-
-- Use `terraform init` to initialize your Terraform project. This downloads the necessary provider plugins.
-
-**Example:**
-
-```bash
-terraform init
-```
-
-**2.4. Planning and Applying Changes**
-
-- **terraform plan:** Generates an execution plan showing what actions Terraform will take.
-- **terraform apply:** Executes the actions proposed in the plan.
-
-**Example:**
-
-```bash
-terraform plan
-terraform apply
-```
-
-**2.5. Managing Terraform State**
-
-- Terraform stores the state of your infrastructure in a file called `terraform.tfstate`.
-- The state file is critical for Terraform to manage your resources accurately.
-
-**Example:**
-
-```bash
-# To view the current state
-terraform show
-
-# To refresh the state
-terraform refresh
-```
-
----
-
-**2.2.1. Modern Provider Configuration with `default_tags` (AWS Provider v5.x)**
+In AWS Provider v5.x, declare global tags at the provider level so every created resource inherits organizational metadata automatically:
 
 ```hcl
 terraform {
   required_version = ">= 1.5.0"
+
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 5.40"
+      version = "~> 5.0"
     }
-  }
-  backend "s3" {
-    bucket         = "my-terraform-state-bucket"
-    key            = "prod/terraform.tfstate"
-    region         = "us-east-1"
-    dynamodb_table = "terraform-locks"
-    encrypt        = true
   }
 }
 
 provider "aws" {
   region = "us-east-1"
+
   default_tags {
     tags = {
       Environment = "Production"
+      Project     = "CoreInfrastructure"
       ManagedBy   = "Terraform"
+      Repository  = "https://github.com/myorg/infra"
     }
   }
-}
-```
-
-#### **3. Intermediate Terraform**
-
-**3.1. Variables and Outputs**
-
-- **Variables:** Used to input dynamic values into Terraform configurations.
-- **Outputs:** Used to extract information from Terraform resources after they are created.
-
-**Example:**
-
-```hcl
-# variables.tf
-
-variable "instance_type" {
-  description = "Type of instance to create"
-  default     = "t2.micro"
-}
-
-# main.tf
-
-resource "aws_instance" "example" {
-  ami           = "ami-0c55b159cbfafe1f0"
-  instance_type = var.instance_type
-
-  tags = {
-    Name = "TerraformExample"
-  }
-}
-
-# outputs.tf
-
-output "instance_id" {
-  description = "The ID of the instance"
-  value       = aws_instance.example.id
-}
-```
-
-**3.2. Managing Multiple Environments**
-
-- Use `terraform.workspace` to manage different environments like dev, staging, and production.
-  
-**Example:**
-
-```bash
-# Create a new workspace
-terraform workspace new dev
-
-# Switch to an existing workspace
-terraform workspace select dev
-```
-
-**3.3. Terraform Modules**
-
-- Modules are reusable pieces of Terraform code that group resources together. They promote reusability and maintainability.
-
-**Example:**
-
-```hcl
-# Creating a module
-
-# Directory structure
-module/
-  ├── main.tf
-  ├── variables.tf
-  └── outputs.tf
-
-# Using a module
-module "vpc" {
-  source = "./module"
-
-  vpc_name = "example-vpc"
 }
 ```
 
 ---
 
-#### **4. Advanced Terraform**
-
-**4.1. Terraform Provisioners**
-
-- Provisioners allow you to execute scripts or commands on a remote resource as part of the resource creation or destruction.
-
-**Example:**
-
-```hcl
-resource "aws_instance" "example" {
-  ami           = "ami-0c55b159cbfafe1f0"
-  instance_type = "t2.micro"
-
-  provisioner "remote-exec" {
-    inline = [
-      "sudo apt-get update",
-      "sudo apt-get install -y nginx"
-    ]
-
-    connection {
-      type     = "ssh"
-      user     = "ubuntu"
-      private_key = file("~/.ssh/id_rsa")
-      host     = self.public_ip
-    }
-  }
-
-  tags = {
-    Name = "TerraformExample"
-  }
-}
-```
-
-**4.2. Handling Secrets with Terraform**
-
-- Use HashiCorp Vault or AWS Secrets Manager to securely manage sensitive data like passwords and API keys in your Terraform configurations.
-
-**Example:**
-
-```hcl
-provider "vault" {
-  address = "https://vault.example.com"
-}
-
-data "vault_generic_secret" "example" {
-  path = "secret/myapp"
-}
-
-resource "aws_db_instance" "example" {
-  engine         = "mysql"
-  instance_class = "db.t2.micro"
-  username       = "admin"
-  password       = data.vault_generic_secret.example.data["password"]
-}
-```
-
-**4.3. Remote State Management**
-
-- Store Terraform state files remotely using backends like S3, Azure Blob Storage, or Google Cloud Storage.
-  
-**Example:**
+## **2. Remote State & Locking (S3 + DynamoDB / S3 Native)**
 
 ```hcl
 terraform {
   backend "s3" {
-    bucket = "my-terraform-state"
-    key    = "path/to/my/key"
-    region = "us-west-2"
+    bucket         = "myorg-terraform-state-prod"
+    key            = "vpc/terraform.tfstate"
+    region         = "us-east-1"
+    encrypt        = true
+    dynamodb_table = "terraform-state-lock"
   }
 }
 ```
 
-**4.4. Terraform Enterprise**
+> [!TIP]
+> **Terraform 1.10+ Native S3 Locking**: Terraform 1.10+ supports native S3 conditional writes, eliminating the need to create and maintain a DynamoDB table for state locking!
 
-- Terraform Enterprise provides additional features like collaboration, policy enforcement, and enhanced security for teams.
+---
 
-**Example:**
+## **3. Modern S3 Bucket Architecture (AWS Provider v5.x)**
+
+In modern AWS provider versions, monolithic `aws_s3_bucket` arguments (such as inline versioning and ACLs) are broken into dedicated modular resources:
 
 ```hcl
-# Example configuration for Terraform Cloud
-terraform {
-  cloud {
-    organization = "my-org"
+# Core Bucket Definition
+resource "aws_s3_bucket" "app_data" {
+  bucket = "myorg-app-data-storage-prod"
 
-    workspaces {
-      name = "my-workspace"
+  lifecycle {
+    prevent_destroy = true
+  }
+}
+
+# Enforce Bucket Owner Ownership (disables legacy S3 ACLs)
+resource "aws_s3_bucket_ownership_controls" "app_data" {
+  bucket = aws_s3_bucket.app_data.id
+
+  rule {
+    object_ownership = "BucketOwnerEnforced"
+  }
+}
+
+# Block all public access
+resource "aws_s3_bucket_public_access_block" "app_data" {
+  bucket = aws_s3_bucket.app_data.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+# Enable Object Versioning
+resource "aws_s3_bucket_versioning" "app_data" {
+  bucket = aws_s3_bucket.app_data.id
+
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+# Enable Server-Side Encryption (AES256 or KMS)
+resource "aws_s3_bucket_server_side_encryption_configuration" "app_data" {
+  bucket = aws_s3_bucket.app_data.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "AES256"
     }
   }
-}
-```
-
-**4.5. Custom Providers and Plugins**
-
-- You can write custom providers and plugins if Terraform’s built-in providers don’t meet your needs.
-  
-**Example:**
-
-```hcl
-# Example using a custom provider
-provider "custom" {
-  # Configuration for the custom provider
-}
-
-resource "custom_resource" "example" {
-  name = "example-resource"
 }
 ```
 
 ---
 
-**4.3. Modern Terraform Features (Terraform 1.5+)**
+## **4. Production VPC Infrastructure Example**
 
-- **Declarative `import` Blocks**:
-  Import existing AWS resources directly via HCL without CLI state commands:
-  ```hcl
-  import {
-    to = aws_s3_bucket.my_bucket
-    id = "my-existing-bucket-name"
+```hcl
+# VPC Definition
+resource "aws_vpc" "main" {
+  cidr_block           = "10.0.0.0/16"
+  enable_dns_hostnames = true
+  enable_dns_support   = true
+
+  tags = {
+    Name = "prod-vpc"
   }
-  ```
+}
 
-- **Safe Refactoring with `moved` Blocks**:
-  Rename resources without recreating them:
-  ```hcl
-  moved {
-    from = aws_instance.old_web
-    to   = aws_instance.new_web
+# Public Subnets with for_each
+variable "public_subnets" {
+  type = map(string)
+  default = {
+    us-east-1a = "10.0.1.0/24"
+    us-east-1b = "10.0.2.0/24"
   }
-  ```
+}
 
-- **Continuous Validation with `check` Blocks**:
-  ```hcl
-  check "health_check" {
-    data "http" "ping" {
-      url = "https://${aws_instance.example.public_ip}"
-    }
-    assert {
-      condition     = data.http.ping.status_code == 200
-      error_message = "Server returned non-200 status code."
-    }
+resource "aws_subnet" "public" {
+  for_each                = var.public_subnets
+  vpc_id                  = aws_vpc.main.id
+  cidr_block              = each.value
+  availability_zone       = each.key
+  map_public_ip_on_launch = true
+
+  tags = {
+    Name = "public-subnet-${each.key}"
   }
-  ```
+}
 
-#### **5. Best Practices for Terraform**
+# Internet Gateway
+resource "aws_internet_gateway" "gw" {
+  vpc_id = aws_vpc.main.id
 
-**5.1. Version Control**
+  tags = {
+    Name = "prod-igw"
+  }
+}
+```
 
-- Store your Terraform configurations in version control systems like Git. This ensures that changes are tracked and collaborative work is streamlined.
+---
 
-**5.2. Use of Modules**
+## **5. Modern Refactoring & Continuous Checks**
 
-- Break down complex infrastructure into modules. This enhances reusability and reduces code duplication.
+### 🔹 Declarative `import` Blocks (Terraform 1.5+)
 
-**5.3. State Management**
+Import existing cloud resources directly through code:
 
-- Use remote state for collaboration and ensure that state files are encrypted and secured.
+```hcl
+import {
+  to = aws_security_group.allow_tls
+  id = "sg-0123456789abcdef0"
+}
+```
 
-**5.4. Locking State**
+### 🔹 Refactoring without Downtime (`moved` Blocks)
 
-- Use state locking to prevent concurrent state modifications when using remote backends like S3 with DynamoDB.
+Rename a resource in your configuration without Terraform planning to destroy and recreate it:
 
-**5.5. Use `terraform validate`**
+```hcl
+moved {
+  from = aws_instance.web_server
+  to   = aws_instance.api_gateway
+}
+```
 
-- Always run `terraform validate` to check the syntax and validity of your Terraform configurations before applying them.
+### 🔹 Continuous Health Assertions (`check` Blocks)
 
-**5.6. Avoid Hardcoding Values**
+```hcl
+check "api_gateway_health" {
+  data "http" "api_endpoint" {
+    url = "https://${aws_lb.web.dns_name}/healthz"
+  }
 
-- Use variables and environment-specific configurations to avoid hardcoding sensitive data or region-specific information.
+  assert {
+    condition     = data.http.api_endpoint.status_code == 200
+    error_message = "API Gateway returned status ${data.http.api_endpoint.status_code}."
+  }
+}
+```
 
-**5.7. Implement Proper Logging and Monitoring**
+---
 
-- Implement logging and monitoring for your Terraform deployments to track changes, catch issues early, and maintain audit trails.
+## **6. CLI Workflow Quick Reference**
 
-**5.8. Implement Policy as Code**
+```bash
+# Initialize and upgrade plugins
+terraform init -upgrade
 
-- Use tools like HashiCorp Sentinel or Open Policy Agent (OPA) to enforce policies on your Terraform configurations.
+# Canonical formatting check
+terraform fmt -recursive -check
+
+# Validate configuration syntax
+terraform validate
+
+# Plan and export to execution file
+terraform plan -out=tfplan
+
+# Apply the pre-calculated plan file
+terraform apply tfplan
+
+# Target a specific resource replacement (modern taint alternative)
+terraform apply -replace="aws_instance.api_gateway"
+```
+
+---
+
+## 📚 **Learning Resources**
+
+* 🔗 [Terraform AWS Provider Documentation](https://registry.terraform.io/providers/hashicorp/aws/latest/docs)
+* 📘 [HashiCorp AWS Tutorials](https://developer.hashicorp.com/terraform/tutorials/aws)
+* 🏛️ [Terraform AWS Modules Repository](https://github.com/terraform-aws-modules)

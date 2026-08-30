@@ -1,282 +1,223 @@
-# GCP Cheatsheet
+# 🌐 Google Cloud Platform (GCP) Cheatsheet
 
 ![text](https://imgur.com/2MpF0w5.png)
 
-**1. Introduction:**
-
-- **Google Cloud Platform (GCP)** is a suite of cloud computing services offered by Google. It provides a range of services including compute, storage, databases, machine learning, and more.
-
-**2. Core GCP Services:**
-
-- **Compute:**
-  - **Google Compute Engine (GCE):**
-    - Scalable virtual machines running on Google’s infrastructure.
-    - Key Concepts: Machine Types, Images, Snapshots, Persistent Disks.
-    - Example:
-
-      ```bash
-      gcloud compute instances create my-instance --zone=us-central1-a --machine-type=e2-medium --image-family=debian-12 --image-project=debian-cloud
-      ```
-
-  - **Google Kubernetes Engine (GKE):**
-    - Managed Kubernetes service for running containerized applications.
-    - Key Concepts: Clusters, Nodes, Pods, Services, Deployments.
-    - Example:
-
-      ```bash
-      gcloud container clusters create my-cluster --zone us-central1-a --num-nodes 3
-      ```
-
-  - **Cloud Run (Serverless Container Platform):**
-    - Deploy containerized applications directly to scalable serverless infrastructure without cluster management.
-    - Example:
-
-      ```bash
-      gcloud run deploy web-app --image=us-central1-docker.pkg.dev/my-project/apps/web:v1 --platform=managed --region=us-central1 --allow-unauthenticated
-      ```
-
-  - **GKE Autopilot:**
-    - Fully managed GKE mode where Google provisions, scales, and manages underlying nodes and security hardening.
-    - Example:
-
-      ```bash
-      gcloud container clusters create-auto prod-cluster --region=us-central1
-      ```
-
-  - **Cloud Functions:**
-    - Serverless environment to execute code in response to events.
-    - Key Concepts: Functions, Triggers, Event Sources.
-    - Example:
-
-      ```bash
-      gcloud functions deploy my-function --runtime python39 --trigger-http --allow-unauthenticated
-      ```
-
-- **Storage:**
-  - **Cloud Storage (`gcloud storage` CLI):**
-    - Modern replacement for `gsutil`, delivering up to 94% faster transfer performance.
-    - Example:
-
-      ```bash
-      gcloud storage buckets create gs://my-new-bucket-2026 --location=us-central1 --uniform-bucket-level-access
-      gcloud storage cp -r ./build/* gs://my-new-bucket-2026/
-      ```
-
-  - **Artifact Registry (Modern Container & Package Registry):**
-    - Replaces deprecated Google Container Registry (`gcr.io`).
-    - Example:
-
-      ```bash
-      gcloud artifacts repositories create docker-repo --repository-format=docker --location=us-central1
-      ```
-
-  - **Google Cloud Storage (Legacy `gsutil`):**
-    - Object storage service for storing and accessing data.
-    - Key Concepts: Buckets, Objects, Classes (Standard, Nearline, Coldline, Archive).
-    - Example:
-
-      ```bash
-      gsutil mb gs://my-bucket
-      gsutil cp my-file.txt gs://my-bucket/
-      ```
-
-  - **Persistent Disks:**
-    - Durable, high-performance block storage for VM instances.
-    - Key Concepts: Disk Types (Standard, SSD, Balanced), Snapshots, Zonal/Regional Disks.
-    - Example:
-
-      ```bash
-      gcloud compute disks create my-disk --size=100GB --type=pd-ssd --zone=us-central1-a
-      ```
-
-  - **Filestore:**
-    - Fully managed file storage service for applications that require a file system interface.
-    - Key Concepts: Instances, Tiers (Basic, High Scale, Enterprise).
-    - Example:
-
-      ```bash
-      gcloud filestore instances create my-filestore-instance --zone=us-central1-a --tier=STANDARD --file-share=name="my-share",capacity=1TB --network=name="default"
-      ```
-
-- **Database:**
-  - **Cloud SQL:**
-    - Managed relational database service supporting MySQL, PostgreSQL, and SQL Server.
-    - Key Concepts: Instances, Backups, Failover, Maintenance Windows.
-    - Example:
-
-      ```bash
-      gcloud sql instances create my-instance --database-version=MYSQL_8_0 --tier=db-f1-micro --region=us-central1
-      ```
-
-  - **Cloud Spanner:**
-    - Scalable, globally-distributed, and strongly consistent database service.
-    - Key Concepts: Instances, Databases, Schemas, Nodes.
-    - Example:
-
-      ```bash
-      gcloud spanner instances create my-instance --config=regional-us-central1 --nodes=1 --description="My Spanner Instance"
-      ```
-
-  - **Firestore:**
-    - NoSQL document database for mobile, web, and server development.
-    - Key Concepts: Collections, Documents, Queries, Indexes.
-    - Example:
-
-      ```bash
-      gcloud firestore databases create --region=us-central
-      ```
-
-**3. Networking:**
-
-- **VPC (Virtual Private Cloud):**
-  - Isolated network environments within GCP.
-  - Key Concepts: Subnets, Routes, Firewalls, VPN, Interconnect.
-  - Example:
-
-    ```bash
-    gcloud compute networks create my-vpc --subnet-mode=custom
-    gcloud compute networks subnets create my-subnet --network=my-vpc --region=us-central1 --range=10.0.0.0/24
-    ```
-
-- **Cloud Load Balancing:**
-  - Global load balancing service for distributing traffic across multiple instances.
-  - Key Concepts: Frontends, Backends, URL Maps, Health Checks.
-  - Example:
-
-    ```bash
-    gcloud compute forwarding-rules create my-rule --global --target-http-proxy=my-proxy --ports=80
-    ```
-
-- **Cloud DNS:**
-  - Managed DNS service running on the same infrastructure as Google.
-  - Key Concepts: Managed Zones, DNS Records, Policies.
-  - Example:
-
-    ```bash
-    gcloud dns managed-zones create my-zone --dns-name="example.com." --description="My DNS zone"
-    gcloud dns record-sets transaction start --zone=my-zone
-    gcloud dns record-sets transaction add --zone=my-zone --name="www.example.com." --ttl=300 --type=A "1.2.3.4"
-    gcloud dns record-sets transaction execute --zone=my-zone
-    ```
-
-- **Cloud CDN:**
-  - Content delivery network for delivering web and video content globally.
-  - Key Concepts: Backends, Cache Modes, Signed URLs.
-  - Example:
-
-    ```bash
-    gcloud compute url-maps create my-url-map --default-service=my-backend-service
-    gcloud compute backend-buckets create my-backend-bucket --gcs-bucket-name=my-bucket
-    gcloud compute backend-buckets add-backend --url-map=my-url-map --default-backend-bucket=my-backend-bucket
-    ```
-
-**4. Security and Identity:**
-
-- **Identity and Access Management (IAM):**
-  - Manage access to resources with fine-grained control.
-  - Key Concepts: Roles, Permissions, Policies, Service Accounts.
-  - Example:
-
-    ```bash
-    gcloud projects add-iam-policy-binding my-project --member="user:example@gmail.com" --role="roles/editor"
-    ```
-
-- **Cloud Identity:**
-  - Identity management for users and groups across services.
-  - Key Concepts: Directory, Groups, Security Settings, OAuth.
-  - Example:
-    - Managed via Google Admin Console.
-
-- **Cloud Key Management Service (KMS):**
-  - Create, manage, and use cryptographic keys.
-  - Key Concepts: Key Rings, Keys, Versions, Policies.
-  - Example:
-
-    ```bash
-    gcloud kms keyrings create my-keyring --location=global
-    gcloud kms keys create my-key --keyring=my-keyring --location=global --purpose=encryption
-    ```
-
-- **Cloud Security Command Center (SCC):**
-  - Security and risk management platform for GCP.
-  - Key Concepts: Findings, Assets, Sources, Security Health Analytics.
-  - Example:
-    - Managed via GCP Console.
-
-**5. Management Tools:**
-
-- **Deployment Manager:**
-  - Infrastructure as code service for managing GCP resources.
-  - Key Concepts: Templates, Deployments, Resources.
-  - Example:
-
-    ```bash
-    gcloud deployment-manager deployments create my-deployment --config=config.yaml
-    ```
-
-- **Stackdriver (now part of Operations Suite):**
-  - Monitoring, logging, and diagnostics tool for GCP.
-  - Key Concepts: Metrics, Logs, Alerts, Dashboards.
-  - Example:
-
-    ```bash
-    gcloud logging write my-log "This is a log entry" --severity=ERROR
-    ```
-
-- **Cloud Console:**
-  - Web-based interface to manage GCP resources.
-  - Key Concepts: Dashboards, Cloud Shell, Editor.
-
-- **Cloud Shell:**
-  - Command-line interface with access to all GCP resources.
-  - Example:
-
-    ```bash
-    gcloud config set project my-project
-    ```
-
-**6. Advanced Topics:**
-
-- **Cost Management:**
-  - Monitor and optimize your GCP costs using Billing Reports and Budgets.
-  - Example
-
-:
-    ```bash
-    gcloud beta billing budgets create --billing-account=012345-67890A-BCDEF0 --display-name="My Budget" --amount=500USD
-    ```
-
-- **Auto Scaling:**
-  - Automatically adjust the number of VM instances based on demand.
-  - Key Concepts: Instance Groups, Autoscaler, Metrics.
-  - Example:
-
-    ```bash
-    gcloud compute instance-groups managed set-autoscaling my-group --max-num-replicas 10 --min-num-replicas 1 --target-cpu-utilization 0.6
-    ```
-
-- **Serverless Architectures:**
-  - Use Cloud Functions, Cloud Run, and Pub/Sub for serverless solutions.
-  - Key Concepts: Triggers, Events, Containers, Scaling.
-  - Example:
-
-    ```bash
-    gcloud run deploy my-service --image=gcr.io/my-project/my-image --platform managed
-    ```
-
-**7. Best Practices:**
-
-- **Security:**
-  - Use IAM policies, encrypt data, monitor with SCC, apply security best practices.
-  
-- **Reliability:**
-  - Use multiple zones/regions, set up failover, and implement backups.
-
-- **Performance Efficiency:**
-  - Choose appropriate machine types, use caching, optimize databases.
-
-- **Cost Optimization:**
-  - Use committed use contracts, monitor spend, and optimize resources.
-
-- **Operational Excellence:**
-  - Automate deployments, monitor operations, and use infrastructure as code (IaC).
+**Google Cloud Platform (GCP)** provides modular cloud services including computing, data storage, data analytics, and machine learning running on the same secure global infrastructure that Google uses internally for its end-user products.
+
+---
+
+## **1. CLI Setup & Project Configuration**
+
+```bash
+# Initialize and authenticate gcloud SDK
+gcloud init
+
+# Set default project and compute region
+gcloud config set project my-production-project
+gcloud config set compute/region us-central1
+gcloud config set compute/zone us-central1-a
+
+# List active configurations
+gcloud config list
+```
+
+---
+
+## **2. Core Compute Services**
+
+### 🔹 Google Compute Engine (GCE)
+
+Scalable virtual machines powered by Google infrastructure:
+
+```bash
+# Create an e2-medium Compute Engine instance with Ubuntu 22.04
+gcloud compute instances create web-instance-1 \
+  --zone=us-central1-a \
+  --machine-type=e2-medium \
+  --image-family=ubuntu-2204-lts \
+  --image-project=ubuntu-os-cloud \
+  --tags=http-server,https-server
+
+# SSH directly into the instance via IAP (Identity-Aware Proxy)
+gcloud compute ssh web-instance-1 --zone=us-central1-a --tunnel-through-iap
+```
+
+### 🔹 Google Kubernetes Engine (GKE) & GKE Autopilot
+
+* **GKE Standard**: You manage node pools, machine types, and scaling configurations.
+* **GKE Autopilot (Recommended)**: Google automatically provisions, configures, and manages all underlying node infrastructure and security hardening.
+
+```bash
+# Create a production GKE Autopilot cluster
+gcloud container clusters create-auto prod-autopilot \
+  --region=us-central1
+
+# Get cluster credentials for kubectl
+gcloud container clusters get-credentials prod-autopilot --region=us-central1
+```
+
+### 🔹 Cloud Run (Serverless Container Platform)
+
+Deploy and scale containerized applications from 0 to thousands of instances automatically:
+
+```bash
+# Deploy a container to Cloud Run with automatic HTTPS
+gcloud run deploy api-service \
+  --image=us-central1-docker.pkg.dev/my-project/apps/api:v1 \
+  --platform=managed \
+  --region=us-central1 \
+  --allow-unauthenticated \
+  --memory=512Mi \
+  --cpu=1
+```
+
+---
+
+## **3. Storage Services**
+
+### 🔹 Cloud Storage (`gcloud storage`)
+
+> [!TIP]
+> **Performance Tip**: Always use the modern **`gcloud storage`** CLI instead of legacy `gsutil`. It provides up to 94% faster transfer performance through multi-threaded parallel transfers.
+
+```bash
+# Create a bucket with Uniform Bucket-Level Access (disables legacy ACLs)
+gcloud storage buckets create gs://my-company-assets-prod \
+  --location=us-central1 \
+  --uniform-bucket-level-access
+
+# Upload a local directory recursively
+gcloud storage cp -r ./dist/* gs://my-company-assets-prod/dist/
+
+# Set lifecycle rule (e.g. transition objects to Nearline after 30 days)
+gcloud storage buckets update gs://my-company-assets-prod --lifecycle-file=lifecycle.json
+```
+
+### 🔹 Artifact Registry (Modern Container & Package Registry)
+
+The modern OCI-compliant registry replacing deprecated Google Container Registry (`gcr.io`):
+
+```bash
+# Create a Docker repository
+gcloud artifacts repositories create docker-repo \
+  --repository-format=docker \
+  --location=us-central1 \
+  --description="Production Docker images"
+
+# Authenticate Docker client to Artifact Registry
+gcloud auth configure-docker us-central1-docker.pkg.dev
+```
+
+---
+
+## **4. Managed Databases**
+
+### 🔹 Cloud SQL (Managed MySQL / PostgreSQL)
+
+```bash
+# Create a high-availability PostgreSQL 15 instance
+gcloud sql instances create pg-prod \
+  --database-version=POSTGRES_15 \
+  --tier=db-custom-2-7680 \
+  --region=us-central1 \
+  --availability-type=REGIONAL \
+  --storage-auto-increase
+
+# Set root/admin password
+gcloud sql users set-password postgres \
+  --instance=pg-prod \
+  --password="SuperSecurePassword123!"
+```
+
+### 🔹 Cloud Spanner (Global Relational Database)
+
+Combines the benefits of relational database structure with non-relational horizontal scale:
+
+```bash
+# Create a Spanner instance
+gcloud spanner instances create spanner-prod \
+  --config=regional-us-central1 \
+  --description="Production Spanner Instance" \
+  --nodes=1
+```
+
+---
+
+## **5. Networking & VPC**
+
+```bash
+# Create a custom VPC network
+gcloud compute networks create prod-vpc --subnet-mode=custom
+
+# Add a subnet
+gcloud compute networks subnets create us-central1-subnet \
+  --network=prod-vpc \
+  --region=us-central1 \
+  --range=10.10.0.0/24
+
+# Create firewall rule allowing HTTP traffic
+gcloud compute firewall-rules create allow-http \
+  --network=prod-vpc \
+  --allow=tcp:80 \
+  --target-tags=http-server
+```
+
+---
+
+## **6. Identity, Security & Workload Identity Federation**
+
+### 🔹 Workload Identity Federation (Eliminate Service Account Keys)
+
+> [!IMPORTANT]
+> **Zero Service Account Keys**: Never download or store long-lived JSON service account keys in CI/CD. Use **Workload Identity Federation** with GitHub Actions or GitLab CI to exchange OpenID Connect (OIDC) tokens for short-lived Google Cloud credentials.
+
+```bash
+# Create a Workload Identity Pool
+gcloud iam workload-identity-pools create "github-pool" \
+  --location="global" \
+  --display-name="GitHub Actions Pool"
+
+# Create a Provider inside the pool
+gcloud iam workload-identity-pools providers create-oidc "github-provider" \
+  --location="global" \
+  --workload-identity-pool="github-pool" \
+  --issuer-uri="https://token.actions.githubusercontent.com" \
+  --attribute-mapping="google.subject=assertion.sub,attribute.repository=assertion.repository"
+```
+
+---
+
+## **7. Google Cloud Observability (Formerly Stackdriver)**
+
+* **Cloud Logging**: Collects and queries application and audit logs using Logging Query Language.
+* **Cloud Monitoring**: Dashboards, metrics collection, and alerting policies.
+* **Cloud Trace & Cloud Profiler**: Distributed tracing and latency profiling for microservices.
+
+```bash
+# Write a structured test log entry via CLI
+gcloud logging write app-logs '{"event": "deployment", "status": "successful"}' --severity=INFO
+
+# Read latest error logs from Cloud Run
+gcloud logging read 'resource.type="cloud_run_revision" AND severity>=ERROR' --limit=10 --format=json
+```
+
+---
+
+## **8. Budgets & Cost Management**
+
+```bash
+# Create a monthly spending budget alert
+gcloud billing budgets create \
+  --billing-account=012345-67890A-BCDEF0 \
+  --display-name="Production Budget" \
+  --budget-amount=500USD
+```
+
+---
+
+## 📚 **Learning Resources**
+
+* 🔗 [Google Cloud Official Documentation](https://cloud.google.com/docs)
+* 🏛️ [Google Cloud Architecture Center](https://cloud.google.com/architecture)
+* 💻 [gcloud CLI Command Reference](https://cloud.google.com/sdk/gcloud/reference)
+* 🎓 [Google Cloud Skills Boost Free Labs](https://www.cloudskillsboost.google/)
