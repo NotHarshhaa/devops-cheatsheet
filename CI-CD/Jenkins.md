@@ -2,240 +2,273 @@
 
 ![](https://imgur.com/jWGs9lH.png)
 
-**1. Introduction:**
+## 1. Introduction
 
-- Jenkins is an open-source automation server that helps automate parts of software development related to building, testing, and deploying, facilitating continuous integration and delivery.
+**Jenkins** is an open-source automation server enabling developers around the world to reliably build, test, and deploy their software. With thousands of plugins, Jenkins is widely utilized for orchestrating complex enterprise CI/CD pipelines.
 
-**2. Installation:**
+---
 
-- **Docker Installation:**
+## 2. Modern Installation
 
-  ```bash
-  docker run -d -p 8080:8080 -p 50000:50000 jenkins/jenkins:lts
-  ```
+> [!IMPORTANT]
+> Modern Jenkins requires **Java 17 or Java 21 LTS**. Support for Java 8 and Java 11 has been retired. Deprecated `apt-key add` has been replaced by the official `/etc/apt/keyrings` workflow.
 
-- **Direct Installation:**
+### Running with Docker (Recommended)
 
-  - **For Ubuntu/Debian:**
+```bash
+docker run -d \
+  --name jenkins \
+  --restart=unless-stopped \
+  -p 8080:8080 -p 50000:50000 \
+  -v jenkins_home:/var/jenkins_home \
+  jenkins/jenkins:lts-jdk17
+```
 
-    ```bash
-    wget -q -O - https://pkg.jenkins.io/debian/jenkins.io.key | sudo apt-key add -
-    sudo sh -c 'echo deb http://pkg.jenkins.io/debian-stable binary/ > /etc/apt/sources.list.d/jenkins.list'
-    sudo apt update
-    sudo apt install jenkins
-    ```
+### Ubuntu / Debian (Modern Keyring Method)
 
-  - **For CentOS/RHEL:**
+```bash
+# Install Java 17 LTS
+sudo apt update && sudo apt install -y fontconfig openjdk-17-jre curl
 
-    ```bash
-    sudo wget -O /etc/yum.repos.d/jenkins.repo https://pkg.jenkins.io/redhat-stable/jenkins.repo
-    sudo rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io.key
-    sudo yum install jenkins
-    ```
+# Import official Jenkins GPG key into keyrings
+sudo mkdir -p /etc/apt/keyrings
+sudo curl -fsSL https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key | sudo tee /etc/apt/keyrings/jenkins-keyring.asc > /dev/null
 
-- **Access Jenkins:**
-  - Visit `http://localhost:8080` in your web browser.
+# Add Jenkins repository
+echo "deb [signed-by=/etc/apt/keyrings/jenkins-keyring.asc] https://pkg.jenkins.io/debian-stable binary/" | sudo tee /etc/apt/sources.list.d/jenkins.list > /dev/null
 
-**3. Jenkins Pipeline:**
+# Install & start service
+sudo apt update
+sudo apt install -y jenkins
+sudo systemctl enable --now jenkins
+```
 
-- **Declarative Pipeline:**
+---
 
-  ```groovy
-  pipeline {
-      agent any
-      environment {
-          MY_VAR = "value"
-      }
-      stages {
-          stage('Checkout') {
-              steps {
-                  checkout scm
-              }
-          }
-          stage('Build') {
-              steps {
-                  sh 'make'
-              }
-          }
-          stage('Test') {
-              steps {
-                  sh 'make test'
-              }
-          }
-          stage('Deploy') {
-              steps {
-                  sh 'make deploy'
-              }
-          }
-      }
-      post {
-          success {
-              echo 'Pipeline completed successfully!'
-          }
-          failure {
-              echo 'Pipeline failed.'
-          }
-      }
-  }
-  ```
+## 3. Declarative Pipeline (`Jenkinsfile`)
 
-- **Scripted Pipeline:**
+Declarative syntax provides a clean, robust, and version-controlled structure with built-in validation.
 
-  ```groovy
-  node {
-      stage('Checkout') {
-          checkout scm
-      }
-      stage('Build') {
-          sh 'make'
-      }
-      stage('Test') {
-          sh 'make test'
-      }
-      stage('Deploy') {
-          sh 'make deploy'
-      }
-  }
-  ```
+```groovy
+pipeline {
+    agent any
 
-**4. Common Jenkins Commands:**
+    options {
+        timeout(time: 1, unit: 'HOURS')
+        disableConcurrentBuilds()
+        buildDiscarder(logRotator(numToKeepStr: '30'))
+        timestamps()
+    }
 
-- **Restart Jenkins:**
+    environment {
+        APP_NAME    = 'order-service'
+        DOCKER_REG  = 'ghcr.io/my-org'
+        IMAGE_TAG   = "${env.BUILD_NUMBER}-${env.GIT_COMMIT.take(7)}"
+    }
 
-  ```bash
-  sudo systemctl restart jenkins
-  ```
+    parameters {
+        choice(name: 'ENVIRONMENT', choices: ['staging', 'production'], description: 'Deploy target')
+        booleanParam(name: 'RUN_INTEGRATION_TESTS', defaultValue: true, description: 'Execute integration suite?')
+    }
 
-- **Manage Jenkins from CLI:**
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
 
-  ```bash
-  java -jar jenkins-cli.jar -s http://localhost:8080/ list-jobs
-  ```
+        stage('Build & Unit Test') {
+            steps {
+                sh 'npm ci'
+                sh 'npm run test:ci'
+            }
+            post {
+                always {
+                    junit 'junit.xml'
+                }
+            }
+        }
 
-**5. Useful Jenkins Plugins:**
+        stage('Parallel Quality Checks') {
+            parallel {
+                stage('Code Linter') {
+                    steps {
+                        sh 'npm run lint'
+                    }
+                }
+                stage('Security Audit') {
+                    steps {
+                        sh 'npm audit --audit-level=high'
+                    }
+                }
+            }
+        }
 
-- **Blue Ocean:** Modern UI for Jenkins pipelines.
-- **Git:** Integrate Git version control into Jenkins.
-- **Pipeline:** Enables Pipeline as Code.
-- **Credentials Binding:** Securely manage credentials.
-- **SonarQube Scanner:** Integrate code quality checks.
-- **Slack Notification:** Send pipeline status notifications to Slack.
+        stage('Docker Build & Push') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'docker-registry-creds',
+                                                  usernameVariable: 'REG_USER',
+                                                  passwordVariable: 'REG_PASS')]) {
+                    sh '''
+                        echo "$REG_PASS" | docker login "$DOCKER_REG" -u "$REG_USER" --password-stdin
+                        docker build -t "$DOCKER_REG/$APP_NAME:$IMAGE_TAG" .
+                        docker push "$DOCKER_REG/$APP_NAME:$IMAGE_TAG"
+                    '''
+                }
+            }
+        }
 
-**6. Best Practices:**
+        stage('Deploy to Production') {
+            when {
+                beforeAgent true
+                branch 'main'
+                expression { params.ENVIRONMENT == 'production' }
+            }
+            input {
+                message 'Approve production deployment?'
+                ok 'Deploy!'
+            }
+            steps {
+                sh "./scripts/deploy.sh production ${DOCKER_REG}/${APP_NAME}:${IMAGE_TAG}"
+            }
+        }
+    }
 
-- **Pipeline as Code:** Always use Jenkins Pipelines defined in `Jenkinsfile` for consistent and version-controlled builds.
-- **Use Parameters:** Use parameters to make your pipelines flexible and reusable.
+    post {
+        always {
+            cleanWs deleteDirs: true, notFailBuild: true
+        }
+        success {
+            echo "Pipeline succeeded! Built image: ${IMAGE_TAG}"
+        }
+        failure {
+            echo "Pipeline failed! Sending notification..."
+        }
+    }
+}
+```
 
-  ```groovy
-  parameters {
-      string(name: 'ENV', defaultValue: 'dev', description: 'Environment')
-  }
-  ```
+---
 
-- **Secure Jenkins:** Regularly update plugins, use RBAC, and secure the Jenkins instance with HTTPS.
+## 4. Kubernetes Dynamic Pod Agents
 
-**7. Jenkins Configuration:**
+Run CI/CD stages inside ephemeral Kubernetes pods that spin up on demand and terminate immediately upon stage completion:
 
-- **Manage Jenkins:**
-  - Manage and configure global settings from the Jenkins dashboard under **Manage Jenkins**.
-- **Configure Tools:** Set up JDK, Maven, and other tools globally in **Global Tool Configuration**.
-- **Jenkinsfile Configuration:**
-  - Define your pipeline stages, environment, and agents within a `Jenkinsfile` stored in your repository.
+```groovy
+pipeline {
+    agent {
+        kubernetes {
+            yaml '''
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    jenkins-agent: node-build
+spec:
+  containers:
+  - name: node
+    image: node:20-alpine
+    command: ['cat']
+    tty: true
+  - name: kaniko
+    image: gcr.io/kaniko-project/executor:debug
+    command: ['cat']
+    tty: true
+'''
+        }
+    }
 
-**8. Advanced Jenkins:**
+    stages {
+        stage('Compile') {
+            steps {
+                container('node') {
+                    sh 'node -v && npm ci && npm run build'
+                }
+            }
+        }
+    }
+}
+```
 
-- **Parallel Stages:**
+---
 
-  ```groovy
-  pipeline {
-      agent any
-      stages {
-          stage('Parallel') {
-              parallel {
-                  stage('Unit Tests') {
-                      steps {
-                          sh 'make test'
-                      }
-                  }
-                  stage('Integration Tests') {
-                      steps {
-                          sh 'make integration-test'
-                      }
-                  }
-              }
-          }
-      }
-  }
-  ```
+## 5. Jenkins Configuration as Code (JCasC)
 
-- **Shared Libraries:** Centralize and reuse pipeline code across projects using Shared Libraries.
+Manage your entire Jenkins controller configuration via a version-controlled YAML file (`jenkins.yaml`):
 
-## **Troubleshooting**
+```yaml
+jenkins:
+  systemMessage: "Managed by Infrastructure as Code (JCasC)"
+  numExecutors: 0 # Controller does not execute builds directly
+  mode: EXCLUSIVE
+  securityRealm:
+    local:
+      allowsSignup: false
+      users:
+        - id: "admin"
+          password: "${ADMIN_PASSWORD}"
+  authorizationStrategy:
+    roleBased:
+      roles:
+        global:
+          - name: "admin"
+            description: "Jenkins administrators"
+            permissions:
+              - "Overall/Administer"
+            assignments:
+              - "admin"
 
-### **Common Issues**
+security:
+  crumbIssuer:
+    standard:
+      excludeClientIPFromCrumb: false # Strict CSRF Protection
 
-1. **Jenkins Won't Start**
-   ```bash
-   # Check logs
-   sudo tail -f /var/log/jenkins/jenkins.log
-   
-   # Check permissions
-   sudo chown -R jenkins:jenkins /var/lib/jenkins
-   ```
+unclassified:
+  location:
+    url: "https://jenkins.example.com/"
+    adminAddress: "devops-admin@example.com"
+```
 
-2. **Pipeline Failure**
-   ```groovy
-   // Add error handling
-   pipeline {
-       agent any
-       stages {
-           stage('Build') {
-               steps {
-                   script {
-                       try {
-                           sh 'make build'
-                       } catch (exc) {
-                           echo 'Build failed!'
-                           throw exc
-                       }
-                   }
-               }
-           }
-       }
-   }
-   ```
+---
 
-3. **Plugin Issues**
-   - Clear plugin cache:
-     ```bash
-     rm -rf $JENKINS_HOME/plugins/*.jpi
-     rm -rf $JENKINS_HOME/plugins/*.hpi
-     ```
-   - Restart Jenkins after plugin updates
+## 6. Shared Libraries
 
-## **Useful Plugins**
+Centralize and share pipeline code across multiple repositories:
 
-1. **Pipeline**
-   - Pipeline Graph View
-   - Pipeline Stage View
-   - Blue Ocean
+```groovy
+// In Jenkinsfile: Load shared library
+@Library('pipeline-library@v2.1.0') _
 
-2. **Source Control**
-   - Git
-   - GitHub Integration
-   - BitBucket Integration
+standardNodePipeline {
+    appName = 'payment-service'
+    nodeVersion = '20'
+    sonarProjectKey = 'my-org_payment-service'
+}
+```
 
-3. **Build Tools**
-   - Maven Integration
-   - Gradle
-   - NodeJS
+---
 
-4. **Testing**
-   - JUnit
-   - Cobertura
-   - SonarQube Scanner
+## 7. Security Hardening & Troubleshooting
 
-5. **Deployment**
-   - Docker
-   - Kubernetes
-   - AWS
+### Security Essentials
+- **CSRF Protection**: Always enable default Crumb Issuer with IP check.
+- **Never Log Secrets**: Use `withCredentials` block to securely bind and mask tokens.
+- **Run Controlller as Non-Root**: Never run the Jenkins controller container as the root user.
+- **Agent-to-Controller Security**: Isolate agents so build jobs cannot read or manipulate the Jenkins controller's internal filesystem.
+
+### CLI Commands & Troubleshooting
+```bash
+# Inspect Jenkins service status
+sudo systemctl status jenkins
+
+# View live system logs
+sudo journalctl -u jenkins -f
+
+# Download and use Jenkins CLI with token authentication
+curl -O http://localhost:8080/jnlpJars/jenkins-cli.jar
+java -jar jenkins-cli.jar -s http://localhost:8080/ -auth admin:API_TOKEN list-jobs
+
+# Safely restart Jenkins when active jobs complete
+java -jar jenkins-cli.jar -s http://localhost:8080/ -auth admin:API_TOKEN safe-restart
+```
