@@ -15,7 +15,7 @@
     - Example:
 
       ```bash
-      gcloud compute instances create my-instance --zone=us-central1-a --machine-type=e2-medium --image-family=debian-10 --image-project=debian-cloud
+      gcloud compute instances create my-instance --zone=us-central1-a --machine-type=e2-medium --image-family=debian-12 --image-project=debian-cloud
       ```
 
   - **Google Kubernetes Engine (GKE):**
@@ -25,6 +25,22 @@
 
       ```bash
       gcloud container clusters create my-cluster --zone us-central1-a --num-nodes 3
+      ```
+
+  - **Cloud Run (Serverless Container Platform):**
+    - Deploy containerized applications directly to scalable serverless infrastructure without cluster management.
+    - Example:
+
+      ```bash
+      gcloud run deploy web-app --image=us-central1-docker.pkg.dev/my-project/apps/web:v1 --platform=managed --region=us-central1 --allow-unauthenticated
+      ```
+
+  - **GKE Autopilot:**
+    - Fully managed GKE mode where Google provisions, scales, and manages underlying nodes and security hardening.
+    - Example:
+
+      ```bash
+      gcloud container clusters create-auto prod-cluster --region=us-central1
       ```
 
   - **Cloud Functions:**
@@ -37,7 +53,24 @@
       ```
 
 - **Storage:**
-  - **Google Cloud Storage:**
+  - **Cloud Storage (`gcloud storage` CLI):**
+    - Modern replacement for `gsutil`, delivering up to 94% faster transfer performance.
+    - Example:
+
+      ```bash
+      gcloud storage buckets create gs://my-new-bucket-2026 --location=us-central1 --uniform-bucket-level-access
+      gcloud storage cp -r ./build/* gs://my-new-bucket-2026/
+      ```
+
+  - **Artifact Registry (Modern Container & Package Registry):**
+    - Replaces deprecated Google Container Registry (`gcr.io`).
+    - Example:
+
+      ```bash
+      gcloud artifacts repositories create docker-repo --repository-format=docker --location=us-central1
+      ```
+
+  - **Google Cloud Storage (Legacy `gsutil`):**
     - Object storage service for storing and accessing data.
     - Key Concepts: Buckets, Objects, Classes (Standard, Nearline, Coldline, Archive).
     - Example:

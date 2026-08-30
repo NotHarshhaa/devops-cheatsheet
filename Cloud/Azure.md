@@ -18,6 +18,16 @@
       az vm create --resource-group myResourceGroup --name myVM --image UbuntuLTS --admin-username azureuser --generate-ssh-keys
       ```
 
+  - **Azure Container Apps (Serverless Containers):**
+    - Built on Kubernetes, KEDA, and Envoy. Ideal for microservices, background jobs, and event-driven APIs without managing Kubernetes clusters.
+    - Example:
+
+      ```bash
+      az containerapp env create --name my-env --resource-group myResourceGroup --location eastus
+      az containerapp create --name web-api --resource-group myResourceGroup --environment my-env \
+        --image mcr.microsoft.com/azuredocs/aci-helloworld:latest --target-port 80 --ingress external
+      ```
+
   - **Azure Functions:**
     - Serverless compute service for running event-driven code.
     - Key Concepts: Functions, Triggers, Bindings.
@@ -86,7 +96,16 @@
       az cosmosdb create --name myCosmosDBAccount --resource-group myResourceGroup --kind MongoDB --locations regionName=eastus
       ```
 
-  - **Azure Database for MySQL/PostgreSQL:**
+  - **Azure Database for MySQL/PostgreSQL (Flexible Server):**
+    - Fully managed Flexible Server architecture provides zone redundancy, burstable compute, and fine-grained maintenance windows.
+    - Example:
+
+      ```bash
+      az postgres flexible-server create --resource-group myResourceGroup --name pg-prod-flex --location eastus --tier GeneralPurpose --sku-name Standard_D2ds_v4
+      az mysql flexible-server create --resource-group myResourceGroup --name mysql-prod-flex --location eastus --tier Burstable --sku-name Standard_B2s
+      ```
+
+  - **Azure Database for MySQL/PostgreSQL (Legacy Single Server):**
     - Managed MySQL/PostgreSQL service.
     - Key Concepts: Servers, Databases, Backup Retention, Performance Tiers.
     - Example:

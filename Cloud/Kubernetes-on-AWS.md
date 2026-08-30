@@ -72,6 +72,21 @@
 
 ---
 
+### Modern Cluster Access: EKS Access Entries
+
+> [!IMPORTANT]
+> AWS EKS has deprecated managing access through the `aws-auth` ConfigMap. Always use **EKS Access Entries** for declarative, IAM-managed access.
+
+```bash
+# Enable Access Entries authentication mode
+aws eks update-cluster-config --name my-cluster --access-config authenticationMode=API_AND_CONFIG_MAP
+
+# Grant an IAM Role cluster admin access
+aws eks create-access-entry --cluster-name my-cluster --principal-arn arn:aws:iam::123456789012:role/DevOpsAdmin --type STANDARD
+aws eks associate-access-policy --cluster-name my-cluster --principal-arn arn:aws:iam::123456789012:role/DevOpsAdmin \
+  --policy-arn arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy --access-scope type=cluster
+```
+
 ## 4. Networking
 
 ### VPC and Subnet Configuration
@@ -201,7 +216,7 @@
   - **Create Volume**:
 
     ```bash
-    aws ec2 create-volume --size 10 --availability-zone us-west-2a --volume-type gp2
+    aws ec2 create-volume --size 10 --availability-zone us-west-2a --volume-type gp3
     ```
 
   - **Attach Volume**:
@@ -282,7 +297,24 @@
 
 ## 8. Security
 
-### IAM Roles for Service Accounts
+### EKS Pod Identity (Modern Successor to IRSA)
+
+> [!TIP]
+> **EKS Pod Identity** eliminates OIDC provider thumbprint management and lets you map IAM roles directly to ServiceAccounts with a single AWS command.
+
+```bash
+# 1. Install EKS Pod Identity Agent add-on
+aws eks create-addon --cluster-name my-cluster --addon-name eks-pod-identity-agent
+
+# 2. Associate IAM role with ServiceAccount
+aws eks create-pod-identity-association \
+  --cluster-name my-cluster \
+  --namespace default \
+  --service-account s3-reader-sa \
+  --role-arn arn:aws:iam::123456789012:role/S3ReaderRole
+```
+
+### IAM Roles for Service Accounts (IRSA)
 
 - **Create IAM Role for Service Account**:
 
@@ -366,6 +398,31 @@ _SECRET
   ```bash
   kubectl autoscale deployment my-deployment --cpu-percent=50 --min=1 --max=10
   ```
+
+### Next-Gen Node Autoscaling with Karpenter
+
+- Karpenter is AWS's open-source, high-performance node auto-provisioner that launches right-sized EC2 instances directly in response to pending pods.
+
+```yaml
+apiVersion: karpenter.sh/v1beta1
+kind: NodePool
+metadata:
+  name: default
+spec:
+  template:
+    spec:
+      requirements:
+        - key: kubernetes.io/arch
+          operator: In
+          values: ["arm64", "amd64"]
+        - key: karpenter.sh/capacity-type
+          operator: In
+          values: ["spot", "on-demand"]
+      nodeClassRef:
+        name: default
+  disruption:
+    consolidationPolicy: WhenUnderutilized
+```
 
 ### Cluster Autoscaler
 

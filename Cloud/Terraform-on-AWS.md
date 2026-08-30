@@ -97,6 +97,37 @@ terraform refresh
 
 ---
 
+**2.2.1. Modern Provider Configuration with `default_tags` (AWS Provider v5.x)**
+
+```hcl
+terraform {
+  required_version = ">= 1.5.0"
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.40"
+    }
+  }
+  backend "s3" {
+    bucket         = "my-terraform-state-bucket"
+    key            = "prod/terraform.tfstate"
+    region         = "us-east-1"
+    dynamodb_table = "terraform-locks"
+    encrypt        = true
+  }
+}
+
+provider "aws" {
+  region = "us-east-1"
+  default_tags {
+    tags = {
+      Environment = "Production"
+      ManagedBy   = "Terraform"
+    }
+  }
+}
+```
+
 #### **3. Intermediate Terraform**
 
 **3.1. Variables and Outputs**
@@ -281,6 +312,39 @@ resource "custom_resource" "example" {
 ```
 
 ---
+
+**4.3. Modern Terraform Features (Terraform 1.5+)**
+
+- **Declarative `import` Blocks**:
+  Import existing AWS resources directly via HCL without CLI state commands:
+  ```hcl
+  import {
+    to = aws_s3_bucket.my_bucket
+    id = "my-existing-bucket-name"
+  }
+  ```
+
+- **Safe Refactoring with `moved` Blocks**:
+  Rename resources without recreating them:
+  ```hcl
+  moved {
+    from = aws_instance.old_web
+    to   = aws_instance.new_web
+  }
+  ```
+
+- **Continuous Validation with `check` Blocks**:
+  ```hcl
+  check "health_check" {
+    data "http" "ping" {
+      url = "https://${aws_instance.example.public_ip}"
+    }
+    assert {
+      condition     = data.http.ping.status_code == 200
+      error_message = "Server returned non-200 status code."
+    }
+  }
+  ```
 
 #### **5. Best Practices for Terraform**
 

@@ -25,7 +25,7 @@
     - Example:
 
       ```bash
-      aws lambda create-function --function-name my-function --runtime python3.8 --role arn:aws:iam::123456789012:role/execution_role --handler my_function.handler --zip-file fileb://my-deployment-package.zip
+      aws lambda create-function --function-name my-function --runtime python3.12 --role arn:aws:iam::123456789012:role/execution_role --handler my_function.handler --zip-file fileb://my-deployment-package.zip
       ```
 
   - **ECS/EKS (Elastic Container Service/Elastic Kubernetes Service):**
@@ -51,11 +51,11 @@
 
   - **EBS (Elastic Block Store):**
     - Block storage for use with EC2 instances.
-    - Key Concepts: Volumes, Snapshots, Volume Types (gp2, io1, st1, etc.).
+    - Key Concepts: Volumes, Snapshots, Volume Types (gp3, io1, st1, etc.).
     - Example:
 
       ```bash
-      aws ec2 create-volume --size 10 --region us-east-1 --availability-zone us-east-1a --volume-type gp2
+      aws ec2 create-volume --size 10 --region us-east-1 --availability-zone us-east-1a --volume-type gp3
       ```
 
   - **Glacier:**
@@ -93,6 +93,15 @@
 
       ```bash
       aws rds create-db-cluster --db-cluster-identifier my-cluster --engine aurora-mysql --master-username admin --master-user-password password
+      ```
+
+  - **Aurora Serverless v2 & DynamoDB On-Demand:**
+    - Aurora Serverless v2 scales compute capacity instantly in fine-grained increments (ACUs).
+    - DynamoDB On-Demand (`PAY_PER_REQUEST`) handles unpredictable workloads without capacity planning.
+    - Example:
+
+      ```bash
+      aws dynamodb create-table --table-name ModernUsers --attribute-definitions AttributeName=UserId,AttributeType=S --key-schema AttributeName=UserId,KeyType=HASH --billing-mode PAY_PER_REQUEST
       ```
 
 **3. Networking:**
@@ -163,6 +172,15 @@
     ```bash
     aws cloudtrail create-trail --name MyTrail --s3-bucket-name my-bucket
     ```
+
+  - **AWS Secrets Manager & SSM Parameter Store:**
+    - Securely store, rotate, and retrieve API keys, credentials, and configuration parameters.
+    - Example:
+
+      ```bash
+      aws secretsmanager create-secret --name "prod/app/db" --secret-string '{"username":"admin","password":"SecurePass123!"}'
+      aws secretsmanager get-secret-value --secret-id "prod/app/db" --query SecretString --output text
+      ```
 
 **5. Management Tools:**
 
