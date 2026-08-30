@@ -1,29 +1,48 @@
-# CircleCI Cheatsheet
+# ⭕ CircleCI Cheatsheet
 
 ![](https://imgur.com/s6aXKl9.png)
-
-## 1. Introduction
 
 **CircleCI** is a modern cloud-native and self-hosted CI/CD automation platform designed for rapid testing, building, and delivering software across Docker, Linux, macOS, and Windows environments.
 
 ---
 
-## 2. Key Architecture & Concepts
+## **1. Key Architecture & Concepts**
 
-- **Workflow**: Orchestration graph managing jobs, dependencies, approval gates, and schedules.
-- **Job**: Set of steps executed inside a defined executor environment.
-- **Step**: Individual executable directive (`checkout`, `run`, `save_cache`, `store_test_results`).
-- **Executor**: Environment runtime:
-  - **Docker (`cimg/*`)**: Next-gen container-based execution (lightweight, rapid startup).
-  - **Machine**: Dedicated Linux VM with complete systemd, Docker, and kernel access.
-  - **macOS**: Dedicated Apple silicon / Xcode environments for iOS/macOS apps.
-  - **Windows**: Dedicated Windows Server VMs.
-- **Orbs**: Shareable, versioned packages of reusable CircleCI configuration.
-- **Contexts**: Organization-wide secure environment variable containers secured by user groups.
+| Concept | Description |
+| --- | --- |
+| **Workflow** | Orchestration graph managing jobs, dependencies, approval gates, and schedules. |
+| **Job** | Set of steps executed inside a defined executor environment. |
+| **Step** | Individual executable directive (`checkout`, `run`, `save_cache`, `store_test_results`). |
+| **Executor** | Runtime environment: **Docker (`cimg/*`)**, **Machine** (VM), **macOS**, or **Windows**. |
+| **Orbs** | Shareable, versioned packages of reusable CircleCI configuration. |
+| **Contexts** | Organization-wide secure environment variable containers secured by user groups. |
 
 ---
 
-## 3. Modern Production `.circleci/config.yml`
+## **2. CircleCI CLI Quick Reference**
+
+The CircleCI CLI allows you to validate configurations, process orbs, and execute jobs locally before pushing commits:
+
+```bash
+# Install CircleCI CLI (macOS / Linux via Homebrew or install script)
+curl -fLSs https://raw.githubusercontent.com/CircleCI-Public/circleci-cli/master/install.sh | bash
+
+# Authenticate with your CircleCI API token
+circleci setup
+
+# Validate .circleci/config.yml syntax locally
+circleci config validate
+
+# Expand orbs and view fully compiled configuration
+circleci config process .circleci/config.yml
+
+# Execute a single job locally using Docker (rapid debugging)
+circleci local execute -j build-and-test
+```
+
+---
+
+## **3. Production `.circleci/config.yml` Example**
 
 ```yaml
 version: 2.1
@@ -37,7 +56,7 @@ executors:
   node-executor:
     docker:
       - image: cimg/node:20.18.0
-    resource_class: medium # Options: small, medium, medium+, large, xlarge, 2xlarge
+    resource_class: medium # small, medium, medium+, large, xlarge, 2xlarge
 
 jobs:
   build-and-test:
@@ -117,10 +136,39 @@ workflows:
 
 ---
 
-## 4. Modern Executors (`cimg/*` vs Legacy Images)
+## **4. Matrix Jobs (Parameterized Workflows)**
+
+Execute the same job across multiple language versions or operating systems using matrix expansion:
+
+```yaml
+jobs:
+  test-node:
+    parameters:
+      version:
+        type: string
+      os:
+        type: executor
+    executor: << parameters.os >>
+    steps:
+      - checkout
+      - run: node -v && npm test
+
+workflows:
+  matrix-workflow:
+    jobs:
+      - test-node:
+          matrix:
+            parameters:
+              version: ["18.20.0", "20.18.0", "22.11.0"]
+              os: [node-linux, node-macos]
+```
+
+---
+
+## **5. Modern Executors (`cimg/*` vs Legacy Images)**
 
 > [!WARNING]
-> Legacy `circleci/*` images (e.g. `circleci/node`, `circleci/python`) are deprecated and no longer updated. Always use official next-generation **`cimg/*`** images:
+> Legacy `circleci/*` images are deprecated. Always use official next-generation **`cimg/*`** images:
 
 | Language / Stack | Modern Image |
 | :--- | :--- |
@@ -133,32 +181,9 @@ workflows:
 
 ---
 
-## 5. Test Splitting & Parallelism
+## **6. OpenID Connect (OIDC) Passwordless Cloud Access**
 
-Accelerate test execution linearly across multiple runner instances:
-
-```yaml
-jobs:
-  test:
-    docker:
-      - image: cimg/node:20.18.0
-    parallelism: 4
-    steps:
-      - checkout
-      - run:
-          name: Run split tests
-          command: |
-            TESTS=$(circleci tests glob "tests/**/*.test.js" | circleci tests split --split-by=timings)
-            npm test -- $TESTS
-      - store_test_results:
-          path: test-results
-```
-
----
-
-## 6. OpenID Connect (OIDC) Passwordless Cloud Access
-
-Authenticate directly with cloud providers via JSON Web Tokens (JWT) using `CIRCLE_OIDC_TOKEN_V2`:
+Authenticate directly with AWS, GCP, or Azure via temporary JSON Web Tokens (JWT) using `CIRCLE_OIDC_TOKEN_V2`:
 
 ```yaml
 jobs:
@@ -181,51 +206,44 @@ jobs:
 
 ---
 
-## 7. Dynamic Config & Path Filtering
+## **7. Self-Hosted Runners (`circleci-runner`)**
 
-Split monorepos or multi-service projects dynamically using setup workflows:
+Execute jobs on your own bare metal, Kubernetes clusters, or private VPC instances:
 
-```yaml
-# In .circleci/config.yml
-version: 2.1
-setup: true # Marks this as a setup workflow
+```bash
+# Install circleci-runner daemon on Linux
+curl -s https://packagecloud.io/install/repositories/circleci/runner/script.deb.sh | sudo bash
+sudo apt install circleci-runner
 
-orbs:
-  path-filtering: circleci/path-filtering@1.1.0
-
-workflows:
-  setup-pipeline:
-    jobs:
-      - path-filtering/filter:
-          base-revision: main
-          mapping: |
-            services/frontend/.* frontend-workflow true
-            services/backend/.*  backend-workflow true
-          config-path: .circleci/continue_config.yml
+# Configure runner token and resource class in /etc/circleci-runner/circleci-runner.yml
+sudo systemctl enable --now circleci-runner
 ```
 
----
-
-## 8. Docker Layer Caching (DLC)
-
-Speed up container builds within machine or remote Docker executors:
+Usage in `.circleci/config.yml`:
 
 ```yaml
 jobs:
-  build-image:
-    machine:
-      image: ubuntu-2404:2024.05.1
-      docker_layer_caching: true # Reuses unchanged image layers between builds
+  private-build:
+    machine: true
+    resource_class: my-org/private-vpc-runner
     steps:
       - checkout
-      - run: docker build -t my-app:$CIRCLE_SHA1 .
+      - run: ./deploy-internal.sh
 ```
 
 ---
 
-## 9. Best Practices
+## **8. Best Practices**
 
-1. **Use Resource Classes**: Scale CPU and RAM to match workload needs (`resource_class: arm.medium` offers cost-effective ARM builds).
+1. **Use Resource Classes**: Match CPU and RAM to workload requirements (`resource_class: arm.medium` offers cost-effective ARM builds).
 2. **Secure Variables with Contexts**: Group environment variables into restricted Contexts requiring security team approvals.
 3. **Use Granular Cache Keys**: Include OS, lockfile checksums, and fallback prefixes. Cache package manager global caches (e.g. `~/.npm`) rather than root folders.
 4. **Leverage Timed Test Splitting**: Always feed test result XML to `store_test_results` so CircleCI can calculate optimal timing partitions.
+
+---
+
+## 📚 **Learning Resources**
+
+* 🔗 [Official CircleCI Documentation](https://circleci.com/docs/)
+* 📦 [CircleCI Orbs Registry](https://circleci.com/developer/orbs)
+* 💻 [CircleCI CLI Documentation](https://circleci-public.github.io/circleci-cli/)

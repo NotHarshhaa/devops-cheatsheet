@@ -1,25 +1,25 @@
-# GitHub Actions Cheatsheet
+# 🐙 GitHub Actions Cheatsheet
 
 ![](https://imgur.com/GMwRo18.png)
 
-## 1. Introduction
-
-**GitHub Actions** is a continuous integration and continuous delivery (CI/CD) and workflow automation platform integrated directly into GitHub repositories. It allows you to automate build, test, package, release, and deployment pipelines directly from repository events.
+**GitHub Actions** is a continuous integration, continuous delivery (CI/CD), and workflow automation platform natively integrated into GitHub. It allows you to automate build, test, package, release, and deployment pipelines directly triggered by repository events.
 
 ---
 
-## 2. Key Architecture & Concepts
+## **1. Key Architecture & Concepts**
 
-- **Workflow**: Automated process defined in YAML under `.github/workflows/`. Triggered by repository events, schedules, or manual webhooks.
-- **Job**: A set of steps executed sequentially on the same runner instance. Jobs run in parallel by default unless ordered with `needs`.
-- **Step**: Individual task executing either shell commands (`run`) or an action (`uses`).
-- **Runner**: Server hosting the job execution. Can be GitHub-hosted (`ubuntu-latest`, `windows-latest`, `macos-latest`, or ARM-based runners) or self-hosted.
-- **Action**: Reusable extension component written in Docker, JavaScript/Node.js, or Composite syntax.
-- **Environment**: Deployment target with protection rules (manual approvals, wait timers) and environment-specific secrets.
+| Concept | Description |
+| --- | --- |
+| **Workflow** | Automated process defined in YAML under `.github/workflows/`. Triggered by events, schedules, or manual webhooks. |
+| **Job** | A set of steps executed sequentially on the same runner instance. Jobs run in parallel by default unless ordered with `needs`. |
+| **Step** | Individual task executing either shell commands (`run`) or an action (`uses`). |
+| **Runner** | Server hosting the job: GitHub-hosted (`ubuntu-latest`, `windows-latest`, `macos-latest`) or self-hosted. |
+| **Action** | Reusable extension component written in Docker, JavaScript/Node.js, or Composite syntax. |
+| **Environment** | Deployment target with protection rules (manual approvals, wait timers) and environment-specific secrets. |
 
 ---
 
-## 3. Production CI/CD Workflow Example
+## **2. Production CI/CD Workflow Example**
 
 ```yaml
 name: Production CI/CD Pipeline
@@ -74,6 +74,15 @@ jobs:
       - name: Run Tests with Coverage
         run: npm test -- --coverage
 
+      - name: Generate Job Summary Report
+        run: |
+          echo "### 📊 Test Results Summary" >> $GITHUB_STEP_SUMMARY
+          echo "| Metric | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "| --- | --- |" >> $GITHUB_STEP_SUMMARY
+          echo "| Unit Tests | ✅ Passed |" >> $GITHUB_STEP_SUMMARY
+          echo "| Commit SHA | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Triggered By | @${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
+
       - name: Upload Test Coverage
         uses: actions/upload-artifact@v4
         with:
@@ -84,7 +93,22 @@ jobs:
 
 ---
 
-## 4. Modern Cloud Authentication: OpenID Connect (OIDC)
+## **3. Contexts & Expressions Reference**
+
+Expressions access workflow information using `${{ <expression> }}`:
+
+| Context | Description | Example |
+| --- | --- | --- |
+| `github` | Metadata about the workflow run and event | `${{ github.sha }}`, `${{ github.ref_name }}` |
+| `env` | Environment variables set in workflow or job | `${{ env.DATABASE_URL }}` |
+| `vars` | Non-sensitive configuration variables | `${{ vars.APP_PORT }}` |
+| `secrets` | Encrypted repository or environment secrets | `${{ secrets.PROD_API_KEY }}` |
+| `steps` | Outputs and outcomes of previous steps | `${{ steps.build.outputs.image_tag }}` |
+| `runner` | Information about the runner operating system | `${{ runner.os }}`, `${{ runner.arch }}` |
+
+---
+
+## **4. Modern Cloud Authentication: OpenID Connect (OIDC)**
 
 > [!TIP]
 > Never store permanent long-lived cloud credentials (like `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY`) in GitHub Secrets. Use GitHub's built-in OIDC token provider to assume temporary roles with short-lived tokens.
@@ -113,56 +137,54 @@ jobs:
 
 ---
 
-## 5. Matrix Builds & Modern Strategy
+## **5. Matrix Builds & Dynamic Matrix Generation**
 
-Run jobs across multiple operating systems, languages, or browser versions concurrently.
+### 🔹 Static Matrix Build
 
 ```yaml
 jobs:
   test-matrix:
-    name: Test on Node ${{ matrix.node-version }} - ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
-      fail-fast: false # Do not cancel other matrix jobs if one fails
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
         node-version: [20, 22]
-        include:
-          # Add an experimental build or canary flag
-          - os: ubuntu-latest
-            node-version: 22
-            experimental: true
-        exclude:
-          - os: macos-latest
-            node-version: 20
     steps:
       - uses: actions/checkout@v4
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-      - run: npm ci
       - run: npm test
-        continue-on-error: ${{ matrix.experimental || false }}
+```
+
+### 🔹 Dynamic Matrix via `fromJSON()`
+
+Calculate the matrix dynamically based on changed directories or API responses:
+
+```yaml
+jobs:
+  generate-matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      services: ${{ steps.set-matrix.outputs.services }}
+    steps:
+      - id: set-matrix
+        run: echo 'services=["auth", "billing", "frontend"]' >> $GITHUB_OUTPUT
+
+  build:
+    needs: generate-matrix
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: ${{ fromJSON(needs.generate-matrix.outputs.services) }}
+    steps:
+      - run: echo "Building service: ${{ matrix.service }}"
 ```
 
 ---
 
-## 6. Caching & Artifact Management (v4)
-
-### Caching Dependencies
-
-```yaml
-- name: Cache Node Modules
-  uses: actions/cache@v4
-  with:
-    path: ~/.npm
-    key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-    restore-keys: |
-      ${{ runner.os }}-node-
-```
-
-### Artifact Upload & Download (v4 Architecture)
+## **6. Caching & Artifact Management (v4)**
 
 ```yaml
 # In Job 1: Build & Upload
@@ -184,11 +206,9 @@ jobs:
 
 ---
 
-## 7. Reusable Workflows vs. Composite Actions
+## **7. Reusable Workflows vs. Composite Actions**
 
 ### Reusable Workflow (`.github/workflows/reusable-deploy.yml`)
-
-Allows cross-repository or cross-team pipeline standardization with inputs, secrets, and outputs.
 
 ```yaml
 name: Reusable Deploy
@@ -207,40 +227,21 @@ jobs:
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment }}
     steps:
-      - run: echo "Deploying to ${{ inputs.environment }} using token"
-```
-
-**Invoking the Reusable Workflow:**
-
-```yaml
-jobs:
-  call-deploy:
-    uses: ./.github/workflows/reusable-deploy.yml
-    with:
-      environment: production
-    secrets:
-      API_TOKEN: ${{ secrets.PROD_API_TOKEN }}
+      - run: echo "Deploying to ${{ inputs.environment }}"
 ```
 
 ### Composite Action (`.github/actions/setup-project/action.yml`)
 
-Combines multiple workflow steps into a single reusable action step.
-
 ```yaml
 name: 'Setup Project'
 description: 'Check out code and prepare toolchains'
-inputs:
-  node-version:
-    description: 'Node version'
-    required: false
-    default: '20'
 runs:
   using: 'composite'
   steps:
     - uses: actions/checkout@v4
     - uses: actions/setup-node@v4
       with:
-        node-version: ${{ inputs.node-version }}
+        node-version: 20
         cache: 'npm'
     - run: npm ci
       shell: bash
@@ -248,23 +249,24 @@ runs:
 
 ---
 
-## 8. Security Hardening & Best Practices
+## **8. Security Hardening & Best Practices**
 
-1. **Explicit Permissions**: Never leave default repository permissions open. Use top-level or job-level `permissions: contents: read` and explicitly specify privileges like `id-token: write` or `pull-requests: write`.
-2. **Pin Actions to Full Commit SHAs**:
+1. **Explicit Permissions**: Always declare minimal top-level `permissions: contents: read` to prevent privilege escalation.
+2. **Pin Actions to Full Commit SHAs**: Prevent supply-chain tampering:
    ```yaml
    uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
    ```
-3. **Use Environment Protection Rules**: Configure manual sign-offs and branch restrictions on target environments (`staging`, `production`) in repository settings.
-4. **Prevent Script Injection**: Never evaluate untrusted user input directly in inline bash scripts. Pass inputs via environment variables:
+3. **Prevent Script Injection**: Never evaluate user-controlled inputs in inline scripts. Pass variables via `env`:
    ```yaml
-   # Vulnerable:
-   # run: echo "Title was ${{ github.event.issue.title }}"
-   # Secure:
    env:
-     ISSUE_TITLE: ${{ github.event.issue.title }}
-   run: echo "Title was $ISSUE_TITLE"
+     TITLE: ${{ github.event.issue.title }}
+   run: echo "$TITLE"
    ```
-5. **Supply Chain Security**:
-   - Run security auditing: `npm audit`, `trivy`, or GitHub CodeQL (`github/codeql-action`).
-   - Generate Software Bill of Materials (SBOM) and sign release artifacts using Sigstore/Cosign.
+
+---
+
+## 📚 **Learning Resources**
+
+* 🔗 [Official GitHub Actions Documentation](https://docs.github.com/en/actions)
+* 📦 [GitHub Actions Marketplace](https://github.com/marketplace?type=actions)
+* 🛡️ [Security Hardening for GitHub Actions](https://docs.github.com/en/actions/security-guides/security-hardening-for-github-actions)

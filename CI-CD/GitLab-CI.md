@@ -1,25 +1,41 @@
-# GitLab CI Cheatsheet
+# 🦊 GitLab CI Cheatsheet
 
 ![](https://imgur.com/dbufti0.png)
 
-## 1. Introduction
-
-**GitLab CI/CD** is a core component of the GitLab platform that automates software testing, building, scanning, and deployment through a declarative configuration file called `.gitlab-ci.yml` in the root of your repository.
+**GitLab CI/CD** is an enterprise-grade continuous integration and delivery platform configured through `.gitlab-ci.yml`. It supports Directed Acyclic Graph (DAG) pipelines, auto-scaling runners, built-in container registries, and native DevSecOps templates.
 
 ---
 
-## 2. Key Architecture & Concepts
+## **1. Key Architecture & Concepts**
 
-- **Pipeline**: Complete workflow executed across stages and jobs.
-- **Stage**: Logical sequencing group (e.g., `.pre`, `build`, `test`, `deploy`, `.post`). Jobs within a stage execute in parallel by default.
-- **Job**: The discrete execution unit containing commands (`script`), environment configs, and artifacts.
-- **Runner**: The executor agent. Can be shared (GitLab SaaS), group-level, or project-specific running on Docker, Kubernetes, or VMs.
-- **DAG (Directed Acyclic Graph)**: Non-linear pipelines defined with `needs:` that decouple job execution from stage boundaries.
-- **Rules**: Modern conditional logic system replacing deprecated `only`/`except` directives.
+| Concept | Description |
+| --- | --- |
+| **Pipeline** | The complete workflow consisting of stages and jobs. |
+| **Stage** | Logical ordering gate (e.g. `lint`, `build`, `test`, `deploy`). Jobs within the same stage run concurrently. |
+| **Job** | Discrete unit of work running bash/powershell scripts inside a container or VM. |
+| **Runner** | The execution daemon running on Docker, Kubernetes, or bare-metal. |
+| **DAG (`needs`)** | Decouples jobs from stage ordering, executing tasks immediately when prerequisites finish. |
+| **Rules** | Powerful condition engine controlling job inclusion, failure handling, and execution modes. |
 
 ---
 
-## 3. Production `.gitlab-ci.yml` Pipeline
+## **2. Predefined CI/CD Variables Quick Reference**
+
+GitLab automatically injects essential context variables into every job:
+
+| Variable | Description | Example |
+| --- | --- | --- |
+| `$CI_COMMIT_SHA` | Full 40-character commit hash | `1a2b3c4d5e...` |
+| `$CI_COMMIT_SHORT_SHA` | Short 8-character commit hash | `1a2b3c4d` |
+| `$CI_COMMIT_REF_SLUG` | URL-safe branch or tag name | `feature-login-page` |
+| `$CI_DEFAULT_BRANCH` | Project's default branch | `main` |
+| `$CI_PIPELINE_SOURCE` | What triggered the pipeline | `push`, `merge_request_event`, `schedule` |
+| `$CI_REGISTRY_IMAGE` | Base address of project container registry | `registry.gitlab.com/group/project` |
+| `$CI_JOB_TOKEN` | Short-lived token for authenticating against GitLab API/registry | `glcbt-64_...` |
+
+---
+
+## **3. Production `.gitlab-ci.yml` Pipeline**
 
 ```yaml
 stages:
@@ -69,7 +85,7 @@ build-job:
   rules:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
 
-# DAG Pipeline: test-unit can run immediately after lint without waiting for build!
+# DAG Pipeline: test-unit runs immediately after lint without waiting for build!
 test-unit:
   stage: test
   needs: ["lint-job"]
@@ -99,36 +115,9 @@ deploy-production:
 
 ---
 
-## 4. Modern Conditional Logic (`rules`)
+## **4. Directed Acyclic Graph (DAG) with `needs`**
 
-Replace legacy `only`/`except` with powerful `rules:` expressions:
-
-```yaml
-job-example:
-  script: echo "Deploying..."
-  rules:
-    # Run only on default branch
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
-      when: on_success
-
-    # Run for merge requests targeting main
-    - if: $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == 'main'
-
-    # Run if specific files changed
-    - if: $CI_PIPELINE_SOURCE == 'push'
-      changes:
-        - src/**/*
-        - Dockerfile
-
-    # Prevent execution
-    - when: never
-```
-
----
-
-## 5. Directed Acyclic Graph (DAG) with `needs`
-
-Speed up pipelines significantly by breaking stage dependencies:
+Break stage bottlenecks and execute microservice pipelines in parallel:
 
 ```yaml
 build:frontend:
@@ -141,20 +130,64 @@ build:backend:
 
 test:frontend:
   stage: test
-  needs: ["build:frontend"] # Runs immediately when frontend build completes!
+  needs: ["build:frontend"] # Starts immediately when frontend build completes
   script: npm run test:frontend
 
 test:backend:
   stage: test
-  needs: ["build:backend"] # Runs immediately when backend build completes!
+  needs: ["build:backend"] # Starts immediately when backend build completes
   script: npm run test:backend
 ```
 
 ---
 
-## 6. OpenID Connect (OIDC) & Passwordless Cloud Auth
+## **5. Multi-Project & Downstream Pipelines (`trigger`)**
 
-Authenticate securely with AWS, GCP, or Vault without storing static API keys.
+Trigger child pipelines or downstream repository deployments:
+
+```yaml
+trigger-e2e-tests:
+  stage: test
+  trigger:
+    project: my-org/e2e-integration-tests
+    branch: main
+    strategy: depend # Wait for downstream pipeline to succeed before completing
+```
+
+---
+
+## **6. GitLab Runner Configuration (`config.toml`)**
+
+Tune self-hosted Docker and Kubernetes runner performance:
+
+```toml
+concurrent = 10
+check_interval = 0
+
+[session_server]
+  session_timeout = 1800
+
+[[runners]]
+  name = "k8s-production-runner"
+  url = "https://gitlab.com/"
+  id = 123456
+  token = "glrt-XXXXX"
+  executor = "docker"
+  [runners.custom_build_dir]
+  [runners.docker]
+    tls_verify = false
+    image = "alpine:latest"
+    privileged = false
+    pull_policy = ["if-not-present"]
+    volumes = ["/cache", "/var/run/docker.sock:/var/run/docker.sock"]
+    shm_size = 2147483648
+```
+
+---
+
+## **7. Modern Cloud Authentication: OpenID Connect (OIDC)**
+
+Assume cloud IAM roles with short-lived tokens without storing static secrets:
 
 ```yaml
 deploy:aws:
@@ -180,73 +213,21 @@ deploy:aws:
     - export AWS_SESSION_TOKEN=$(echo "$STS_CREDENTIALS" | awk '{print $3}')
   script:
     - aws sts get-caller-identity
-    - aws s3 sync dist/ s3://my-production-bucket/
 ```
 
 ---
 
-## 7. GitLab CI/CD Catalog & CI Components
+## **8. Production Best Practices**
 
-Modern GitLab pipelines use CI Components instead of complex monolithic YAML includes:
-
-```yaml
-include:
-  # Using GitLab CI/CD Catalog Components
-  - component: gitlab.com/components/secret-detection/secret-detection@1.1.0
-  - component: gitlab.com/components/container-scanning/container-scanning@4.0.0
-    inputs:
-      image: "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA"
-
-  # Or referencing structured local files
-  - local: '/.gitlab/ci/build.gitlab-ci.yml'
-  - local: '/.gitlab/ci/test.gitlab-ci.yml'
-```
+1. **Enable Pipeline Interruptibility**: Add `interruptible: true` to prevent wasting runner minutes on stale branch commits.
+2. **Mask and Protect Variables**: Always mark sensitive credentials as **Masked** and **Protected** in **Settings** → **CI/CD** → **Variables**.
+3. **Use Artifact Expirations**: Always declare `expire_in` to prevent disk storage bloat on your GitLab instance.
+4. **Use DAG (`needs:`)**: Significantly reduce total pipeline duration by allowing jobs to run as soon as dependencies are ready.
 
 ---
 
-## 8. Built-in Security & Supply Chain Scans
+## 📚 **Learning Resources**
 
-Include standard security templates managed directly by GitLab:
-
-```yaml
-include:
-  - template: Jobs/SAST.gitlab-ci.yml
-  - template: Jobs/Dependency-Scanning.gitlab-ci.yml
-  - template: Jobs/Secret-Detection.gitlab-ci.yml
-  - template: Jobs/Container-Scanning.gitlab-ci.yml
-
-sast:
-  stage: test
-  variables:
-    SAST_EXCLUDED_PATHS: "spec, test, tests, tmp"
-```
-
----
-
-## 9. Reusable YAML Blocks (`!reference` and Anchors)
-
-### Modern `!reference` Tag (Recommended over YAML anchors)
-
-```yaml
-.setup_node:
-  before_script:
-    - node -v
-    - npm ci
-
-unit-test:
-  before_script:
-    - !reference [.setup_node, before_script]
-    - echo "Running unit tests setup"
-  script:
-    - npm test
-```
-
----
-
-## 10. Production Best Practices
-
-1. **Enable Pipeline Interruptibility**: Add `interruptible: true` to default configurations to abort stale branch pipelines on new pushes.
-2. **Strict Variable Masking**: Always mark sensitive CI/CD variables as **Masked** and **Protected** in Project Settings.
-3. **Use Artifact Expirations**: Set realistic `expire_in` values (e.g., `1 hour`, `2 days`) to prevent runner storage exhaustion.
-4. **Prefer CI Components over Nested Anchors**: Use CI components or `!reference` tags for clean composability.
-5. **Optimize Cache Paths**: Cache package manager cache directories (like `~/.npm` or `~/.cache/pip`) rather than project-local folders to avoid corrupt node_modules states.
+* 🔗 [Official GitLab CI Documentation](https://docs.gitlab.com/ee/ci/)
+* 📜 [GitLab CI/CD Keyword Reference](https://docs.gitlab.com/ee/ci/yaml/)
+* 💻 [GitLab Runner Configuration](https://docs.gitlab.com/runner/configuration/)
