@@ -1,170 +1,192 @@
-# Trivy Cheatsheet
+# 🔍 Trivy Cheatsheet
 
 ![text](https://imgur.com/TYu7qw7.png)
 
-**1. Introduction:**
+**Trivy** by Aqua Security is a comprehensive, blazing-fast security scanner for container images, file systems, Git repositories, virtual machine images, Kubernetes clusters, and AWS environments. It detects CVE vulnerabilities, infrastructure misconfigurations, exposed secrets, and license non-compliance.
 
-- **Trivy** is a comprehensive and easy-to-use security scanner for container images, file systems, and Git repositories, detecting vulnerabilities, misconfigurations, and secrets.
+---
 
-**2. Installation:**
+## **1. Installation Quickstart**
 
-- **Installing Trivy:**
-  - On macOS using Homebrew:
+### 🔹 Linux (Modern Debian / Ubuntu)
 
-    ```bash
-    brew install aquasecurity/trivy/trivy
-    ```
+```bash
+sudo apt-get install -y wget apt-transport-https gnupg
+sudo mkdir -p /etc/apt/keyrings
+wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | gpg --dearmor | sudo tee /etc/apt/keyrings/trivy.gpg > /dev/null
+echo "deb [signed-by=/etc/apt/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb generic main" | sudo tee -a /etc/apt/sources.list.d/trivy.list
 
-  - On Linux:
+sudo apt-get update
+sudo apt-get install -y trivy
+```
 
-    ```bash
-    sudo apt-get install wget apt-transport-https gnupg lsb-release
-    wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
-    echo deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main | sudo tee -a /etc/apt/sources.list.d/trivy.list
-    sudo apt-get update
-    sudo apt-get install trivy
-    ```
+### 🔹 macOS & Docker
 
-  - On Windows:
-    - Download the binary from the [GitHub releases](https://github.com/aquasecurity/trivy/releases).
+```bash
+# macOS via Homebrew
+brew install trivy
 
-**3. Basic Usage:**
+# Run directly via Docker (no local installation)
+docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v $HOME/Library/Caches:/root/.cache/ aquasec/trivy:latest image nginx:latest
+```
 
-- **Scanning a Docker Image:**
+---
 
-  ```bash
-  trivy image nginx:latest
-  ```
+## **2. Core Scanning Targets**
 
-  - This command scans the `nginx:latest` Docker image for known vulnerabilities.
+```bash
+# 1. Scan a Container Image
+trivy image nginx:alpine
 
-- **Scanning a File System:**
+# 2. Scan a Local Filesystem / Source Code
+trivy fs /path/to/project
 
-  ```bash
-  trivy fs /path/to/directory
-  ```
+# 3. Scan a Remote Git Repository
+trivy repo https://github.com/org/repo
 
-  - This command scans the specified directory for vulnerabilities and misconfigurations.
+# 4. Scan Infrastructure as Code (Terraform, CloudFormation, Dockerfile, K8s manifests)
+trivy config ./infra/
 
-- **Scanning a Git Repository:**
+# 5. Scan a Live Kubernetes Cluster
+trivy k8s --report summary cluster
+```
 
-  ```bash
-  trivy repo https://github.com/user/repository
-  ```
+---
 
-  - This command scans the entire GitHub repository for vulnerabilities.
+## **3. Modern Scanning Options & Filters**
 
-**4. Scanning Options:**
+> [!TIP]
+> Use `--scanners` to select target engines: `vuln` (CVEs), `misconfig` (IaC compliance), `secret` (leaked tokens), and `license`.
 
-- **Severity Levels:**
-  - Filter results based on severity:
+```bash
+# Scan for vulnerabilities, misconfigurations, and secrets in one run
+trivy fs --scanners vuln,misconfig,secret .
 
-    ```bash
-    trivy image --severity HIGH,CRITICAL nginx:latest
-    ```
+# Filter by severity (HIGH and CRITICAL only)
+trivy image --severity HIGH,CRITICAL python:3.11-slim
 
-  - This command limits the output to high and critical vulnerabilities only.
+# Filter out unpatchable vulnerabilities (show only actionable fixes)
+trivy image --ignore-unfixed nginx:latest
 
-- **Ignore Unfixed Vulnerabilities:**
+# Fail the command with exit code 1 (ideal for CI/CD pipelines)
+trivy image --exit-code 1 --severity CRITICAL nginx:latest
+```
 
-  ```bash
-  trivy image --ignore-unfixed nginx:latest
-  ```
+---
 
-  - Excludes vulnerabilities that have no known fixes.
+## **4. Software Bill of Materials (SBOM)**
 
-- **Output Formats:**
-  - JSON:
+Trivy generates and scans industry-standard SBOM formats (SPDX and CycloneDX):
 
-    ```bash
-    trivy image -f json -o results.json nginx:latest
-    ```
+```bash
+# Generate a CycloneDX SBOM in JSON
+trivy image --format cyclonedx --output sbom-cyclonedx.json node:18-alpine
 
-  - Table (default):
+# Generate an SPDX SBOM in JSON
+trivy image --format spdx-json --output sbom-spdx.json node:18-alpine
 
-    ```bash
-    trivy image -f table nginx:latest
-    ```
+# Scan an existing SBOM file for newly disclosed vulnerabilities
+trivy sbom sbom-cyclonedx.json
+```
 
-**5. Advanced Usage:**
+---
 
-- **Customizing Vulnerability Database Update:**
+## **5. Ignoring Known / Accepted Vulnerabilities (`.trivyignore`)**
 
-  ```bash
-  trivy image --skip-update nginx:latest
-  ```
+Create a `.trivyignore` file in the root of your project to suppress false positives or accepted risks:
 
-  - Skips updating the vulnerability database before scanning.
+```text
+# Ignore specific CVEs with reason and expiry date
+# Accepted risk until upgrade next sprint
+CVE-2023-12345
+CVE-2024-54321 exp:2026-10-01
 
-- **Using Trivy with Docker:**
-  - Running Trivy as a Docker container:
+# Ignore specific paths from secret scanning
+path:tests/fixtures/mock_keys.pem
+```
 
-    ```bash
-    docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy image nginx:latest
-    ```
+Execute scan with ignore file:
 
-  - Scanning an image by directly pulling it from a registry:
+```bash
+trivy image --ignorefile .trivyignore my-app:latest
+```
 
-    ```bash
-    trivy image --docker-username <username> --docker-password <password> myregistry.com/myimage:tag
-    ```
+---
 
-- **Trivy in CI/CD Pipelines:**
-  - Integrate Trivy into CI/CD workflows to automate vulnerability scanning during build stages.
+## **6. CI/CD Integration Examples**
 
-**6. Trivy Misconfiguration Detection:**
+### 🔹 GitHub Actions Workflow
 
-- **Scanning for Misconfigurations:**
+```yaml
+name: Security Scan
+on: [push, pull_request]
 
-  ```bash
-  trivy config /path/to/configuration/files
-  ```
+jobs:
+  trivy-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-  - Scans configuration files (e.g., Kubernetes, Terraform) for security misconfigurations.
+      - name: Build Container Image
+        run: docker build -t myapp:${{ github.sha }} .
 
-**7. Trivy and Secrets Detection:**
+      - name: Run Trivy Vulnerability Scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'myapp:${{ github.sha }}'
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
+```
 
-- **Scanning for Secrets:**
+### 🔹 GitLab CI (`.gitlab-ci.yml`)
 
-  ```bash
-  trivy fs --security-checks secrets /path/to/code
-  ```
+```yaml
+trivy_scan:
+  stage: test
+  image:
+    name: aquasec/trivy:latest
+    entrypoint: [""]
+  script:
+    - trivy fs --exit-code 1 --severity CRITICAL --scanners vuln,secret .
+```
 
-  - Detects hardcoded secrets like passwords, API keys, and tokens within the codebase.
+---
 
-**8. Integration with Other Tools:**
+## **7. Output Formats & Reporting**
 
-- **Trivy and Harbor:**
-  - Trivy can be used as a vulnerability scanner within [Harbor](https://goharbor.io/), a cloud-native registry.
+```bash
+# Output as JSON
+trivy image -f json -o scan-results.json nginx:latest
 
-- **Trivy and Kubernetes:**
-  - Trivy can scan Kubernetes resources for vulnerabilities and misconfigurations.
+# Output as SARIF (for GitHub Security Tab integration)
+trivy image -f sarif -o results.sarif nginx:latest
 
-**9. Trivy Reports:**
+# Generate an HTML report using a template
+trivy image --format template --template "@contrib/html.tpl" -o report.html nginx:latest
+```
 
-- **Generating Reports:**
-  - HTML Report:
+---
 
-    ```bash
-    trivy image -f json -o report.json nginx:latest
-    trivy report --input report.json --format html --output report.html
-    ```
+## **8. Cache Maintenance**
 
-  - Detailed Reports with Severity Breakdown:
+Trivy automatically downloads and updates its vulnerability database. Manage disk usage with:
 
-    ```bash
-    trivy image --severity HIGH,CRITICAL --format table nginx:latest
-    ```
+```bash
+# Clear all cached vulnerability databases and image layers
+trivy clean --all
 
-**10. Troubleshooting Trivy:**
+# Clear only the vulnerability database
+trivy clean --scan-cache
+```
 
-- **Common Issues:**
-  - **Slow Scans:** Consider skipping database updates if they are not necessary.
-  - **Network Issues:** Ensure your network allows access to Trivy’s vulnerability database.
+---
 
-- **Debugging:**
-  - Use the `--debug` flag to see detailed logs:
+## 📚 **Learning Resources**
 
-    ```bash
-    trivy image --debug nginx:latest
-    ```
+* 🔗 [Official Trivy Documentation](https://aquasecurity.github.io/trivy/latest/)
+* 📦 [Trivy GitHub Repository](https://github.com/aquasecurity/trivy)
+* 🛡️ [Trivy CI/CD Integration Guides](https://aquasecurity.github.io/trivy/latest/docs/integrations/github-actions/)

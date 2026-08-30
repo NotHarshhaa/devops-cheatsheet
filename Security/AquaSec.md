@@ -1,84 +1,144 @@
-# AquaSec Cheatsheet
+# 🛡️ Aqua Security Cheatsheet
 
 ![text](https://imgur.com/8MBLV6G.png)
 
-**1. Introduction:**
+**Aqua Security** is a leading cloud-native security platform delivering full-lifecycle security for containerized, Kubernetes, and serverless environments. Aqua combines an enterprise Cloud Native Application Protection Platform (CNAPP) with industry-standard open-source tools including **Trivy**, **Tracee**, and **Kube-bench**.
 
-- **AquaSec** (Aqua Security) is a comprehensive security platform for securing containers, Kubernetes, and cloud-native applications throughout the CI/CD pipeline.
+---
 
-**2. Installation:**
+## **1. Core Platform Architecture**
 
-- **Installing AquaSec:**
-  - AquaSec is usually deployed as a Kubernetes application.
-  - Download AquaSec from the [Aqua website](https://www.aquasec.com/) and follow the installation instructions for your environment.
+| Component | Type | Description |
+| --- | --- | --- |
+| **Aqua Server / Console** | Management | Central control plane managing policies, compliance reports, and audit logs. |
+| **Aqua Enforcer / MicroEnforcer** | Agent | Host/pod daemon enforcing runtime protection, container immutability, and drift prevention. |
+| **Tracee** | Open-Source | eBPF-powered runtime security engine detecting malicious behaviors at the Linux kernel level. |
+| **Kube-bench** | Open-Source | Automated CIS Kubernetes Benchmark audit tool. |
+| **Trivy** | Open-Source | Comprehensive scanner for container images, filesystems, Git repos, and Kubernetes configs. |
 
-- **Dockerized Installation:**
-  - AquaSec components can also be installed using Docker images available on Docker Hub.
+---
 
-**3. Basic Configuration:**
+## **2. Open-Source Ecosystem Quick Reference**
 
-- **Aqua Console:**
-  - The Aqua Console is the central management interface for configuring and monitoring AquaSec.
-  - Access the Aqua Console at `http://<aqua-console-ip>:8080`.
+### 🔹 Kube-bench (CIS Kubernetes Benchmark)
 
-- **User Management:**
-  - Create users and assign roles in the Aqua Console under the **Users** section.
+Audit Kubernetes nodes against the Center for Internet Security (CIS) benchmarks:
 
-**4. Container Security:**
+```bash
+# Run kube-bench inside a Docker container targeting a master node
+docker run --pid=host -v /etc:/etc:ro -v /var:/var:ro -t aquasec/kube-bench:latest master
 
-- **Image Scanning:**
-  - AquaSec automatically scans container images for vulnerabilities, malware, and misconfigurations.
-  - Scans can be initiated via the Aqua Console or automated in CI/CD pipelines.
+# Run kube-bench on a worker node
+docker run --pid=host -v /etc:/etc:ro -v /var:/var:ro -t aquasec/kube-bench:latest node
 
-- **Runtime Protection:**
-  - AquaSec provides real-time monitoring of running containers, blocking unauthorized activities based on predefined policies.
+# Run as a Kubernetes Job
+kubectl apply -f https://raw.githubusercontent.com/aquasecurity/kube-bench/main/job.yaml
+kubectl logs -l job-name=kube-bench
+```
 
-**5. Kubernetes Security:**
+### 🔹 Tracee (eBPF Runtime Threat Detection)
 
-- **Kubernetes Admission Control:**
-  - AquaSec integrates with Kubernetes admission controllers to enforce security policies during the pod creation process.
-  - Policies can prevent the deployment of vulnerable or misconfigured containers.
+Detect privilege escalations, rootkit attempts, and reverse shells in real time:
 
-- **Network Segmentation:**
-  - AquaSec can segment Kubernetes network traffic using microsegmentation to restrict communication between pods.
+```bash
+# Run Tracee via Docker using host kernel headers
+docker run --name tracee --rm -it \
+  --privileged \
+  --pid=host \
+  -v /lib/modules/:/lib/modules/:ro \
+  -v /usr/src:/usr/src:ro \
+  -v /tmp/tracee:/tmp/tracee \
+  aquasec/tracee:latest
 
-**6. Advanced Features:**
+# Trace only suspicious security events (process exec, file changes)
+tracee --trace event=sched_process_exec,openat
 
-- **Secrets Management:**
-  - AquaSec integrates with secrets management tools like HashiCorp Vault to secure sensitive data in containers and Kubernetes clusters.
+# Detect when a container escapes to the host namespace
+tracee --output json --events standard_file_events
+```
 
-- **Compliance Auditing:**
-  - AquaSec provides auditing capabilities to ensure compliance with standards like PCI-DSS, HIPAA, and NIST.
+---
 
-**7. AquaSec in CI/CD Pipelines:**
+## **3. Kubernetes Admission Control**
 
-- **Integrating with Jenkins:**
-  - Use the AquaSec Jenkins plugin to scan images as part of the build process and fail builds that do not meet security criteria.
+Aqua's validating webhook intercepts `kubectl apply` requests, blocking pods that fail security policies before they are scheduled.
 
-- **Automating Policies:**
-  - Define security policies that are automatically enforced across all stages of the pipeline.
+```plaintext
+kubectl apply -f pod.yaml
+          ↓
+Kubernetes API Server
+          ↓ (Admission Review)
+[Aqua Validating Webhook]
+          ↓
+Decision:
+├── Image contains Critical CVEs -> REJECT (403 Forbidden)
+├── Running as Root / Privileged -> REJECT (Policy Violation)
+└── Scanned & Compliant          -> ACCEPT (Pod Created)
+```
 
-**8. Monitoring and Reporting:**
+Example Admission Policy:
+* **Disallow Root Users**: Blocks any container with `runAsUser: 0`.
+* **Enforce Scanned Image Pass**: Rejects images that have not been scanned and approved in the registry.
+* **Block Privileged Containers**: Disallows `privileged: true` and sensitive host volume mounts (`/etc`, `/var/run/docker.sock`).
 
-- **Dashboards:**
-  - AquaSec provides detailed dashboards for monitoring vulnerabilities, policy violations, and runtime security events.
+---
 
-- **Custom Alerts:**
-  - Configure alerts for specific security events, such as the detection of high-severity vulnerabilities or unauthorized access attempts.
+## **4. Runtime Protection: Drift Prevention**
 
-**9. Scaling AquaSec:**
+Aqua Enforcer ensures **container immutability** by strictly enforcing the principle that a container should never change at runtime:
 
-- **High Availability:**
-  - Deploy AquaSec in a high-availability configuration with multiple Aqua Consoles and databases to ensure resilience.
+* **Executable Blacklisting**: Prevents binaries not present in the original container image from executing.
+* **File Integrity Monitoring**: Alerts and blocks modifications to sensitive directories (`/etc`, `/bin`, `/usr`).
+* **MicroEnforcer**: Injected directly into container pods in serverless container environments (AWS Fargate, Google Cloud Run) where host access is restricted.
 
-- **Integrating with SIEMs:**
-  - AquaSec integrates with Security Information and Event Management (SIEM) systems like Splunk and IBM QRadar for centralized monitoring.
+---
 
-**10. Troubleshooting AquaSec:**
+## **5. CI/CD Pipeline Security Gate**
 
-- **Common Issues:**
-  - **Failed Scans:** Ensure that the Aqua scanner is properly configured and has access to the image registry.
-  - **Policy Enforcement Issues:** Review policy definitions and ensure they are correctly applied.
+Integrate Aqua scanner or Trivy directly into your deployment pipeline:
 
-- **Debugging:**
-  - Check AquaSec logs for detailed error information and troubleshooting steps.
+### 🔹 GitHub Actions Security Gate
+
+```yaml
+name: Container Security Scan
+on: [push]
+
+jobs:
+  aqua-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build container image
+        run: docker build -t myapp:${{ github.sha }} .
+
+      - name: Run Aqua Trivy Vulnerability Scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'myapp:${{ github.sha }}'
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          severity: 'CRITICAL,HIGH'
+```
+
+---
+
+## **6. Enterprise Troubleshooting & Audit**
+
+* **Audit Log Stream**: Stream security violation events directly to SIEM solutions (Splunk, Datadog, AWS Security Hub).
+* **Verify Enforcer DaemonSet**:
+  ```bash
+  kubectl get pods -n aqua -l app=aqua-enforcer
+  kubectl logs -n aqua -l app=aqua-enforcer --tail=50
+  ```
+
+---
+
+## 📚 **Learning Resources**
+
+* 🔗 [Aqua Security Official Documentation](https://docs.aquasec.com/)
+* 🛡️ [Tracee eBPF Project](https://aquasecurity.github.io/tracee/latest/)
+* 📦 [Kube-bench Repository](https://github.com/aquasecurity/kube-bench)
+* 📖 [Trivy Documentation](https://aquasecurity.github.io/trivy/)

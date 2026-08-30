@@ -1,124 +1,193 @@
-# SonarQube Cheatsheet
+# 📊 SonarQube Cheatsheet
 
 ![text](https://imgur.com/l49w71S.png)
 
-**1. Introduction:**
+**SonarQube** is the industry-leading platform for continuous code quality and Static Application Security Testing (SAST). It detects bugs, vulnerabilities, and code smells across 30+ programming languages, enforcing the **"Clean as You Code"** methodology to keep technical debt out of production.
 
-- **SonarQube** is a popular open-source platform for continuous inspection of code quality, performing automatic reviews with static analysis of code to detect bugs, code smells, and security vulnerabilities.
+---
 
-**2. Installation:**
+## **1. Core Concepts & Terminology**
 
-- **Installing SonarQube:**
-  - On Docker:
+| Concept | Description |
+| --- | --- |
+| **Clean as You Code** | Focuses on maintaining high standards on **New Code** rather than remediating legacy debt. |
+| **Quality Gate** | A pass/fail condition enforced in CI/CD pipelines before code is merged into main branches. |
+| **Quality Profile** | The collection of active static analysis rules applied to a specific programming language. |
+| **Security Hotspots** | Security-sensitive code areas requiring human review before approval. |
+| **Vulnerabilities** | Confirmed flaws that compromise software security (OWASP Top 10, CWE, SANS). |
 
-    ```bash
-    docker run -d --name sonarqube -p 9000:9000 sonarqube
-    ```
+---
 
-  - Manual Installation on Linux:
+## **2. Installation & Quickstart**
 
-    ```bash
-    wget https://binaries.sonarsource.com/Distribution/sonarqube/sonarqube-8.9.0.43852.zip
-    unzip sonarqube-8.9.0.43852.zip
-    cd sonarqube-8.9.0.43852/bin/linux-x86-64
-    ./sonar.sh start
-    ```
+### 🔹 Run with Docker (Community Edition)
 
-- **Starting SonarQube:**
-  - Access SonarQube at `http://localhost:9000`.
-  - Default credentials: `admin/admin`.
+```bash
+docker run -d \
+  --name sonarqube \
+  -p 9000:9000 \
+  -e SONAR_JDBC_URL=jdbc:postgresql://postgres:5432/sonar \
+  -e SONAR_JDBC_USERNAME=sonar \
+  -e SONAR_JDBC_PASSWORD=sonar \
+  sonarqube:community
+```
 
-**3. Configuring SonarQube:**
+Default credentials: `admin` / `admin` (forced change on first login).
 
-- **Database Configuration:**
-  - SonarQube requires a database like PostgreSQL, MySQL, or Oracle.
-  - Configure the database connection in the `sonar.properties` file:
+> [!IMPORTANT]
+> **Supported Databases**: SonarQube supports **PostgreSQL**, **Microsoft SQL Server**, and **Oracle**. *(MySQL support was discontinued in SonarQube 7.9+).*
 
-    ```properties
-    sonar.jdbc.url=jdbc:postgresql://localhost/sonarqube
-    sonar.jdbc.username=sonar
-    sonar.jdbc.password=sonar
-    ```
+### 🔹 Linux Host Kernel Requirements
 
-- **Configuring Quality Profiles:**
-  - Quality profiles define the set of rules SonarQube uses for code analysis.
-  - Create or customize profiles in the **Quality Profiles** section of the UI.
+Because SonarQube embeds Elasticsearch, you must increase the virtual memory map count on the host:
 
-**4. Running Analysis:**
+```bash
+# Set runtime parameter
+sudo sysctl -w vm.max_map_count=262144
 
-- **Using SonarQube Scanner:**
-  - Install the scanner:
+# Persist across reboots in /etc/sysctl.conf
+echo "vm.max_map_count=262144" | sudo tee -a /etc/sysctl.conf
+```
 
-    ```bash
-    npm install -g sonarqube-scanner
-    ```
+---
 
-  - Run a scan:
+## **3. Scanner Configuration (`sonar-project.properties`)**
 
-    ```bash
-    sonar-scanner \
-      -Dsonar.projectKey=my-project \
-      -Dsonar.sources=. \
-      -Dsonar.host.url=http://localhost:9000 \
-      -Dsonar.login=admin \
-      -Dsonar.password=admin
-    ```
+Place `sonar-project.properties` in your repository root:
 
-- **Integrating with CI/CD:**
-  - Integrate SonarQube with Jenkins, GitLab CI, or other CI/CD tools to automate code analysis.
+```properties
+# Project identification
+sonar.projectKey=my-org_my-service
+sonar.projectName=My Microservice
+sonar.projectVersion=1.0.0
 
-**5. SonarQube Plugins:**
+# Source and test directories
+sonar.sources=src
+sonar.tests=test
+sonar.sourceEncoding=UTF-8
 
-- **Installing Plugins:**
-  - Navigate to **Administration > Marketplace** in SonarQube and search for plugins.
-  - Popular plugins include SonarLint, SonarCSS, and SonarTS.
+# Exclusions
+sonar.exclusions=**/node_modules/**,**/build/**,**/dist/**,**/*.spec.ts
 
-- **SonarQube and IDE Integration:**
-  - **SonarLint** is a plugin that integrates with IDEs like IntelliJ, Eclipse, and VS Code for real-time code quality feedback.
+# Test coverage reports (Jest / Istanbul example)
+sonar.javascript.lcov.reportPaths=coverage/lcov.info
 
-**6. Advanced Features:**
+# Clean Code Quality Gate parameter
+sonar.qualitygate.wait=true
+```
 
-- **Code Coverage:**
-  - SonarQube integrates with code coverage tools like Jacoco for Java and Istanbul for JavaScript to report on test coverage.
+---
 
-- **Security Vulnerabilities:**
-  - SonarQube detects vulnerabilities and provides remediation guidance based on OWASP and SANS standards.
+## **4. Running Scans via CLI**
 
-**7. Managing Users and Permissions:**
+> [!NOTE]
+> Modern SonarQube (v9.x/10.x+) uses **Analysis Tokens** (`sonar.token`) instead of username/password.
 
-- **User Management:**
-  - Add users and groups in the **Security** section.
-  - Assign roles such as **Admin**, **User**, or **Code Viewer**.
+```bash
+# Using modern sonar-scanner CLI
+sonar-scanner \
+  -Dsonar.host.url=http://localhost:9000 \
+  -Dsonar.token=sqa_0123456789abcdef0123456789abcdef01234567
 
-- **LDAP/SSO Integration:**
-  - Configure LDAP or SSO in `sonar.properties` for centralized user authentication.
+# Using Maven (Java)
+mvn clean verify sonar:sonar \
+  -Dsonar.host.url=http://localhost:9000 \
+  -Dsonar.token=$SONAR_TOKEN
 
-**8. Monitoring and Reporting:**
+# Using Gradle (Java/Kotlin)
+./gradlew sonar \
+  -Dsonar.host.url=http://localhost:9000 \
+  -Dsonar.token=$SONAR_TOKEN
+```
 
-- **Project Dashboards:**
-  - SonarQube provides detailed dashboards for each project, showing metrics like code coverage, duplications, and issues over time.
+---
 
-- **Custom Reports:**
-  - Generate custom reports with detailed metrics and trends for management or compliance purposes.
+## **5. CI/CD Pipeline Integrations**
 
-**9. Scaling SonarQube:**
+### 🔹 GitHub Actions Workflow
 
-- **High Availability:**
-  - Run SonarQube in a cluster mode by configuring multiple nodes and a load balancer.
-  - Configure the cluster settings in the `sonar.properties` file.
+```yaml
+name: SonarQube Analysis
+on:
+  push:
+    branches: [main]
+  pull_request:
+    types: [opened, synchronize, reopened]
 
-- **Optimizing Performance:**
-  - Use a separate database for larger SonarQube deployments and allocate sufficient resources to the server.
+jobs:
+  sonarqube:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history is required for accurate blame info
 
-**10. Troubleshooting SonarQube:**
+      - name: Run SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@master
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
 
-- **Common Issues:**
-  - **Out of Memory:** Increase JVM heap size in `sonar.properties`.
-  - **Failed Scans:** Check the logs in `logs/` directory for detailed error messages.
+      - name: Enforce Quality Gate Status
+        uses: SonarSource/sonarqube-quality-gate-action@master
+        timeout-minutes: 5
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+```
 
-- **Debugging:**
-  - Enable debug logging in `sonar.properties`:
+### 🔹 GitLab CI Pipeline (`.gitlab-ci.yml`)
 
-    ```properties
-    sonar.log.level=DEBUG
-    ```
+```yaml
+stages:
+  - test
+  - sonarqube
+
+sonarqube-check:
+  stage: sonarqube
+  image:
+    name: sonarsource/sonar-scanner-cli:latest
+    entrypoint: [""]
+  variables:
+    SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar"
+    GIT_DEPTH: "0"
+  cache:
+    key: "${CI_JOB_NAME}"
+    paths:
+      - .sonar/cache
+  script:
+    - sonar-scanner -Dsonar.qualitygate.wait=true
+  only:
+    - merge_requests
+    - main
+```
+
+---
+
+## **6. Quality Gates & "Clean as You Code"**
+
+A standard production Quality Gate enforces the following on **New Code**:
+
+1. **0 New Security Vulnerabilities**
+2. **0 New Bugs**
+3. **Security Hotspots Reviewed**: 100%
+4. **Code Coverage on New Code**: ≥ 80.0%
+5. **Duplicated Lines on New Code**: ≤ 3.0%
+
+Failing any of these conditions causes `-Dsonar.qualitygate.wait=true` to exit with an error code, automatically blocking the PR from merging.
+
+---
+
+## **7. IDE Integration: SonarLint**
+
+Install the **SonarLint** extension in VS Code, IntelliJ, or Eclipse:
+
+* **Connected Mode**: Syncs your local IDE rules with the central SonarQube server's active Quality Profile.
+* **Instant Detection**: Highlights bugs, code smells, and security hotspots as you type before committing to Git.
+
+---
+
+## 📚 **Learning Resources**
+
+* 🔗 [Official SonarQube Documentation](https://docs.sonarsource.com/sonarqube/latest/)
+* 📦 [SonarQube Scanner CLI](https://docs.sonarsource.com/sonarqube/latest/analyzing-source-code/scanners/sonar-scanner/)
+* 🛡️ [Clean as You Code Principles](https://www.sonarsource.com/clean-code/clean-as-you-code/)
