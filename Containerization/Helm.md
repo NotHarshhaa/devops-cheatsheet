@@ -1,265 +1,165 @@
-# Helm Cheatsheet
+# ⎈ Helm Cheatsheet
 
 ![text](https://imgur.com/nDW9BHK.png)
 
-**1. Introduction:**
+**Helm** is the package manager for Kubernetes. It simplifies the definition, installation, versioning, and upgrading of complex Kubernetes applications through templated packages called **Charts**.
 
-- **Helm** is a package manager for Kubernetes, helping you define, install, and upgrade even the most complex Kubernetes applications. It uses charts to package Kubernetes resources.
+---
 
-**2. Key Concepts:**
+## **1. Core Concepts & Architecture**
 
-- **Chart:** A collection of files that describe a set of Kubernetes resources.
-- **Release:** An instance of a chart running in a Kubernetes cluster.
-- **Repository:** A place where charts can be collected and shared.
+| Concept | Description |
+| --- | --- |
+| **Chart** | A bundle of templated YAML manifests and default values describing Kubernetes resources. |
+| **Release** | A named, running instance of a chart deployed into a Kubernetes cluster. |
+| **Values** | Configuration parameters (`values.yaml` or `--set`) that customize template rendering. |
+| **OCI Registry** | Modern storage specification allowing Helm charts to be pushed and pulled from container registries (GHCR, ECR, Harbor). |
 
-**3. Installing Helm:**
+---
 
-- **Helm Installation:**
+## **2. Installation & Quickstart**
 
-  ```bash
-  curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
-  ```
+```bash
+# Install Helm 3 CLI (macOS)
+brew install helm
 
-- **Add a Helm Repository:**
+# Install Helm 3 CLI (Linux)
+curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
 
-  ```bash
-  helm repo add bitnami https://charts.bitnami.com/bitnami
-  helm repo update
-  ```
+# Verify version
+helm version
+```
 
-**4. Helm Commands:**
+---
 
-- **Install a Chart:**
+## **3. Repository & Release Operations**
 
-  ```bash
-  helm install my-release bitnami/nginx
-  ```
+```bash
+# Add an official Helm repository
+helm repo add bitnami https://charts.bitnami.com/bitnami
+helm repo update
 
-- **List Releases:**
+# Search for charts
+helm search repo nginx
 
-  ```bash
-  helm list
-  ```
+# Install a chart release
+helm install my-nginx bitnami/nginx --set service.type=ClusterIP
 
-- **Upgrade a Release:**
+# List all releases across all namespaces
+helm list -A
 
-  ```bash
-  helm upgrade my-release bitnami/nginx
-  ```
+# Upgrade a release with custom values file
+helm upgrade my-nginx bitnami/nginx -f custom-values.yaml
 
-- **Atomic Upgrade with Automatic Rollback**:
+# Atomic upgrade: rolls back automatically if any resource fails health checks
+helm upgrade --install my-nginx bitnami/nginx \
+  --atomic \
+  --timeout 5m
 
-  ```bash
-  helm upgrade --install my-release bitnami/nginx --atomic --timeout 5m
-  ```
+# Roll back to previous revision
+helm rollback my-nginx 1
 
-- **Inspect Changes before Deploying (Helm Diff Plugin)**:
+# View revision history
+helm history my-nginx
 
-  ```bash
-  helm plugin install https://github.com/databus23/helm-diff
-  helm diff upgrade my-release ./my-chart
-  ```
+# Uninstall a release
+helm uninstall my-nginx
+```
 
-- **Uninstall a Release:**
+---
 
-  ```bash
-  helm uninstall my-release
-  ```
+## **4. OCI Registry Integration (Modern Standard)**
 
-- **Search for Charts:**
+Helm 3.8+ natively packages and pushes charts as OCI artifacts directly to container registries without requiring external servers like ChartMuseum:
 
-  ```bash
-  helm search repo nginx
-  ```
+```bash
+# 1. Package a local chart
+helm package ./my-chart
 
-**5. Chart Structure:**
+# 2. Authenticate to GitHub Container Registry (or AWS ECR / Docker Hub)
+echo $GITHUB_TOKEN | helm registry login ghcr.io -u $USERNAME --password-stdin
 
-- **Basic Chart Structure:**
+# 3. Push the packaged chart to OCI registry
+helm push my-chart-0.1.0.tgz oci://ghcr.io/myorg/charts
 
-  ```
-  my-chart/
-  ├── Chart.yaml
-  ├── values.yaml
-  ├── charts/
-  ├── templates/
-  │   ├── deployment.yaml
-  │   ├── service.yaml
-  │   └── _helpers.tpl
-  ```
+# 4. Install chart directly from OCI registry
+helm install my-app oci://ghcr.io/myorg/charts/my-chart --version 0.1.0
+```
 
-- **Chart.yaml:**
+---
 
-  ```yaml
-  apiVersion: v2
-  name: my-chart
-  description: A Helm chart for Kubernetes
-  version: 0.1.0
-  ```
+## **5. Template Rendering & Local Debugging**
 
-- **values.yaml:**
+```bash
+# Render Kubernetes YAML locally without contacting cluster
+helm template my-release ./my-chart
 
-  ```yaml
-  replicaCount: 3
-  image:
-    repository: nginx
-    tag: stable
-  ```
-
-- **Template Example (deployment.yaml):**
-
-  ```yaml
-  apiVersion: apps/v1
-  kind: Deployment
-  metadata:
-    name: {{ .Release.Name }}-nginx
-  spec:
-    replicas: {{ .Values.replicaCount }}
-    selector:
-      matchLabels:
-        app: {{ .Release.Name }}-nginx
-    template:
-      metadata:
-        labels:
-          app: {{ .Release.Name }}-nginx
-      spec:
-        containers:
-        - name: nginx
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-  ```
-
-**6. Helm Lifecycle:**
-
-- **Creating a New Chart:**
-
-  ```bash
-  helm create my-chart
-  ```
-
-- **Templating:**
-  - **List all template values:**
-
-    ```bash
-    helm template my-release my-chart
-    ```
-  
-  - **Lint a Chart:**
-
-    ```bash
-    helm lint my-chart
-    ```
-
-**7. Helm Repositories:**
-
-- **Creating a Local Helm Repository:**
-
-  ```bash
-  helm repo index ./charts --url http://example.com/charts
-  ```
-  
-- **Serving Charts:**
-
-  ```bash
-  helm serve --address 0.0.0.0:8879
-  ```
+# Render with specific override values
+helm template my-release ./my-chart -f prod-values.yaml
 
-**7.1. Modern OCI Registries (Chart Distribution):**
-
-- Helm 3 natively supports Open Container Initiative (OCI) registries (Docker Hub, GitHub Packages, AWS ECR, Harbor).
-
-- **Registry Login**:
-
-  ```bash
-  helm registry login ghcr.io -u my-username
-  ```
-
-- **Package and Push to OCI**:
-
-  ```bash
-  helm package ./my-chart --version 1.0.0
-  helm push my-chart-1.0.0.tgz oci://ghcr.io/my-org/charts
-  ```
-
-- **Install from OCI Registry**:
-
-  ```bash
-  helm install my-release oci://ghcr.io/my-org/charts/my-chart --version 1.0.0
-  ```
-
-
-**8. Helm Hooks:**
-
-- **Example of a Pre-Install Hook:**
-
-  ```yaml
-  apiVersion: batch/v1
-  kind: Job
-  metadata:
-    name: "{{ .Release.Name }}-preinstall"
-    annotations:
-      "helm.sh/hook": pre-install
-  spec:
-    template:
-      spec:
-        containers:
-        - name: preinstall
-          image: busybox
-          command: ['sh', '-c', 'echo Hello Helm']
-        restartPolicy: Never
-  ```
-
-**9. Helm and CI/CD:**
-
-- **Using Helm in Jenkins Pipeline:**
-
-  ```groovy
-  pipeline {
-    agent any
-    stages {
-      stage('Deploy') {
-        steps {
-          script {
-            sh "helm upgrade --install my-release ./my-chart"
-          }
-        }
-      }
-    }
-  }
-  ```
-
-**10. Advanced Helm Concepts:**
-
-- **Subcharts:** Use subcharts to package related Kubernetes resources together.
-- **Chart Museum:** Helm repository server to store and manage Helm charts.
-- **Helmfile:** A declarative spec for deploying Helm charts.
-
-**11. Helm Security:**
-
-- **Chart Signing:**
-  - Sign and verify Helm charts to ensure integrity.
-
-  ```bash
-  helm package --sign --key <key> --keyring <keyring> my-chart
-  helm verify my-chart-0.1.0.tgz
-  ```
-
-- **RBAC:** Control access to Helm releases with Kubernetes RBAC.
-
-**12. Troubleshooting Helm:**
-
-- **Debugging a Chart Installation:**
-
-  ```bash
-  helm install --debug --dry-run my-release ./my-chart
-  ```
-
-- **Checking Helm Release History:**
-
-  ```bash
-  helm history my-release
-  ```
-
-- **Rollback a Release:**
-
-  ```bash
-  helm rollback my-release 1
-  ```
+# Lint chart for syntax and best practices
+helm lint ./my-chart
+
+# Perform a dry-run against the cluster with server-side validation
+helm install my-release ./my-chart --dry-run --debug
+```
+
+### 🔹 Inspect Changes before Upgrading (`helm-diff` Plugin)
+
+```bash
+# Install helm-diff plugin
+helm plugin install https://github.com/databus23/helm-diff
+
+# Show a colored unified diff between deployed release and local changes
+helm diff upgrade my-release ./my-chart
+```
+
+---
+
+## **6. Chart Structure & Helpers**
+
+```plaintext
+my-chart/
+├── Chart.yaml          # Metadata (name, version, dependencies)
+├── values.yaml         # Default configuration values
+├── values.schema.json  # JSON Schema for validating user inputs
+├── charts/             # Dependent subcharts
+└── templates/          # Jinja-like Go templates
+    ├── deployment.yaml
+    ├── service.yaml
+    ├── NOTES.txt       # Post-installation instructions displayed to user
+    └── _helpers.tpl    # Reusable template snippets and definitions
+```
+
+### 🔹 Example `Chart.yaml`
+
+```yaml
+apiVersion: v2
+name: my-service
+description: Production microservice Helm chart
+type: application
+version: 1.2.0
+appVersion: "2.1.0"
+dependencies:
+  - name: redis
+    version: "~> 18.0"
+    repository: "https://charts.bitnami.com/bitnami"
+    condition: redis.enabled
+```
+
+---
+
+## **7. Production Best Practices**
+
+1. **Always Use `--atomic` in CI/CD**: Ensures deployments fail fast and roll back cleanly without leaving orphan resources.
+2. **Enforce `values.schema.json`**: Catch invalid variable types, missing required keys, and out-of-range ports before deployment.
+3. **Pin Subchart Versions**: Always define explicit semantic versions in `dependencies` of `Chart.yaml`.
+4. **Prefer OCI Registries**: Store container images and Helm charts together in the same secure, audited registry.
+
+---
+
+## 📚 **Learning Resources**
+
+* 🔗 [Official Helm Documentation](https://helm.sh/docs/)
+* 📦 [Artifact Hub (Public Charts Search)](https://artifacthub.io/)
+* 📜 [Helm Chart Template Guide](https://helm.sh/docs/chart_template_guide/)

@@ -1,681 +1,232 @@
-# Kubernetes Cheatsheet
+# ☸️ Kubernetes Cheatsheet
 
 ![text](https://imgur.com/aYuSIvY.png)
 
 ## Checkout detailed article on [Dev.to](https://dev.to/prodevopsguytech/kubernetes-commands-for-devops-engineers-124o)
 
-## 1. Introduction to Kubernetes
-
-### What is Kubernetes?
-
-- **Kubernetes** is an open-source container orchestration platform that automates the deployment, scaling, and management of containerized applications.
-
-### Key Concepts
-
-- **Cluster**: A set of worker machines, called nodes, that run containerized applications.
-- **Node**: A single machine in a Kubernetes cluster.
-- **Pod**: The smallest deployable unit, which can contain one or more containers.
-- **Service**: A stable network endpoint to expose a set of pods.
-- **Namespace**: A way to divide cluster resources between multiple users.
-- **Kubelet**: An agent running on each node that ensures containers are running in a Pod.
-- **Kubectl**: Command-line tool to interact with Kubernetes clusters.
+**Kubernetes** (K8s) is an open-source container orchestration engine that automates the deployment, scaling, and operational lifecycle of containerized workloads.
 
 ---
 
-## 2. Basic Kubernetes Operations
+## **1. Core Concepts & Architecture**
 
-### Setting Up a Kubernetes Cluster
+```plaintext
+                   Control Plane
+  [ API Server ] <-> [ etcd ] <-> [ Controller Manager ]
+         ^
+         |                    [ Scheduler ]
+         v
+     Worker Nodes
+  [ Kubelet ] <-> [ Container Runtime (CRI-O / containerd) ]
+  [ Kube-Proxy ]
+  [ Pods: Container A, Container B ]
+```
 
-- **Minikube**: Set up a single-node Kubernetes cluster for testing.
-
-  ```bash
-  minikube start
-  ```
-
-### Working with `kubectl`
-
-- **Get Cluster Information**:
-
-  ```bash
-  kubectl cluster-info
-  ```
-
-- **Get All Nodes in the Cluster**:
-
-  ```bash
-  kubectl get nodes
-  ```
-
-### Modern Kubectl Operations & Ephemeral Debugging
-
-- **Server-Side Apply**:
-
-  ```bash
-  kubectl apply --server-side -f deployment.yaml
-  ```
-
-- **Ephemeral Container Debugging (`kubectl debug`)**:
-
-  ```bash
-  # Attach an ephemeral debug container into a running pod without restart
-  kubectl debug -it mypod --image=nicolaka/netshoot --target=mycontainer -- sh
-
-  # Debug a worker node by spawning a container with host namespaces
-  kubectl debug node/worker-node-1 -it --image=busybox
-  ```
-
-- **Live Streaming Events**:
-
-  ```bash
-  kubectl events -n default --types=Warning --watch
-  ```
-
-### Managing Pods
-
-- **Create a Pod**:
-
-  ```bash
-  kubectl run mypod --image=nginx
-  ```
-
-- **List All Pods**:
-
-  ```bash
-  kubectl get pods
-  ```
-
-- **Describe a Pod**:
-
-  ```bash
-  kubectl describe pod mypod
-  ```
-
-- **Delete a Pod**:
-
-  ```bash
-  kubectl delete pod mypod
-  ```
-
-### Using Namespaces
-
-- **List All Namespaces**:
-
-  ```bash
-  kubectl get namespaces
-  ```
-
-- **Create a Namespace**:
-
-  ```bash
-  kubectl create namespace mynamespace
-  ```
-
-- **Delete a Namespace**:
-
-  ```bash
-  kubectl delete namespace mynamespace
-  ```
+| Component | Role | Description |
+| --- | --- | --- |
+| **API Server** | Control Plane | Central gateway exposing the REST API. |
+| **etcd** | Control Plane | Consistent, highly available key-value store holding cluster state. |
+| **Scheduler** | Control Plane | Assigns unscheduled pods to eligible worker nodes based on resource requests. |
+| **Controller Manager** | Control Plane | Runs reconciliation loops (Node, Deployment, ReplicaSet controllers). |
+| **Kubelet** | Worker Node | Node agent ensuring containers declared in PodSpecs are running and healthy. |
+| **Kube-Proxy** | Worker Node | Manages host network packet forwarding and load-balances Service traffic. |
 
 ---
 
-## 3. Deployments and Scaling
+## **2. Everyday `kubectl` Quick Reference**
 
-### Deployments
+### 🔹 Cluster & Node Management
 
-- **Create a Deployment**:
+```bash
+# Cluster health and API endpoint
+kubectl cluster-info
 
-  ```bash
-  kubectl create deployment myapp --image=nginx
-  ```
+# List all nodes with IP, status, and Kubernetes version
+kubectl get nodes -o wide
 
-- **View Deployment Status**:
+# Drain a node safely before maintenance (cordons and evicts pods)
+kubectl drain node-1 --ignore-daemonsets --delete-emptydir-data
 
-  ```bash
-  kubectl get deployments
-  ```
+# Uncordon node after maintenance
+kubectl uncordon node-1
 
-- **Update a Deployment**:
+# View node CPU and Memory consumption (requires metrics-server)
+kubectl top nodes
+kubectl top pods -A --sort-by=cpu
+```
 
-  ```bash
-  kubectl set image deployment/myapp nginx=nginx:1.27-alpine
-  ```
+### 🔹 Pod & Workload Operations
 
-- **Rollback a Deployment**:
+```bash
+# Run a quick disposable test pod
+kubectl run test-pod --image=busybox -it --rm -- sh
 
-  ```bash
-  kubectl rollout undo deployment/myapp
-  ```
+# Server-Side Apply (declarative, detects conflicts)
+kubectl apply --server-side -f deployment.yaml
 
-### Scaling Applications
+# Rollout status and history
+kubectl rollout status deployment/web-app
+kubectl rollout history deployment/web-app
+kubectl rollout undo deployment/web-app --to-revision=2
 
-- **Scale a Deployment**:
+# Restart all pods in a deployment gracefully
+kubectl rollout restart deployment/web-app
 
-  ```bash
-  kubectl scale deployment myapp --replicas=3
-  ```
-
-- **Auto-scaling with Horizontal Pod Autoscaler (HPA)**:
-
-  ```bash
-  kubectl autoscale deployment myapp --min=1 --max=5 --cpu-percent=80
-  ```
-
----
-
-## 4. Services and Networking
-
-### Services
-
-- **Expose a Pod with a Service**:
-
-  ```bash
-  kubectl expose pod mypod --port=80 --target-port=8080
-  ```
-
-- **Create a Service for a Deployment**:
-
-  ```bash
-  kubectl expose deployment myapp --type=NodePort --port=80
-  ```
-
-- **List All Services**:
-
-  ```bash
-  kubectl get services
-  ```
-
-### Networking
-
-- **Understanding Cluster Networking**: Kubernetes abstracts network communication between Pods.
-- **Network Policies**: Restrict Pod communication using Network Policies.
-
-  ```yaml
-  apiVersion: networking.k8s.io/v1
-  kind: NetworkPolicy
-  metadata:
-    name: mynetworkpolicy
-    namespace: mynamespace
-  spec:
-    podSelector:
-      matchLabels:
-        role: db
-    policyTypes:
-    - Ingress
-    - Egress
-    ingress:
-    - from:
-      - podSelector:
-          matchLabels:
-            role: frontend
-    egress:
-    - to:
-      - podSelector:
-          matchLabels:
-            role: backend
-  ```
+# Stream logs with timestamps
+kubectl logs -f deployment/web-app --all-containers=true --tail=50
+```
 
 ---
 
-## 5. Persistent Storage
+## **3. Ephemeral Debugging (`kubectl debug`)**
 
-### Volumes
+Attach an interactive troubleshooting container into an existing, running pod without restarting it:
 
-- **Create a Persistent Volume**:
+```bash
+# Attach network troubleshooting container (netshoot) into an active pod
+kubectl debug -it my-pod --image=nicolaka/netshoot --target=app-container
 
-  ```yaml
-  apiVersion: v1
-  kind: PersistentVolume
-  metadata:
-    name: mypv
-  spec:
-    capacity:
-      storage: 1Gi
-    accessModes:
-      - ReadWriteOnce
-    hostPath:
-      path: "/mnt/data"
-  ```
-
-- **Create a Persistent Volume Claim**:
-
-  ```yaml
-  apiVersion: v1
-  kind: PersistentVolumeClaim
-  metadata:
-    name: mypvc
-  spec:
-    accessModes:
-      - ReadWriteOnce
-    resources:
-      requests:
-        storage: 1Gi
-  ```
-
-### StorageClasses
-
-- **Create a StorageClass**:
-
-  ```yaml
-  apiVersion: storage.k8s.io/v1
-  kind: StorageClass
-  metadata:
-    name: mystorageclass
-  provisioner: kubernetes.io/aws-ebs
-  parameters:
-    type: gp2
-  ```
+# Debug a broken node by spawning a privileged pod on the host namespace
+kubectl debug node/worker-1 -it --image=busybox
+```
 
 ---
 
-## 6. ConfigMaps and Secrets
+## **4. Workload Manifests**
 
-### ConfigMaps
+### 🔹 Production Deployment Manifest
 
-- **Create a ConfigMap from a File**:
-
-  ```bash
-  kubectl create configmap myconfig --from-file=config.txt
-  ```
-
-- **View a ConfigMap**:
-
-  ```bash
-  kubectl get configmap myconfig -o yaml
-  ```
-
-- **Use a ConfigMap in a Pod**:
-
-  ```yaml
-  apiVersion: v1
-  kind: Pod
-  metadata:
-    name: mypod
-  spec:
-    containers:
-    - name: mycontainer
-      image: nginx
-      envFrom:
-      - configMapRef:
-          name: myconfig
-  ```
-
-### Secrets
-
-- **Create a Secret from a Literal Value**:
-
-  ```bash
-  kubectl create secret generic mysecret --from-literal=username=admin
-  ```
-
-- **View a Secret**:
-
-  ```bash
-  kubectl get secret mysecret -o yaml
-  ```
-
-- **Use a Secret in a Pod**:
-
-  ```yaml
-  apiVersion: v1
-  kind: Pod
-  metadata:
-    name: mypod
-  spec:
-    containers:
-    - name: mycontainer
-      image: nginx
-      envFrom:
-      - secretRef:
-          name: mysecret
-  ```
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-app
+  namespace: default
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: web-app
+  template:
+    metadata:
+      labels:
+        app: web-app
+    spec:
+      containers:
+        - name: app
+          image: nginx:alpine
+          ports:
+            - containerPort: 80
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 80
+            initialDelaySeconds: 15
+            periodSeconds: 20
+```
 
 ---
 
-## 7. Ingress Controllers
+## **5. Services & The Modern Gateway API**
 
-### Setting Up Ingress
+### 🔹 ClusterIP & Headless Service
 
-- **Install an Ingress Controller**: Use a Helm chart or YAML manifest to install an ingress controller (e.g., NGINX Ingress Controller).
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-service
+spec:
+  type: ClusterIP
+  selector:
+    app: web-app
+  ports:
+    - port: 80
+      targetPort: 80
+```
 
-  ```bash
-  kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/cloud/deploy.yaml
-  ```
+### 🔹 Kubernetes Gateway API (Official Evolution of Ingress)
 
-### Configuring Ingress Resources
+The Gateway API provides expressive, role-oriented routing:
 
-- **Create an Ingress Resource**:
-
-  ```yaml
-  apiVersion: networking.k8s.io/v1
-  kind: Ingress
-  metadata:
-    name: myingress
-  spec:
-    rules:
-    - host: myapp.example.com
-      http:
-        paths:
-        - path: /
-          pathType: Prefix
-          backend:
-            service:
-              name: myapp-service
-              port:
-                number: 80
-  ```
-
-- **TLS Termination with Ingress**:
-
-  ```yaml
-  apiVersion: networking.k8s.io/v1
-  kind: Ingress
-  metadata:
-    name: myingress
-  spec:
-    tls:
-    - hosts:
-      - myapp.example.com
-      secretName: mytlssecret
-    rules:
-    - host: myapp.example.com
-      http:
-        paths:
-        - path: /
-          pathType: Prefix
-          backend:
-            service:
-              name: myapp-service
-              port:
-                number: 80
-  ```
-
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: prod-gateway
+  namespace: default
+spec:
+  gatewayClassName: eg
+  listeners:
+    - name: http
+      protocol: HTTP
+      port: 80
 ---
-
-### Kubernetes Gateway API (Next-Gen Ingress)
-
-> [!TIP]
-> **Gateway API** (`gateway.networking.k8s.io`) is the modern evolution of Kubernetes Ingress, providing role-oriented, expressive, and cross-namespace routing.
-
-- **HTTPRoute Example**:
-
-  ```yaml
-  apiVersion: gateway.networking.k8s.io/v1
-  kind: HTTPRoute
-  metadata:
-    name: api-route
-    namespace: default
-  spec:
-    parentRefs:
-      - name: production-gateway
-    hostnames:
-      - "api.example.com"
-    rules:
-      - matches:
-          - path:
-              type: PathPrefix
-              value: /v1
-        backendRefs:
-          - name: api-service
-            port: 80
-  ```
-
----
-
-## 8. Kubernetes Security
-
-### Role-Based Access Control (RBAC)
-
-- **Create a Role**:
-
-  ```yaml
-  apiVersion: rbac.authorization.k8s.io/v1
-  kind: Role
-  metadata:
-    namespace: mynamespace
-    name: myrole
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: web-route
+  namespace: default
+spec:
+  parentRefs:
+    - name: prod-gateway
   rules:
-  - apiGroups: [""]
-    resources: ["pods"]
-    verbs: ["get", "watch", "list"]
-  ```
-
-- **Bind a Role to a User**:
-
-  ```yaml
-  apiVersion: rbac.authorization.k8s.io/v1
-  kind: RoleBinding
-  metadata:
-    name: myrolebinding
-    namespace: mynamespace
-  subjects:
-  - kind: User
-    name: myuser
-    apiGroup: rbac.authorization.k8s.io
-  roleRef:
-    kind: Role
-    name: myrole
-    apiGroup: rbac.authorization.k8s.io
-  ```
-
-### Pod Security Standards (PSS / PSA)
-
-> [!IMPORTANT]
-> Pod Security Policies (PSP) have been removed from Kubernetes. Modern clusters use **Pod Security Standards** via Namespace labels (`enforce`, `audit`, `warn` with levels `privileged`, `baseline`, `restricted`).
-
-- **Enforce Restricted Profile on Namespace**:
-
-  ```yaml
-  apiVersion: v1
-  kind: Namespace
-  metadata:
-    name: secure-apps
-    labels:
-      pod-security.kubernetes.io/enforce: restricted
-      pod-security.kubernetes.io/enforce-version: latest
-      pod-security.kubernetes.io/warn: restricted
-  ```
-
-### Legacy Pod Security Policies (PSP) [Deprecated/Removed]
-
-- **Create a PSP**:
-
-  ```yaml
-  apiVersion: policy/v1beta1
-  kind: PodSecurityPolicy
-  metadata:
-    name: mypsp
-  spec:
-    privileged: false
-    seLinux:
-      rule: RunAsAny
-    supplementalGroups:
-      rule: RunAsAny
-    runAsUser:
-      rule: RunAsAny
-    fsGroup:
-      rule: RunAsAny
-    volumes:
-    - '*'
-  ```
-
-### Network Policies
-
-- **Create a Network Policy**:
-
-  ```yaml
-  apiVersion: networking.k8s.io/v1
-  kind: NetworkPolicy
-  metadata:
-    name: allow-db
-    namespace: mynamespace
-  spec:
-    podSelector:
-      matchLabels:
-        role: db
-    policyTypes:
-
-
-    - Ingress
-    ingress:
-    - from:
-      - podSelector:
-          matchLabels:
-            role: frontend
-  ```
-
-### Securing Kubernetes API Server
-
-- **Enable API Server Auditing**:
-  - Edit the API server manifest to include auditing options.
-
-  ```yaml
-  - --audit-log-path=/var/log/kubernetes/audit.log
-  - --audit-policy-file=/etc/kubernetes/audit-policy.yaml
-  ```
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /api
+      backendRefs:
+        - name: web-service
+          port: 80
+```
 
 ---
 
-## 9. Advanced Kubernetes
+## **6. Pod Security Standards (PSA/PSS)**
 
-### Custom Resource Definitions (CRDs)
+Enforce built-in Pod Security Admission by labeling namespaces:
 
-- **Create a Custom Resource Definition**:
-
-  ```yaml
-  apiVersion: apiextensions.k8s.io/v1
-  kind: CustomResourceDefinition
-  metadata:
-    name: myresources.example.com
-  spec:
-    group: example.com
-    versions:
-    - name: v1
-      served: true
-      storage: true
-      schema:
-        openAPIV3Schema:
-          type: object
-          properties:
-            spec:
-              type: object
-    scope: Namespaced
-    names:
-      plural: myresources
-      singular: myresource
-      kind: MyResource
-      shortNames:
-      - mr
-  ```
-
-### Operators
-
-- **Introduction to Operators**: Operators are Kubernetes applications designed to manage complex stateful applications by extending the Kubernetes API.
-- **Creating an Operator**:
-  - Use the Operator SDK to scaffold and build an operator.
-
-  ```bash
-  operator-sdk init --domain=example.com --repo=github.com/example/memcached-operator
-  operator-sdk create api --group=cache --version=v1 --kind=Memcached --resource --controller
-  ```
-
-### Service Mesh with Istio
-
-- **Install Istio**:
-
-  ```bash
-  istioctl install --set profile=demo
-  ```
-
-- **Deploy an Application with Istio**:
-  - Annotate namespace to enable Istio sidecar injection.
-
-  ```bash
-  kubectl label namespace mynamespace istio-injection=enabled
-  ```
-
-  - Deploy application in the annotated namespace.
-- **Traffic Management with Istio**:
-  - Create VirtualService and DestinationRule to manage traffic routing.
-
-  ```yaml
-  apiVersion: networking.istio.io/v1alpha3
-  kind: VirtualService
-  metadata:
-    name: myapp
-  spec:
-    hosts:
-    - myapp.example.com
-    http:
-    - route:
-      - destination:
-          host: myapp
-          subset: v1
-  ```
-  
-### Monitoring and Logging
-
-- **Prometheus and Grafana**:
-  - **Install Prometheus**:
-
-    ```bash
-    kubectl apply -f https://github.com/prometheus-operator/prometheus-operator/blob/main/bundle.yaml
-    ```
-
-  - **Install Grafana**:
-
-    ```bash
-    kubectl apply -f https://raw.githubusercontent.com/grafana/grafana/main/deploy/kubernetes/grafana-deployment.yaml
-    ```
-
-  - **View Metrics in Grafana**: Access the Grafana dashboard and configure data sources to use Prometheus.
-
-- **Logging with ELK Stack**:
-  - **Deploy ELK Stack**: Use Helm or custom YAML manifests to deploy Elasticsearch, Logstash, and Kibana.
-
-    ```bash
-    helm install elk-stack stable/elastic-stack
-    ```
-
-  - **Configure Fluentd for Log Collection**:
-    - Deploy Fluentd as a DaemonSet to collect logs from all nodes and send them to Elasticsearch.
-
-### High Availability and Disaster Recovery
-
-- **Kubernetes High Availability (HA)**:
-  - **HA Master Nodes**: Set up multiple master nodes to ensure availability.
-  - **HA etcd Cluster**: Use an HA etcd cluster to store Kubernetes state with redundancy.
-
-- **Disaster Recovery**:
-  - **Backup and Restore etcd**:
-    - Use `etcdctl` to take snapshots of the etcd cluster.
-
-    ```bash
-    etcdctl snapshot save /path/to/backup
-    ```
-
-    - Restore from the snapshot when needed.
-
-### Federation
-
-- **Multi-Cluster Federation**:
-  - **Set Up Federation**: Use Kubernetes Federation v2 to manage multiple clusters from a single control plane.
-
-  ```bash
-  kubefedctl join mycluster --cluster-context=mycluster-context --host-cluster-context=host-cluster-context
-  ```
-
-  - **Deploy Federated Resources**: Deploy resources that span across multiple clusters using the Federation API.
+```bash
+# Enforce restricted profile (drops all root privileges, requires seccomp)
+kubectl label --overwrite ns production \
+  pod-security.kubernetes.io/enforce=restricted \
+  pod-security.kubernetes.io/enforce-version=latest \
+  pod-security.kubernetes.io/warn=restricted
+```
 
 ---
 
-## 10. References
+## **7. ConfigMaps, Secrets & RBAC**
 
-### Official Documentation
+```bash
+# Create ConfigMap from literal or file
+kubectl create configmap app-config --from-literal=ENVIRONMENT=production
 
-- [Kubernetes Official Documentation](https://kubernetes.io/docs/)
+# Create Secret
+kubectl create secret generic app-secrets --from-literal=DB_PASSWORD="SuperSecretPassword!"
 
-### Community Resources
+# Check authorization permissions (can I create deployments in default?)
+kubectl auth can-i create deployments --namespace default
+```
 
-- [Kubernetes Slack](http://slack.k8s.io/)
-- [Kubernetes GitHub Repository](https://github.com/kubernetes/kubernetes)
-- [Kubernetes Blog](https://kubernetes.io/blog/)
+---
+
+## 📚 **Learning Resources**
+
+* 🔗 [Official Kubernetes Documentation](https://kubernetes.io/docs/)
+* 📦 [Kubernetes Gateway API Specification](https://gateway-api.sigs.k8s.io/)
+* 🛡️ [Pod Security Standards Guide](https://kubernetes.io/docs/concepts/security/pod-security-standards/)
+* 💻 [Kubectl Command Reference](https://kubernetes.io/docs/reference/kubectl/)

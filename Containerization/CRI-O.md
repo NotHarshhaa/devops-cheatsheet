@@ -1,112 +1,63 @@
-# CRI-O Cheatsheet
+# 🧊 CRI-O Cheatsheet
 
 ![text](https://imgur.com/iET0fW6.png)
 
-## Table of Contents
-
-1. **Introduction to CRI-O**
-   - What is CRI-O?
-   - Architecture Overview
-   - Key Features
-2. **Installation**
-   - System Requirements
-   - Installing CRI-O on Linux
-   - Post-Installation Configuration
-3. **Basic Commands**
-   - CRI-O CLI Overview
-   - Starting and Stopping CRI-O
-   - Managing Containers
-   - Viewing Logs
-4. **Container Management**
-   - Pulling Images
-   - Running Containers
-   - Stopping and Removing Containers
-   - Viewing Running Containers
-5. **Networking**
-   - Default Networking Configuration
-   - Configuring Custom Networks
-   - Using CNI Plugins with CRI-O
-6. **Storage**
-   - Managing Container Storage
-   - Configuring Storage Options
-   - Persistent Storage Management
-7. **Security**
-   - Pod Security Policies (PSPs)
-   - SELinux and CRI-O
-   - Seccomp Profiles
-   - AppArmor Integration
-8. **Monitoring and Logging**
-   - Integrating with Prometheus
-   - Setting Up Log Collection
-   - Debugging Containers
-9. **Advanced Configuration**
-   - CRI-O Configuration Files
-   - Runtime Configuration
-   - Resource Limits and Cgroups
-   - Tuning for Performance
-10. **Troubleshooting**
-    - Common Issues and Fixes
-    - Analyzing CRI-O Logs
-    - Debugging Failed Containers
-11. **Integration with Kubernetes**
-    - Configuring CRI-O with Kubernetes
-    - CRI-O as a Container Runtime for K8s
-    - Multi-tenancy with CRI-O in Kubernetes
-12. **Best Practices**
-    - Security Best Practices
-    - Performance Optimization
-    - Efficient Resource Management
-13. **FAQs**
-    - Common Questions about CRI-O
-14. **References**
-    - Official Documentation
-    - Community Resources
+**CRI-O** is an open-source, lightweight Container Runtime Interface (CRI) implementation specifically optimized for Kubernetes. It allows Kubernetes to run containers directly using Open Container Initiative (OCI) compatible runtimes (like `runc` or `crun`) without the overhead of full general-purpose container engines.
 
 ---
 
-## 1. Introduction to CRI-O
+## **1. Architecture & Core Concepts**
 
-### What is CRI-O?
+```plaintext
+Kubernetes Kubelet
+       ↓ (gRPC / CRI API)
+  [ CRI-O Daemon ]
+       ↓ (OCI Runtime Spec)
+  [ runc / crun ]
+       ↓
+Linux Kernel (cgroups v2, namespaces, seccomp, SELinux)
+```
 
-- **CRI-O** is an open-source, lightweight container runtime for Kubernetes. It is designed to provide a minimal and stable interface between Kubernetes and the container runtime, adhering to the Container Runtime Interface (CRI) specifications.
-
-### Architecture Overview
-
-- **CRI-O** integrates directly with Kubernetes, using OCI-compatible runtimes (like runc) to handle container operations. It replaces the need for a full container engine like Docker in Kubernetes environments.
-
-### Key Features
-
-- **Lightweight**: Minimal dependencies and a smaller footprint compared to full container engines.
-- **Compatibility**: Fully compliant with Kubernetes and the Open Container Initiative (OCI) specifications.
-- **Security**: Integrates with SELinux, AppArmor, and seccomp for enhanced security.
-- **Performance**: Optimized for performance with lower overhead.
+| Component | Description |
+| --- | --- |
+| **`crio`** | The main background daemon listening on a Unix socket (`/var/run/crio/crio.sock`). |
+| **`crictl`** | The official CLI client for debugging and inspecting CRI-compatible runtimes. |
+| **`conmon`** | Container monitoring program that monitors runtime instances, handles I/O streams, and catches exit codes. |
+| **OCI Runtimes** | Low-level execution runtimes (`runc`, or fast C-based `crun`). |
 
 ---
 
-## 2. Installation
+## **2. Installation & Prerequisites**
 
-### System Requirements
-
-- **Supported OS**: CRI-O supports various Linux distributions including Fedora, CentOS, and Ubuntu.
-- **Kernel Version**: Ensure that your Linux kernel is 4.19 or higher for optimal compatibility.
-
-### Modern Installation via Kubernetes Community Repositories (`pkgs.k8s.io`)
+### 🔹 Kernel Modules & Sysctl Settings
 
 ```bash
-# Enable required kernel modules
+# Load required kernel modules
+cat <<EOF | sudo tee /etc/modules-load.d/crio.conf
+overlay
+br_netfilter
+EOF
+
 sudo modprobe overlay
 sudo modprobe br_netfilter
 
-# Configure sysctl network parameters
+# Configure sysctl networking parameters
 cat <<EOF | sudo tee /etc/sysctl.d/99-kubernetes-cri.conf
 net.bridge.bridge-nf-call-iptables  = 1
 net.ipv4.ip_forward                 = 1
 net.bridge.bridge-nf-call-ip6tables = 1
 EOF
-sudo sysctl --system
 
-# Add CRI-O repository for Kubernetes v1.30
-CRIO_VERSION="v1.30"
+sudo sysctl --system
+```
+
+### 🔹 Install via Kubernetes Community Repositories (`pkgs.k8s.io`)
+
+```bash
+KUBERNETES_VERSION=v1.30
+CRIO_VERSION=v1.30
+
+# Add Kubernetes repository key
 sudo mkdir -p /etc/apt/keyrings
 curl -fsSL https://pkgs.k8s.io/addons:/cri-o:/stable:/$CRIO_VERSION/deb/Release.key | \
   sudo gpg --dearmor -o /etc/apt/keyrings/cri-o-apt-keyring.gpg
@@ -114,343 +65,105 @@ curl -fsSL https://pkgs.k8s.io/addons:/cri-o:/stable:/$CRIO_VERSION/deb/Release.
 echo "deb [signed-by=/etc/apt/keyrings/cri-o-apt-keyring.gpg] https://pkgs.k8s.io/addons:/cri-o:/stable:/$CRIO_VERSION/deb/ /" | \
   sudo tee /etc/apt/sources.list.d/cri-o.list
 
-sudo apt-get update && sudo apt-get install -y cri-o
+sudo apt-get update
+sudo apt-get install -y cri-o
+
+sudo systemctl daemon-reload
 sudo systemctl enable --now crio
 ```
 
-### Installing CRI-O on Linux (Distribution Packages)
-
-- **Fedora/CentOS**:
-
-  ```bash
-  sudo dnf install -y cri-o
-  ```
-
-- **Ubuntu**:
-
-  ```bash
-  sudo apt-get install -y cri-o
-  ```
-
-### Post-Installation Configuration
-
-- **Start and Enable CRI-O**:
-
-  ```bash
-  sudo systemctl start crio
-  sudo systemctl enable crio
-  ```
-
-- **Verify Installation**:
-
-  ```bash
-  crio --version
-  ```
-
 ---
 
-## 3. Basic Commands
-
-### CRI-O CLI Overview
-
-- **`crio`**: The main command for interacting with the CRI-O service.
-- **`crictl`**: A CLI tool used to manage containers and images through CRI-O.
-
-### Starting and Stopping CRI-O
-
-- **Start CRI-O**:
-
-  ```bash
-  sudo systemctl start crio
-  ```
-
-- **Stop CRI-O**:
-
-  ```bash
-  sudo systemctl stop crio
-  ```
-
-### Managing Containers
-
-- **List Running Containers**:
-
-  ```bash
-  sudo crictl ps
-  ```
-
-- **Stop a Container**:
-
-  ```bash
-  sudo crictl stop <container_id>
-  ```
-
-- **Remove a Container**:
-
-  ```bash
-  sudo crictl rm <container_id>
-  ```
-
-### Viewing Logs
-
-- **View CRI-O Logs**:
-
-  ```bash
-  sudo journalctl -u crio
-  ```
-
----
-
-## 4. Container Management
-
-### Pulling Images
-
-- **Pull an Image**:
-
-  ```bash
-  sudo crictl pull <image_name>
-  ```
-
-### Running Containers
-
-- **Run a Container**:
-
-  ```bash
-  sudo crictl run <pod_config.json> <container_config.json>
-  ```
-
-### Stopping and Removing Containers
-
-- **Stop a Container**:
-
-  ```bash
-  sudo crictl stop <container_id>
-  ```
-
-- **Remove a Container**:
-
-  ```bash
-  sudo crictl rm <container_id>
-  ```
-
-### Viewing Running Containers
-
-- **List Containers**:
-
-  ```bash
-  sudo crictl ps
-  ```
-
----
-
-## 5. Networking
-
-### Default Networking Configuration
-
-- **Default Network**: CRI-O uses the `cni0` bridge for networking by default.
-
-### Configuring Custom Networks
-
-- **CNI Plugins**: CRI-O can use various CNI plugins to configure custom network setups.
-
-### Using CNI Plugins with CRI-O
-
-- **Install CNI Plugins**:
-
-  ```bash
-  sudo dnf install -y containernetworking-plugins
-  ```
-
-- **Configure Plugin**: Add your CNI plugin configuration in `/etc/cni/net.d/`.
-
----
-
-## 6. Storage
-
-### Managing Container Storage
-
-- **Default Storage**: CRI-O uses `overlay` storage driver by default.
-
-### Configuring Storage Options
-
-- **Modify Storage Driver**: Edit `/etc/containers/storage.conf` to change the storage driver.
-
-### Persistent Storage Management
-
-- **Mount Volumes**: Use `--mount` option to attach persistent storage volumes to containers.
-
----
-
-## 7. Security
-
-### Pod Security Standards (PSS) & Admission (PSA)
-
-> [!IMPORTANT]
-> Pod Security Policies (PSPs) have been removed from modern Kubernetes versions. CRI-O enforces container security boundaries according to Kubernetes **Pod Security Standards** (`privileged`, `baseline`, `restricted`) along with native Linux primitives:
-> - **SELinux**: Mandatory Access Control (MAC) labeling
-> - **Seccomp**: System call filtering (`/etc/crio/seccomp.json`)
-> - **AppArmor / Capabilities**: Dropping unnecessary kernel privileges
-
-### Legacy Pod Security Policies (PSPs) [Removed in K8s 1.25+]
-
-- **Enable PSPs**: Configure PSPs in Kubernetes to apply security restrictions on CRI-O managed containers.
-
-### SELinux and CRI-O
-
-- **SELinux Enforcement**: Ensure SELinux is enabled on the host system for better security.
-
-### Seccomp Profiles
-
-- **Enable Seccomp**: CRI-O supports seccomp profiles to restrict system calls for containers.
-
-### AppArmor Integration
-
-- **AppArmor Profiles**: Apply AppArmor profiles for CRI-O containers to enforce security policies.
-
----
-
-## 8. Monitoring and Logging
-
-### Integrating with Prometheus
-
-- **Prometheus Metrics**: CRI-O exposes metrics that can be scraped by Prometheus for monitoring.
-
-### Setting Up Log Collection
-
-- **Log Rotation**: Configure log rotation in `/etc/crio/crio.conf` to manage container logs.
-
-### Debugging Containers
-
-- **Container Logs**:
-
-  ```bash
-  sudo crictl logs <container_id>
-  ```
-
----
-
-## 9. Advanced Configuration
-
-### CRI-O Configuration Files
-
-- **Main Configuration File**: `/etc/crio/crio.conf`
-- **Modify Configurations**: Adjust settings for runtime, networking, and storage.
-
-### Runtime Configuration
-
-- **Specify Runtime**: Use the `runtime` section in `crio.conf` to set the container runtime (e.g., runc, kata).
-
-### Cgroups v2 & Alternative OCI Runtimes (`crun`, `kata`)
-
-Create `/etc/crio/crio.conf.d/10-cgroup-systemd.conf`:
-
-```toml
-[crio.runtime]
-# Modern Linux requires systemd cgroup manager
-cgroup_manager = "systemd"
-
-# Use crun for faster, lower-overhead C-based container execution
-default_runtime = "crun"
-
-[crio.runtime.runtimes.crun]
-runtime_path = "/usr/bin/crun"
-runtime_type = "oci"
-
-# Hardware-isolated VM container runtime
-[crio.runtime.runtimes.kata]
-runtime_path = "/usr/bin/kata-runtime"
-runtime_type = "oci"
+## **3. CLI Debugging with `crictl`**
+
+Configure `/etc/crictl.yaml` for instant command execution:
+
+```yaml
+runtime-endpoint: unix:///var/run/crio/crio.sock
+image-endpoint: unix:///var/run/crio/crio.sock
+timeout: 10
+debug: false
 ```
 
-### Resource Limits and Cgroups
+### 🔹 Essential `crictl` Commands
 
-- **Set Resource Limits**: Define CPU and memory limits in the container configuration.
+```bash
+# 1. Check runtime and networking status
+sudo crictl info
+sudo crictl status
 
-### Tuning for Performance
+# 2. List running Pod Sandboxes
+sudo crictl pods
 
-- **Adjust Parameters**: Modify parameters like `pids_limit` and `log_size_max` in `crio.conf` for performance tuning.
+# 3. List all containers
+sudo crictl ps -a
+
+# 4. Pull container image
+sudo crictl pull docker.io/library/nginx:alpine
+
+# 5. View container logs
+sudo crictl logs <container-id>
+
+# 6. Stream live logs with follow
+sudo crictl logs -f <container-id>
+
+# 7. Execute command inside a running container
+sudo crictl exec -it <container-id> sh
+
+# 8. View live CPU and memory usage of containers
+sudo crictl stats
+
+# 9. Inspect a pod sandbox details
+sudo crictl inspectp <pod-id>
+```
 
 ---
 
-## 10. Troubleshooting
+## **4. Modern Security: Pod Security Standards (PSS/PSA)**
 
-### Common Issues and Fixes
+> [!IMPORTANT]
+> **Kubernetes 1.25+ Removal**: Legacy Pod Security Policies (PSPs) have been permanently removed. CRI-O enforces container security boundaries according to Kubernetes **Pod Security Standards**:
 
-- **Containers Not Starting**: Check logs for errors related to runtime or configuration issues.
-- **Networking Issues**: Verify CNI plugin configurations and network settings.
+* **Privileged**: Unrestricted capabilities for cluster system infrastructure.
+* **Baseline**: Prevents known privilege escalations with default container configurations.
+* **Restricted**: Hardened configuration dropping all root privileges, enforcing read-only root filesystems, and requiring seccomp profiles.
 
-### Analyzing CRI-O Logs
+CRI-O applies default seccomp profiles located at `/etc/crio/seccomp.json` and supports SELinux labeling automatically.
 
-- **View Logs**:
+---
 
+## **5. Configuring Kubelet for CRI-O**
+
+Configure `/var/lib/kubelet/kubeadm-flags.env` or `kubeadm-config.yaml`:
+
+```yaml
+apiVersion: kubeadm.k8s.io/v1beta3
+kind: InitConfiguration
+nodeRegistration:
+  criSocket: unix:///var/run/crio/crio.sock
+```
+
+---
+
+## **6. Troubleshooting CRI-O**
+
+* **Inspect Service Logs**:
   ```bash
-  sudo journalctl -u crio
+  journalctl -u crio --no-pager -n 100 -f
+  ```
+* **Verify Socket Availability**:
+  ```bash
+  ls -la /var/run/crio/crio.sock
+  ```
+* **Clean Unused Containers & Images**:
+  ```bash
+  sudo crictl rmi --prune
   ```
 
-### Debugging Failed Containers
-
-- **Check Exit Code**:
-
-  ```bash
-  sudo crictl inspect <container_id>
-  ```
-
 ---
 
-## 11. Integration with Kubernetes
+## 📚 **Learning Resources**
 
-### Configuring CRI-O with Kubernetes
-
-- **Set CRI-O as the Default Runtime**: Modify Kubernetes configuration to use CRI-O as the default container runtime.
-
-### CRI-O as a Container Runtime for K8s
-
-- **Installation**: Ensure CRI-O is installed and configured on all Kubernetes nodes.
-
-### Multi-tenancy with CRI-O in Kubernetes
-
-- **Namespace Isolation**: Use Kubernetes namespaces and CRI-O security features to ensure tenant isolation.
-
----
-
-## 12. Best Practices
-
-### Security Best Practices
-
-- **Use SELinux**: Enable SELinux for all nodes running CRI-O.
-- **Limit Resource Usage**: Define CPU and memory limits to prevent resource exhaustion.
-
-### Performance Optimization
-
-- **Tune Runtime**: Adjust runtime parameters for high-performance workloads.
-- **Log Management**: Set up proper log rotation to prevent disk space exhaustion.
-
-### Efficient Resource Management
-
-- **Resource Limits**: Apply resource limits to containers to optimize cluster resource usage.
-
----
-
-## 13. FAQs
-
-### Common Questions about CRI-O
-
-- **
-
-Q**: How does CRI-O differ from Docker?
-  **A**: CRI-O is a lightweight container runtime designed specifically for Kubernetes, whereas Docker is a full-featured container platform.
-
-- **Q**: Can CRI-O run standalone without Kubernetes?
-  **A**: CRI-O is designed to run within Kubernetes environments, but it can also be used with tools like `crictl` for standalone operations.
-
----
-
-## 14. References
-
-### Official Documentation
-
-- [CRI-O GitHub Repository](https://github.com/cri-o/cri-o)
-- [CRI-O Documentation](https://crio.readthedocs.io/)
-
-### Community Resources
-
-- [Kubernetes CRI-O Integration Guide](https://kubernetes.io/docs/setup/production-environment/container-runtimes/#cri-o)
+* 🔗 [Official CRI-O Documentation](https://cri-o.io/)
+* 📦 [CRI-O GitHub Repository](https://github.com/cri-o/cri-o)
+* 🛠️ [Kubernetes Container Runtime Interface (CRI)](https://kubernetes.io/docs/setup/production-environment/container-runtimes/#cri-o)
