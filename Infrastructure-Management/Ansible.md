@@ -6,322 +6,418 @@
 
 ### ✅ What is Ansible?  
 
-Ansible is an **open-source automation tool** used for:  
-✅ **Configuration Management** (e.g., installing & managing software on servers)  
-✅ **Application Deployment** (e.g., deploying a web app on multiple servers)  
-✅ **Orchestration** (e.g., managing multi-tier applications like load balancer + DB)  
-✅ **Provisioning** (e.g., setting up cloud infrastructure with AWS, Azure, GCP)  
+Ansible is an **open-source automation engine** by Red Hat used for:  
+* ✅ **Configuration Management** (e.g., configuring operating systems, installing & managing software packages)  
+* ✅ **Application Deployment** (e.g., zero-downtime rolling updates across web clusters)  
+* ✅ **Orchestration** (e.g., coordinating multi-tier applications like load balancers + app + database)  
+* ✅ **Provisioning** (e.g., provisioning cloud infrastructure on AWS, Azure, GCP, or bare metal)  
 
 ### ✅ Why Use Ansible?  
 
-🔹 **Agentless:** No need to install agents on target machines (uses SSH & WinRM)  
-🔹 **Idempotent:** Runs multiple times without unwanted changes  
-🔹 **Human-Readable:** Uses YAML playbooks  
-🔹 **Cross-Platform:** Works on **Linux, Windows, macOS, Cloud Servers**  
+* 🔹 **Agentless:** No daemons or agents to install on managed nodes (uses native SSH on Linux/Unix and WinRM on Windows)  
+* 🔹 **Idempotent:** Running tasks repeatedly guarantees the desired state without unwanted duplicate changes  
+* 🔹 **Human-Readable:** Written in clear, declarative YAML syntax  
+* 🔹 **Extensible:** Massive ecosystem of pre-built modules and collections on **Ansible Galaxy**  
+* 🔹 **Cross-Platform:** Supports Linux, Windows, macOS, networking appliances (Cisco, Juniper, Arista), and cloud platforms  
 
 ---
 
 ## **🛠️ 1. Installing & Setting Up Ansible**  
 
-### ✅ Installing Ansible on Linux  
+### ✅ Installing Ansible on Control Node  
 
 ```bash
 # Ubuntu/Debian
 sudo apt update
 sudo apt install -y ansible
 
-# CentOS/RHEL
-sudo yum install -y ansible
+# CentOS/RHEL 8/9
+sudo dnf install -y epel-release
+sudo dnf install -y ansible
+
+# Using Python pip (platform independent)
+python3 -m pip install --user ansible ansible-lint
 ```
 
-### ✅ Checking Installation  
+### ✅ Checking Installation & Environment  
 
 ```bash
 ansible --version
 ```
 
-### ✅ Setting Up an Inventory File  
+### ✅ Ansible Configuration (`ansible.cfg`)
 
-An **inventory file** (`/etc/ansible/hosts`) tells Ansible where to connect.  
-Example:  
+Ansible searches for `ansible.cfg` in the following precedence order:
+1. `ANSIBLE_CONFIG` (environment variable)
+2. `./ansible.cfg` (current working directory)
+3. `~/.ansible.cfg` (user home directory)
+4. `/etc/ansible/ansible.cfg` (global fallback)
+
+Example project `./ansible.cfg`:
+
+```ini
+[defaults]
+inventory = ./inventory.ini
+remote_user = ubuntu
+private_key_file = ~/.ssh/id_rsa
+host_key_checking = False
+forks = 10
+retry_files_enabled = False
+
+[privilege_escalation]
+become = True
+become_method = sudo
+become_user = root
+become_ask_pass = False
+
+[ssh_connection]
+pipelining = True
+```
+
+---
+
+## **🌐 2. Managing Inventories (INI & YAML Formats)**
+
+### ✅ INI Format (`inventory.ini`)
 
 ```ini
 [webservers]
-server1 ansible_host=192.168.1.10 ansible_user=ubuntu
-server2 ansible_host=192.168.1.11 ansible_user=ubuntu
+web1 ansible_host=192.168.1.10 ansible_user=ubuntu
+web2 ansible_host=192.168.1.11 ansible_user=ubuntu
 
 [dbservers]
-db1 ansible_host=192.168.1.20 ansible_user=root
+db1 ansible_host=192.168.1.20 ansible_user=ubuntu
+
+[production:children]
+webservers
+dbservers
+
+[production:vars]
+ansible_python_interpreter=/usr/bin/python3
+env=production
 ```
 
-### ✅ Testing Connectivity with `ping`  
-
-```bash
-ansible all -m ping
-```
-
-📌 If successful, you'll see:  
-
-```bash
-server1 | SUCCESS => {"changed": false, "ping": "pong"}
-server2 | SUCCESS => {"changed": false, "ping": "pong"}
-```
-
----
-
-## **🚀 2. Running Ad-Hoc Commands (Quick Tasks Without a Playbook)**  
-
-✅ **Check disk usage**  
-
-```bash
-ansible all -m command -a "df -h"
-```
-
-✅ **Check system uptime**  
-
-```bash
-ansible all -m command -a "uptime"
-```
-
-✅ **Create a directory on remote hosts**  
-
-```bash
-ansible all -m file -a "path=/opt/newdir state=directory"
-```
-
-✅ **Copy files to remote servers**  
-
-```bash
-ansible all -m copy -a "src=/tmp/file.txt dest=/home/ubuntu/file.txt"
-```
-
-✅ **Install a package (e.g., nginx) on all web servers**  
-
-```bash
-ansible webservers -m apt -a "name=nginx state=present" --become
-```
-
-✅ **Restart a service (e.g., nginx)**  
-
-```bash
-ansible webservers -m service -a "name=nginx state=restarted" --become
-```
-
----
-
-## **📜 3. Writing Ansible Playbooks (Automation Scripts)**  
-
-✅ **What is a Playbook?**  
-A **playbook** is a YAML file that contains tasks to **automate configuration**.  
-
-### **🔹 Basic Playbook Example**  
+### ✅ YAML Format (`inventory.yml`)
 
 ```yaml
-- name: Install and Start Nginx
+all:
+  children:
+    webservers:
+      hosts:
+        web1:
+          ansible_host: 192.168.1.10
+        web2:
+          ansible_host: 192.168.1.11
+      vars:
+        http_port: 80
+    dbservers:
+      hosts:
+        db1:
+          ansible_host: 192.168.1.20
+      vars:
+        db_port: 5432
+  vars:
+    ansible_user: ubuntu
+    env: production
+```
+
+### ✅ Testing Connectivity with `ping`
+
+```bash
+# Ping all managed hosts
+ansible all -i inventory.ini -m ping
+
+# Ping only webservers
+ansible webservers -m ping
+```
+
+---
+
+## **🚀 3. Running Ad-Hoc Commands**  
+
+Ad-hoc commands are ideal for quick one-off administrative tasks. Modern Ansible encourages using Fully Qualified Collection Names (FQCN) like `ansible.builtin.<module>`.
+
+```bash
+# Check disk usage on all nodes
+ansible all -m ansible.builtin.command -a "df -h"
+
+# Check system uptime
+ansible all -m ansible.builtin.command -a "uptime"
+
+# Run command with shell pipes/redirection
+ansible all -m ansible.builtin.shell -a "grep -i error /var/log/syslog | tail -n 20"
+
+# Create a directory on remote hosts
+ansible all -m ansible.builtin.file -a "path=/opt/app state=directory mode=0755" --become
+
+# Copy file to remote servers
+ansible all -m ansible.builtin.copy -a "src=./app.conf dest=/etc/app.conf mode=0644" --become
+
+# Install a package (e.g., nginx) on webservers
+ansible webservers -m ansible.builtin.apt -a "name=nginx state=present update_cache=yes" --become
+
+# Restart a service
+ansible webservers -m ansible.builtin.service -a "name=nginx state=restarted" --become
+
+# Gather and filter system facts
+ansible all -m ansible.builtin.setup -a "filter=ansible_distribution*"
+```
+
+---
+
+## **📜 4. Writing Ansible Playbooks**  
+
+### ✅ Basic Playbook Structure with Handlers
+
+Handlers run only once at the end of a play, and only when a task reporting a change triggers them via `notify`.
+
+```yaml
+---
+- name: Configure Web Server with Nginx
   hosts: webservers
-  become: yes  # Run as sudo
+  become: true
+
+  vars:
+    server_name: example.com
+    document_root: /var/www/html
+
   tasks:
-    - name: Install Nginx
-      apt:
+    - name: Ensure Nginx is installed
+      ansible.builtin.apt:
         name: nginx
         state: present
+        update_cache: true
 
-    - name: Start Nginx
-      service:
+    - name: Deploy custom index page from template
+      ansible.builtin.template:
+        src: templates/index.html.j2
+        dest: "{{ document_root }}/index.html"
+        owner: www-data
+        group: www-data
+        mode: '0644'
+      notify: Restart Nginx
+
+    - name: Ensure Nginx service is running and enabled
+      ansible.builtin.service:
         name: nginx
         state: started
-```
+        enabled: true
 
-✅ **Run the Playbook**  
-
-```bash
-ansible-playbook playbook.yml
-```
-
----
-
-## **🔹 4. Using Variables in Ansible**  
-
-✅ **Define Variables in a Playbook**  
-
-```yaml
-- name: Install a Package with a Variable
-  hosts: webservers
-  vars:
-    package_name: nginx
-  tasks:
-    - name: Install Package
-      apt:
-        name: "{{ package_name }}"
-        state: present
-```
-
-✅ **Use Built-in Ansible Facts**  
-
-```bash
-ansible all -m setup
-```
-
-Example Fact Usage in Playbook:  
-
-```yaml
-- name: Display System Information
-  hosts: all
-  tasks:
-    - debug:
-        msg: "This server is running {{ ansible_distribution }} {{ ansible_distribution_version }}"
-```
-
----
-
-## **🔹 5. Loops & Conditionals**  
-
-✅ **Loop Example (Install Multiple Packages)**  
-
-```yaml
-- name: Install Multiple Packages
-  hosts: webservers
-  become: yes
-  tasks:
-    - name: Install Packages
-      apt:
-        name: "{{ item }}"
-        state: present
-      loop:
-        - nginx
-        - curl
-        - unzip
-```
-
-✅ **Conditional Execution**  
-
-```yaml
-- name: Restart Nginx Only If Needed
-  hosts: webservers
-  become: yes
-  tasks:
-    - name: Check if Nginx is Running
-      shell: pgrep nginx
-      register: nginx_running
-      ignore_errors: yes
-
+  handlers:
     - name: Restart Nginx
-      service:
+      ansible.builtin.service:
         name: nginx
         state: restarted
-      when: nginx_running.rc == 0
 ```
 
 ---
 
-## **📂 6. Ansible Roles (Best Practices for Large Projects)**  
+## **🧩 5. Jinja2 Templates (`template` Module)**
 
-✅ **Generate an Ansible Role Structure**  
+Templates let you generate dynamic configuration files with embedded variables, conditions, and loops.
 
-```bash
-ansible-galaxy init my_role
+Example template: `templates/index.html.j2`
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Welcome to {{ server_name }}</title>
+</head>
+<body>
+  <h1>Managed by Ansible</h1>
+  <p>Server Hostname: {{ ansible_hostname }}</p>
+  <p>IP Address: {{ ansible_default_ipv4.address }}</p>
+  <p>Operating System: {{ ansible_distribution }} {{ ansible_distribution_version }}</p>
+
+  {% if env == 'production' %}
+  <p><strong>Environment: PRODUCTION</strong></p>
+  {% else %}
+  <p>Environment: {{ env | default('development') }}</p>
+  {% endif %}
+</body>
+</html>
 ```
 
-📌 This creates a structured directory like:  
+---
+
+## **🔹 6. Loops, Conditionals & Registers**  
+
+### ✅ Loop Example (`loop`)
+
+```yaml
+- name: Install multiple packages
+  ansible.builtin.apt:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - nginx
+    - git
+    - curl
+    - htop
+    - ufw
+```
+
+### ✅ Register & Conditional Execution (`when`)
+
+```yaml
+- name: Check if application configuration exists
+  ansible.builtin.stat:
+    path: /etc/myapp/config.json
+  register: config_file
+
+- name: Initialize configuration if missing
+  ansible.builtin.template:
+    src: templates/config.json.j2
+    dest: /etc/myapp/config.json
+    mode: '0600'
+  when: not config_file.stat.exists
+```
+
+---
+
+## **📂 7. Ansible Roles (Organizing Complex Projects)**  
+
+Roles allow you to automatically load related vars, files, tasks, handlers, and templates based on a known directory structure.
+
+### ✅ Generate Role Skeleton
+
+```bash
+ansible-galaxy role init roles/nginx
+```
+
+Directory Structure:
 
 ```plaintext
-my_role/
-├── tasks/
+roles/nginx/
+├── defaults/       # Default variables (lowest precedence)
 │   └── main.yml
-├── handlers/
+├── vars/           # Role variables (high precedence)
 │   └── main.yml
-├── templates/
-├── files/
-├── vars/
+├── tasks/          # Main list of tasks executed by the role
 │   └── main.yml
-├── defaults/
+├── handlers/       # Handlers triggered by notify
 │   └── main.yml
-├── meta/
+├── templates/      # Jinja2 templates (.j2)
+│   └── nginx.conf.j2
+├── files/          # Static files copied to target machines
+├── meta/           # Role dependencies and author info
 │   └── main.yml
-├── README.md
+└── README.md
 ```
 
-✅ **Use Roles in a Playbook**  
+### ✅ Using Roles in a Playbook
 
 ```yaml
-- name: Deploy Web Server
+---
+- name: Deploy Production Application Stack
   hosts: webservers
+  become: true
   roles:
-    - nginx_role
+    - role: common
+    - role: nginx
+      vars:
+        nginx_port: 8080
+    - role: myapp
 ```
 
 ---
 
-## **🔐 7. Ansible Vault (Encrypting Secrets)**  
+## **🔐 8. Ansible Vault (Encrypting Sensitive Data)**  
 
-✅ **Create an Encrypted File**  
-
-```bash
-ansible-vault create secrets.yml
-```
-
-✅ **Edit an Encrypted File**  
+Ansible Vault encrypts sensitive variables, passwords, SSH keys, or entire files.
 
 ```bash
-ansible-vault edit secrets.yml
+# Create a new encrypted file
+ansible-vault create vars/secrets.yml
+
+# Edit an existing encrypted file
+ansible-vault edit vars/secrets.yml
+
+# Encrypt an existing plaintext file
+ansible-vault encrypt credentials.txt
+
+# Decrypt an encrypted file
+ansible-vault decrypt credentials.txt
+
+# View encrypted file contents without editing
+ansible-vault view vars/secrets.yml
+
+# Re-key with a new password
+ansible-vault rekey vars/secrets.yml
 ```
 
-✅ **Use Vault in Playbooks**  
+### ✅ Running Playbooks with Vault
+
+```bash
+# Prompt for password interactively
+ansible-playbook site.yml --ask-vault-pass
+
+# Read password from a secure file
+ansible-playbook site.yml --vault-password-file ~/.vault_pass.txt
+```
+
+---
+
+## **🎯 9. Playbook Execution Flags & Workflow Control**  
+
+| Command / Flag | Purpose |
+| --- | --- |
+| `ansible-playbook site.yml --syntax-check` | Check playbook for syntax errors without running |
+| `ansible-playbook site.yml --check` | **Dry run** mode: simulate changes without modifying systems |
+| `ansible-playbook site.yml --check --diff` | Simulate changes and show a unified diff of file alterations |
+| `ansible-playbook site.yml --limit web1` | Limit execution to specific host(s) or group (`-l`) |
+| `ansible-playbook site.yml --tags "deploy"` | Run only tasks tagged with `deploy` (`-t`) |
+| `ansible-playbook site.yml --skip-tags "cleanup"` | Skip tasks tagged with `cleanup` |
+| `ansible-playbook site.yml --step` | Interactive execution: confirm each task one by one |
+| `ansible-playbook site.yml --start-at-task "Start Service"` | Resume playbook execution from a specific task |
+| `ansible-playbook site.yml -e "version=2.1.0"` | Pass extra runtime variables (`--extra-vars`) |
+
+---
+
+## **📦 10. Ansible Galaxy Collections**
+
+Ansible modularized features into collections (`namespace.collection`).
+
+```bash
+# Install a collection from Galaxy
+ansible-galaxy collection install amazon.aws
+ansible-galaxy collection install community.docker
+ansible-galaxy collection install kubernetes.core
+
+# Install all dependencies from a requirements.yml file
+ansible-galaxy install -r requirements.yml
+```
+
+Example `requirements.yml`:
 
 ```yaml
-- name: Deploy with Encrypted Secrets
-  hosts: webservers
-  vars_files:
-    - secrets.yml
-  tasks:
-    - debug:
-        msg: "The secret password is {{ secret_password }}"
-```
+---
+roles:
+  - name: geerlingguy.docker
+    version: 7.4.4
 
-✅ **Run Playbook with Vault Password Prompt**  
-
-```bash
-ansible-playbook playbook.yml --ask-vault-pass
+collections:
+  - name: amazon.aws
+    version: 7.3.0
 ```
 
 ---
 
-## **🎯 8. Useful Ansible Commands**  
+## **🧠 Tips & Production Best Practices**
 
-✅ **Check Playbook Syntax**  
-
-```bash
-ansible-playbook playbook.yml --syntax-check
-```
-
-✅ **Dry Run (Test Without Executing Changes)**  
-
-```bash
-ansible-playbook playbook.yml --check
-```
-
-✅ **List All Available Modules**  
-
-```bash
-ansible-doc -l
-```
-
-✅ **Get Help for a Specific Module**  
-
-```bash
-ansible-doc apt
-```
+1. **Always Use FQCN**: Specify `ansible.builtin.copy` rather than short name `copy` to avoid namespace collisions.
+2. **Lint Every Commit**: Use `ansible-lint` in CI pipelines to catch anti-patterns and deprecations.
+3. **Use Handlers for Restarts**: Avoid restarting services inside tasks; notify handlers so services only restart when configuration files change.
+4. **Never Store Secrets in Plaintext**: Use `ansible-vault` for tokens, passwords, and private keys.
+5. **Always Set File Permissions**: Always declare `mode: '0644'` or `mode: '0755'` when creating files and directories.
+6. **Set `ansible_managed` Header**: Add `{{ ansible_managed }}` at the top of templates to warn users against manual edits.
 
 ---
 
-## 🎯 **Conclusion**  
+## 📚 **Learning Resources**
 
-This **Ansible Cheatsheet** provides a **step-by-step guide** from **beginner to advanced**.  
-
-🚀 **Next Steps:**  
-✅ **Practice with real-world playbooks**  
-✅ **Use roles for better structuring**  
-✅ **Secure credentials with Ansible Vault**  
-✅ **Automate cloud infrastructure with Terraform + Ansible**  
-
-🔗 **Contribute to the Cheatsheet Collection:** [GitHub Repo](https://github.com/NotHarshhaa/devops-cheatsheet)  
+* 🔗 [Official Ansible Documentation](https://docs.ansible.com/ansible/latest/)
+* 📦 [Ansible Galaxy](https://galaxy.ansible.com/)
+* 🔍 [Ansible Module Index](https://docs.ansible.com/ansible/latest/collections/ansible/builtin/index.html)
+* 🧪 [Ansible Lint Guide](https://ansible.readthedocs.io/projects/lint/)

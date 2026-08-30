@@ -4,68 +4,68 @@
 
 ## 📘 Introduction
 
-[Puppet](https://puppet.com) is an **open-source configuration management tool** that automates infrastructure provisioning, configuration, and management. It uses a **declarative language** to describe the desired state of your systems.
+[Puppet](https://puppet.com) is an **enterprise-grade configuration management tool** that automates the provisioning, configuration, and compliance of infrastructure across multi-cloud and on-premises environments.
 
-Puppet supports both **agent-master** and **agentless (bolt)** architectures, making it powerful for large-scale environments.
+Puppet uses a **declarative domain-specific language (DSL)** based on Ruby to model system state. It can be deployed in an **agent-server (primary/agent)** architecture or run standalone using **Puppet Apply** or **Puppet Bolt** (agentless task runner).
 
 ---
 
 ## 🧠 Key Concepts
 
-| Term         | Description                                                                |
-| ------------ | -------------------------------------------------------------------------- |
-| **Manifest** | A file written in Puppet DSL (.pp) that describes desired system state.    |
-| **Module**   | A collection of manifests, templates, files, etc., organized in structure. |
-| **Class**    | Reusable block of Puppet code.                                             |
-| **Resource** | Basic unit that describes something (like a package or service).           |
-| **Facts**    | System information gathered by **Facter**.                                 |
-| **Catalog**  | Compiled version of the manifests specific to a node.                      |
-| **Node**     | A client machine being managed.                                            |
+| Term | Description |
+| --- | --- |
+| **Manifest** | A file containing Puppet DSL code with the `.pp` file extension. |
+| **Resource** | The basic unit of configuration representing a system element (`package`, `file`, `service`, `user`). |
+| **Class** | A named, reusable block of Puppet code representing a singleton configuration component. |
+| **Defined Type** | Reusable block that can be instantiated multiple times with unique titles. |
+| **Module** | A structured package containing manifests, templates, files, and metadata. |
+| **Facts** | System metadata automatically gathered from managed nodes using **Facter**. |
+| **Catalog** | Compiled dependency graph representing the desired state for a specific node. |
+| **Hiera** | Key-value hierarchical data lookup tool separating code from configuration data. |
 
 ---
 
-## 🧾 Puppet Commands
+## 🧾 Puppet Commands Quick Reference
 
 <details>
 <summary>🟢 Beginner Commands (Click to Expand)</summary>
 
-### 🔹 Check Version
+### 🔹 Check Version & Environment
 
 ```bash
 puppet --version
+facter --version
 ```
 
 ### 🔹 Apply Manifest Locally
 
 ```bash
-puppet apply example.pp
+puppet apply manifest.pp
+puppet apply --noop manifest.pp   # Dry-run mode (no changes applied)
 ```
 
-### 🔹 Validate Syntax of Manifest
+### 🔹 Syntax Validation & Linting
 
 ```bash
-puppet parser validate example.pp
+puppet parser validate manifest.pp
+puppet-lint manifest.pp
 ```
 
-### 🔹 Format Manifests (Linting)
+### 🔹 Inspect & Query System Resources
 
 ```bash
-puppet parser validate example.pp
-puppet-lint example.pp
+puppet resource user root
+puppet resource service sshd
+puppet resource package nginx
 ```
 
-### 🔹 List Available Facts
+### 🔹 View System Facts
 
 ```bash
 facter
-facter os
-```
-
-### 🔹 View Help
-
-```bash
-puppet help
-puppet help apply
+facter os.family
+facter networking.ip
+facter memory.system.available
 ```
 
 </details>
@@ -75,37 +75,35 @@ puppet help apply
 <details>
 <summary>🟡 Intermediate Commands (Click to Expand)</summary>
 
-### 🔹 Puppet Resource (Inspect or Manage)
+### 🔹 PDK (Puppet Development Kit)
 
 ```bash
-puppet resource <type>
-puppet resource user root
-puppet resource service ssh
+pdk new module my_module
+pdk new class my_class
+pdk validate                      # Syntax, linting, metadata check
+pdk test unit                     # Run RSpec unit tests
 ```
 
-### 🔹 Generate New Module Skeleton
-
-```bash
-puppet module generate yourname-modulename
-```
-
-### 🔹 Install a Module
-
-```bash
-puppet module install puppetlabs-apache
-```
-
-### 🔹 List Installed Modules
+### 🔹 Manage Modules
 
 ```bash
 puppet module list
+puppet module install puppetlabs-apt
+puppet module install puppetlabs-docker
+puppet module upgrade puppetlabs-apt
 ```
 
-### 🔹 Check Current Puppet Config
+### 🔹 Trigger Agent Run Manually
 
 ```bash
-puppet config print
-puppet config print all
+# Run agent once and print verbose output
+puppet agent -t
+
+# Dry-run agent execution
+puppet agent -t --noop
+
+# Enable debug logging
+puppet agent -t --debug
 ```
 
 </details>
@@ -115,105 +113,71 @@ puppet config print all
 <details>
 <summary>🔴 Advanced Commands (Click to Expand)</summary>
 
-### 🔹 Agent Commands
+### 🔹 Certificate Authority Management (`puppetserver ca`)
 
 ```bash
-puppet agent -t
-puppet agent -t --debug
-```
-
-### 🔹 Manage Certificates
-
-```bash
+# List all pending certificate signing requests (CSRs)
 puppetserver ca list
-puppetserver ca sign --certname node.example.com
-puppetserver ca revoke --certname node.example.com
-puppetserver ca clean --certname node.example.com
+
+# Sign an agent certificate
+puppetserver ca sign --certname node1.example.com
+
+# Sign all pending certificates
+puppetserver ca sign --all
+
+# Revoke and clean a decommissioned node certificate
+puppetserver ca revoke --certname node1.example.com
+puppetserver ca clean --certname node1.example.com
 ```
 
-### 🔹 PuppetDB Query
+### 🔹 PuppetDB & PQL Queries
 
 ```bash
-puppet query 'inventory[certname] { facts.os.name = "Ubuntu" }'
+# Query nodes by operating system
+puppet query 'inventory[certname] { facts.os.family = "Debian" }'
+
+# Query nodes where a specific package is installed
+puppet query 'resources[certname] { type = "Package" and title = "openssl" }'
 ```
 
-### 🔹 Run Task with Bolt
+### 🔹 Hiera CLI Lookup
 
 ```bash
-bolt command run "uptime" --targets localhost
-bolt plan run myplan
+puppet lookup my_module::port --node web1.example.com --explain
 ```
 
-### 🔹 Testing & Debugging
+### 🔹 Puppet Bolt (Agentless Task Execution)
 
 ```bash
-puppet apply --noop file.pp
-puppet apply --debug file.pp
-puppet lookup varname
-puppet describe <type>
-```
-
-### 🔹 System & Config
-
-```bash
-puppet config print <setting>
-puppet facts show
-puppet module search apache
-puppet doc <module>
-puppet resource --to_yaml
+bolt command run "uptime" --targets linux_servers
+bolt task run package action=install name=curl --targets web1.example.com
+bolt plan run myplan::deploy --targets all
 ```
 
 </details>
 
 ---
 
-## 🟢 Beginner Level
+## 🟢 Beginner Level: Syntax & Resources
 
-### 🔹 Installing Puppet (Agent/Master)
-
-```bash
-# Install Puppet (Debian/Ubuntu)
-sudo apt install puppet
-
-# Check version
-puppet --version
-```
-
----
-
-### 🔹 First Manifest Example
+### 🔹 Basic Resource Declaration
 
 ```puppet
-# hello.pp
-file { '/tmp/hello.txt':
-  ensure  => present,
-  content => "Hello from Puppet!",
+# Manage file
+file { '/etc/motd':
+  ensure  => file,
+  owner   => 'root',
+  group   => 'root',
+  mode    => '0644',
+  content => "Authorized Access Only - Managed by Puppet\n",
 }
-```
 
-Run it:
-
-```bash
-puppet apply hello.pp
-```
-
----
-
-### 🔹 Resource Types
-
-| Type        | Example                             |
-| ----------- | ----------------------------------- |
-| **file**    | Manage files, directories, symlinks |
-| **package** | Install, remove software            |
-| **service** | Ensure a service is running/stopped |
-| **user**    | Manage system users                 |
-
-```puppet
-# Install nginx and ensure it runs
+# Manage package
 package { 'nginx':
   ensure => installed,
 }
 
+# Manage service
 service { 'nginx':
   ensure => running,
   enable => true,
@@ -222,222 +186,207 @@ service { 'nginx':
 
 ---
 
-### 🔹 Variables
+## 🔗 Resource Relationships & Chaining
+
+In Puppet, resources do not execute in linear top-to-bottom order by default. You must declare explicit dependencies using metaparameters or chaining arrows.
+
+### 🔹 Relationship Metaparameters
+
+| Metaparameter | Behavior |
+| --- | --- |
+| `require` | Current resource applies **after** specified resource |
+| `before` | Current resource applies **before** specified resource |
+| `notify` | Current resource applies **before** and sends a refresh trigger if changed |
+| `subscribe` | Current resource applies **after** and refreshes if target changed |
 
 ```puppet
-$greeting = "Hello, World"
-notice($greeting)
+package { 'nginx':
+  ensure => installed,
+}
+
+file { '/etc/nginx/nginx.conf':
+  ensure  => file,
+  source  => 'puppet:///modules/nginx/nginx.conf',
+  require => Package['nginx'],
+  notify  => Service['nginx'],
+}
+
+service { 'nginx':
+  ensure => running,
+  enable => true,
+}
+```
+
+### 🔹 Chaining Arrows
+
+Use `->` (ordering) and `~>` (ordering with notification):
+
+```puppet
+Package['nginx'] -> File['/etc/nginx/nginx.conf'] ~> Service['nginx']
 ```
 
 ---
 
-### 🔹 Conditionals
+## 🟡 Intermediate Level: Classes, Defined Types & Modules
+
+### 🔸 Classes vs Defined Types
+
+* **Class**: Singleton. Can only be declared once per node.
+* **Defined Type**: Reusable prototype. Can be instantiated multiple times with different titles.
+
+#### Class Example:
 
 ```puppet
-if $osfamily == 'Debian' {
-  notice("Debian-based system")
-} else {
-  notice("Other OS")
+class nginx (
+  Integer $port = 80,
+  String $package_name = 'nginx',
+) {
+  package { $package_name:
+    ensure => installed,
+  }
+
+  file { '/etc/nginx/sites-available/default':
+    ensure  => file,
+    content => epp('nginx/vhost.epp', { 'port' => $port }),
+    notify  => Service['nginx'],
+  }
+
+  service { 'nginx':
+    ensure => running,
+    enable => true,
+  }
+}
+```
+
+#### Defined Resource Type Example:
+
+```puppet
+define nginx::vhost (
+  Integer $port,
+  String $docroot,
+) {
+  file { "/etc/nginx/conf.d/${title}.conf":
+    ensure  => file,
+    content => epp('nginx/vhost_snippet.epp', {
+      'server_name' => $title,
+      'port'        => $port,
+      'docroot'     => $docroot,
+    }),
+    notify  => Service['nginx'],
+  }
+}
+
+# Invoking multiple instances:
+nginx::vhost { 'blog.example.com':
+  port    => 80,
+  docroot => '/var/www/blog',
+}
+
+nginx::vhost { 'shop.example.com':
+  port    => 8080,
+  docroot => '/var/www/shop',
 }
 ```
 
 ---
 
-## 🟡 Intermediate Level
+### 🔸 Templates: EPP (Embedded Puppet) vs ERB
 
-### 🔸 Facts and Facter
+Modern Puppet favors **EPP (`.epp`)** templates using native Puppet DSL over legacy ERB.
 
-View system facts:
-
-```bash
-facter
-facter os
-```
-
-Use in manifests:
+File: `templates/vhost.epp`:
 
 ```puppet
-if $facts['os']['family'] == 'RedHat' {
-  package { 'httpd': ensure => installed }
+<%- | String $server_name, Integer $port, String $docroot | -%>
+server {
+    listen <%= $port %>;
+    server_name <%= $server_name %>;
+    root <%= $docroot %>;
+}
+```
+
+Usage in manifest:
+
+```puppet
+file { '/etc/nginx/conf.d/site.conf':
+  ensure  => file,
+  content => epp('nginx/vhost.epp', {
+    'server_name' => 'example.com',
+    'port'        => 80,
+    'docroot'     => '/var/www/html',
+  }),
 }
 ```
 
 ---
 
-### 🔸 Classes
+## 🔴 Advanced Level: Hiera & Directory Environments
 
-```puppet
-class apache {
-  package { 'apache2': ensure => installed }
-  service { 'apache2': ensure => running }
-}
-```
+### 🔹 Modern Hiera 5 Configuration (`hiera.yaml`)
 
-Include it:
-
-```puppet
-include apache
-```
-
----
-
-### 🔸 Modules
-
-```bash
-puppet module generate yourname-apache
-puppet module install puppetlabs-apache
-```
-
-Structure:
-
-```
-apache/
-├── manifests/
-│   └── init.pp
-├── files/
-├── templates/
-```
-
-Use:
-
-```puppet
-class { 'apache': }
-```
-
----
-
-### 🔸 Templates (ERB)
-
-File: `templates/vhost.erb`
-
-```erb
-<VirtualHost *:80>
-  ServerName <%= @servername %>
-</VirtualHost>
-```
-
-Manifest:
-
-```puppet
-file { '/etc/httpd/conf.d/vhost.conf':
-  content => template('apache/vhost.erb'),
-}
-```
-
----
-
-### 🔸 Puppet Apply vs Agent
-
-| Mode      | Usage                                  |
-| --------- | -------------------------------------- |
-| **Apply** | Local apply of manifests               |
-| **Agent** | Connects to master and applies catalog |
-
----
-
-## 🔴 Advanced Level
-
-### 🔹 Puppet Master-Agent Setup
-
-* **Puppet Server**: Central server managing infrastructure.
-* **Agent**: Node that pulls configuration from the server.
-
-```bash
-# On agent
-puppet agent -t
-```
-
-Sign certs:
-
-```bash
-puppetserver ca list
-puppetserver ca sign --certname <agent-fqdn>
-```
-
----
-
-### 🔹 Environments
-
-Used to separate dev, staging, prod configs.
-
-Directory structure:
-
-```
-/etc/puppetlabs/code/environments/
-├── production/
-│   └── manifests/
-├── development/
-```
-
----
-
-### 🔹 Hiera (Hierarchical Data Lookup)
-
-Configure external data in YAML:
+Hiera separates code logic from site-specific data:
 
 ```yaml
-# hiera.yaml
 version: 5
 defaults:
   datadir: data
   data_hash: yaml_data
 
+hierarchy:
+  - name: "Per-node secrets (eyaml)"
+    lookup_key: eyaml_lookup_key
+    path: "nodes/%{trusted.certname}.eyaml"
+  - name: "Per-node data"
+    path: "nodes/%{trusted.certname}.yaml"
+  - name: "Environment data"
+    path: "environments/%{server_facts.environment}.yaml"
+  - name: "Operating System Family"
+    path: "os/%{facts.os.family}.yaml"
+  - name: "Common data"
+    path: "common.yaml"
+```
+
+Lookup data directly in Hiera YAML:
+
+```yaml
 # data/common.yaml
-apache::port: 80
-```
-
-Access in Puppet:
-
-```puppet
-$port = lookup('apache::port')
+nginx::port: 80
+app::db_user: 'app_admin'
 ```
 
 ---
 
-### 🔹 PuppetDB
+### 🔹 Encrypted Secrets with Hiera-eYAML
 
-Central storage for catalog, fact, and report data.
-
-Query:
-
-```puppet
-query_nodes(['=', 'catalog_environment', 'production'])
-```
-
----
-
-### 🔹 Bolt (Agentless Task Runner)
+Encrypt passwords directly in your git repository:
 
 ```bash
-bolt command run 'uptime' --targets localhost
-bolt plan run myplan
+# Encrypt a secret string
+eyaml encrypt -s 'SuperSecretPassword123'
 ```
 
-Write plans in YAML or Puppet DSL.
+Output stored safely in `data/common.eyaml`:
+
+```yaml
+app::db_password: >
+  ENC[PKCS7,MIIBeQYJKoZIhvcNAQcDoIIBajCCAWYCAQAxggEhMIIBHQIBADAFMAACAQEw...==]
+```
 
 ---
 
-## 📌 Useful Puppet CLI Commands
+## 📌 Puppet Best Practices
 
-| Command                          | Description                   |
-| -------------------------------- | ----------------------------- |
-| `puppet apply <file.pp>`         | Apply a manifest locally      |
-| `puppet agent -t`                | Trigger agent run             |
-| `puppet resource <type> <name>`  | View current resource state   |
-| `puppet module install <name>`   | Install a module              |
-| `puppet config print all`        | Print all config settings     |
-| `puppet parser validate file.pp` | Validate syntax of manifest   |
-| `facter`                         | Show system facts             |
-| `puppet doc <module>`            | Generate module documentation |
+1. **Use PDK for Module Authoring**: Standardize code style, unit tests, and validation.
+2. **Always Declare Explicit Dependencies**: Use `require`, `notify`, or chaining arrows (`->`, `~>`) rather than relying on evaluation order.
+3. **Prefer EPP over ERB**: EPP ensures type validation and syntax consistency with Puppet DSL.
+4. **Use Trusted Facts**: Rely on `$trusted['certname']` for node identification to prevent fact spoofing.
+5. **Keep Manifests Generic**: Store all environment-specific values in Hiera data files, not hardcoded in `.pp` files.
 
 ---
 
 ## 📚 Learning Resources
 
-* 📘 [Official Docs](https://puppet.com/docs/puppet/latest/puppet_index.html)
-* 📦 [Forge Modules](https://forge.puppet.com/)
-* 🧪 [Bolt (Task Runner)](https://puppet.com/docs/bolt/latest/bolt.html)
-* 📖 [Puppet DSL Cheat Sheet](https://puppet.com/docs/puppet/latest/lang_summary.html)
-* 🧠 [Learn Puppet Free Courses](https://learn.puppet.com)
-
----
+* 📘 [Official Puppet Documentation](https://puppet.com/docs/puppet/latest/puppet_index.html)
+* 📦 [Puppet Forge (Community Modules)](https://forge.puppet.com/)
+* 🛠️ [Puppet Development Kit (PDK)](https://puppet.com/docs/pdk/latest/pdk.html)
+* 🧪 [Puppet Bolt Task Runner](https://puppet.com/docs/bolt/latest/bolt.html)

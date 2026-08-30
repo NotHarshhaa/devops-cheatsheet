@@ -8,19 +8,24 @@ Terraform by [HashiCorp](https://www.hashicorp.com/products/terraform) is an **o
 
 With Terraform, you define infrastructure in a **declarative format**, allowing for versioning, reusability, automation, and consistency across environments.
 
+> [!NOTE]
+> **OpenTofu Compatibility**: OpenTofu is the open-source, community-driven fork of Terraform (Linux Foundation). Almost all CLI commands and HCL syntax (`terraform ...` ⇄ `tofu ...`) are drop-in interchangeable.
+
 ## 🔹 **Key Concepts**
 
-| Term           | Description                                                            |
-| -------------- | ---------------------------------------------------------------------- |
-| **Providers**  | Plugin responsible for managing a specific cloud platform (e.g., AWS). |
-| **Resources**  | Infrastructure components like EC2, S3, etc.                           |
-| **Variables**  | Input values passed into configuration.                                |
-| **Outputs**    | Values that Terraform returns after execution.                         |
-| **State File** | Keeps track of resources Terraform manages.                            |
+| Term | Description |
+| --- | --- |
+| **Providers** | Plugins responsible for managing specific platforms (e.g., AWS, Azure, GCP, Kubernetes). |
+| **Resources** | Infrastructure components declared to be managed (e.g., EC2, S3, VPC). |
+| **Data Sources** | Read-only infrastructure queries fetching existing cloud resources outside Terraform. |
+| **Variables** | Input values passed into configurations for modularity. |
+| **Outputs** | Return values that Terraform displays or passes to other configurations. |
+| **State File** | Tracks real-world resources mapped to configuration (`terraform.tfstate`). |
+| **Modules** | Self-contained packages of Terraform configurations that create reusable components. |
 
 ---
 
-## 🌍 Terraform Commands
+## 🌍 Terraform Commands Quick Reference
 
 <details>
 <summary>🟢 Beginner Commands (Click to Expand)</summary>
@@ -47,6 +52,7 @@ terraform validate
 
 ```bash
 terraform fmt
+terraform fmt -recursive
 ```
 
 ### 🔹 Show Help
@@ -67,25 +73,36 @@ terraform plan -help
 
 ```bash
 terraform plan
+terraform plan -out=tfplan
 ```
 
 ### 🔹 Apply Infrastructure Changes
 
 ```bash
 terraform apply
+terraform apply -auto-approve
+terraform apply tfplan
+```
+
+### 🔹 Targeted Recreation (Modern Replacement for Taint)
+
+```bash
+terraform apply -replace="aws_instance.web"
 ```
 
 ### 🔹 Destroy Infrastructure
 
 ```bash
 terraform destroy
+terraform destroy -auto-approve
 ```
 
 ### 🔹 Output Variables
 
 ```bash
 terraform output
-terraform output my_variable
+terraform output -json
+terraform output instance_ip
 ```
 
 ### 🔹 Manage State
@@ -93,6 +110,8 @@ terraform output my_variable
 ```bash
 terraform state list
 terraform state show <resource>
+terraform state mv <old_name> <new_name>
+terraform state rm <resource>
 ```
 
 </details>
@@ -119,13 +138,24 @@ terraform init -upgrade
 ### 🔹 Backend Configuration
 
 ```bash
-terraform init -backend-config="key=my-state.tfstate"
+terraform init -backend-config="key=my-state.tfstate" -reconfigure
 ```
 
-### 🔹 Import Existing Infrastructure
+### 🔹 Import Existing Infrastructure (CLI & Modern Import Block)
 
 ```bash
+# Classic CLI import
 terraform import aws_instance.example i-12345678
+
+# Modern Terraform 1.5+ declarative generation
+terraform plan -generate-config-out=generated.tf
+```
+
+### 🔹 Native Automated Tests (Terraform 1.6+)
+
+```bash
+terraform test
+terraform test -verbose
 ```
 
 ### 🔹 Graph Dependency Tree
@@ -134,15 +164,21 @@ terraform import aws_instance.example i-12345678
 terraform graph | dot -Tpng > graph.png
 ```
 
+### 🔹 Force Unlock State
+
+```bash
+terraform force-unlock <LOCK_ID>
+```
+
 </details>
 
 ---
 
-## 🟢 **Beginner Commands**
+## 🟢 **Beginner Commands & Core Workflow**
 
 ### 🔹 `terraform version`
 
-Shows the installed version of Terraform.
+Shows the installed version of Terraform and configured provider plugins.
 
 ```bash
 terraform version
@@ -152,19 +188,43 @@ terraform version
 
 ### 🔹 `terraform init`
 
-Initializes the working directory with provider plugins and backend config.
+Initializes the working directory containing Terraform configuration files. Downloads required provider plugins and configures the backend.
 
 ```bash
+# Standard initialization
 terraform init
+
+# Upgrade provider plugins to latest allowed versions
+terraform init -upgrade
+
+# Reconfigure backend settings (migrating state storage)
+terraform init -reconfigure
 ```
 
-💡 Run this once per project after writing your `.tf` files.
+💡 Run this once per project after writing your `.tf` files or whenever you add new providers/modules.
+
+---
+
+### 🔹 `terraform fmt`
+
+Automatically rewrites Terraform configuration files to a canonical format and style.
+
+```bash
+# Format current directory
+terraform fmt
+
+# Format all files in subdirectories recursively
+terraform fmt -recursive
+
+# Check if files are formatted without modifying them (CI/CD check)
+terraform fmt -check
+```
 
 ---
 
 ### 🔹 `terraform validate`
 
-Validates your configuration files for syntax errors.
+Validates your configuration files syntactically and checks whether internal references and arguments are valid without accessing remote services.
 
 ```bash
 terraform validate
@@ -174,303 +234,444 @@ terraform validate
 
 ### 🔹 `terraform plan`
 
-Shows what actions Terraform *will* take without applying them.
+Creates an execution plan, letting you preview what actions Terraform will take to reach the desired state before making changes.
 
 ```bash
+# Preview changes
 terraform plan
+
+# Save the execution plan to a file (recommended for CI/CD)
+terraform plan -out=tfplan
+
+# Pass custom variable values via CLI
+terraform plan -var="environment=production" -var="instance_count=3"
+
+# Specify a custom variables file
+terraform plan -var-file="prod.tfvars"
 ```
 
-📌 Use before every `apply` to preview infrastructure changes.
+📌 Always run `plan` before `apply` to inspect additions (`+`), changes (`~`), and destructions (`-`).
 
 ---
 
 ### 🔹 `terraform apply`
 
-Applies changes to reach the desired infrastructure state.
+Executes the actions proposed in a Terraform plan to create, update, or delete infrastructure.
 
 ```bash
+# Apply interactively (requires confirmation prompt)
 terraform apply
-```
 
-* You can auto-approve with:
-
-```bash
+# Auto-approve without prompt (useful in CI/CD pipelines)
 terraform apply -auto-approve
+
+# Apply a pre-generated plan file safely
+terraform apply tfplan
 ```
 
 ---
 
 ### 🔹 `terraform destroy`
 
-Removes infrastructure defined in the configuration files.
+Terminates all resources tracked by the current configuration and state.
 
 ```bash
+# Destroy with confirmation prompt
 terraform destroy
-```
 
-* Auto-confirm with:
-
-```bash
+# Auto-confirm destruction
 terraform destroy -auto-approve
+
+# Preview destruction without deleting
+terraform plan -destroy
 ```
 
 ---
 
-### 🔹 `terraform fmt`
+## 🟡 **Intermediate Commands & State Operations**
 
-Automatically formats `.tf` files to canonical style.
+### 🔹 Modern Replacement for `terraform taint` (`-replace`)
 
-```bash
-terraform fmt
-```
-
-* Format all recursively:
+> [!WARNING]
+> `terraform taint` is **deprecated** since Terraform v0.15.2 and v1.x. Use `terraform apply -replace` instead.
 
 ```bash
-terraform fmt -recursive
+# Modern standard (Terraform 0.15.2+)
+terraform apply -replace="aws_instance.example"
+
+# Legacy command (retains for backwards compatibility)
+terraform taint aws_instance.example
+terraform untaint aws_instance.example
 ```
 
 ---
-
-## 🟡 **Intermediate Commands**
 
 ### 🔹 `terraform show`
 
-Displays human-readable output of the current or saved state.
+Displays human-readable output of the current state or a saved plan file.
 
 ```bash
+# Show current state
 terraform show
-terraform show terraform.tfstate
+
+# Inspect a saved plan file
+terraform show tfplan
+
+# Output state in JSON for parsing with jq
+terraform show -json
 ```
 
 ---
 
 ### 🔹 `terraform output`
 
-Prints the values of output variables after apply.
+Extracts the values of output variables from the state file.
 
 ```bash
+# List all outputs
 terraform output
+
+# Get a specific output
 terraform output instance_ip
+
+# Extract as raw string (strips quotes for scripting)
+terraform output -raw instance_ip
+
+# Output in JSON format
+terraform output -json
 ```
 
 ---
 
-### 🔹 `terraform state list`
+### 🔹 `terraform state` Management
 
-Lists all resources tracked in the current state file.
+Directly inspect and modify the Terraform state file.
 
 ```bash
+# List all resources currently tracked in state
 terraform state list
+
+# Show detailed attributes of a tracked resource
+terraform state show aws_instance.web
+
+# Move/rename a resource within state without destroying it
+terraform state mv aws_instance.old_name aws_instance.new_name
+
+# Move resource into a module
+terraform state mv aws_instance.web module.web_cluster.aws_instance.web
+
+# Remove a resource from state without destroying it in the cloud
+terraform state rm aws_instance.unmanaged_resource
+
+# Pull remote state file to stdout
+terraform state pull > backup.tfstate
 ```
 
 ---
 
-### 🔹 `terraform state show`
+### 🔹 `terraform workspace`
 
-Displays details about a specific resource in the state.
-
-```bash
-terraform state show aws_instance.example
-```
-
----
-
-### 🔹 `terraform taint`
-
-Forces recreation of a resource on the next apply.
+Manages separate state instances within the same configuration directory (useful for multi-environment deployments like `dev`, `staging`, `prod`).
 
 ```bash
-terraform taint aws_instance.example
-```
-
----
-
-### 🔹 `terraform untaint`
-
-Removes taint from a resource.
-
-```bash
-terraform untaint aws_instance.example
-```
-
----
-
-### 🔹 `terraform import`
-
-Brings existing infrastructure into Terraform state.
-
-```bash
-terraform import aws_instance.example i-0abcd1234efgh5678
-```
-
----
-
-### 🔹 `terraform graph`
-
-Generates a dependency graph (in DOT format).
-
-```bash
-terraform graph | dot -Tpng > graph.png
-```
-
----
-
-### 🔹 `terraform providers`
-
-Lists all providers used in the current configuration.
-
-```bash
-terraform providers
-```
-
----
-
-### 🔹 `terraform workspace` commands
-
-Used to manage multiple workspaces (e.g., dev, staging, prod).
-
-```bash
-terraform workspace new dev
-terraform workspace select dev
+# List all workspaces
 terraform workspace list
+
+# Create a new workspace
+terraform workspace new staging
+
+# Switch between workspaces
+terraform workspace select prod
+
+# View current workspace
+terraform workspace show
+
+# Delete an empty workspace
+terraform workspace delete staging
 ```
 
----
+In HCL, reference the active workspace using `${terraform.workspace}`:
 
-## 🔴 **Advanced Commands**
-
-### 🔹 `terraform plan -out=tfplan`
-
-Saves the execution plan to a file.
-
-```bash
-terraform plan -out=tfplan
-```
-
-Then apply it later:
-
-```bash
-terraform apply tfplan
-```
-
----
-
-### 🔹 `terraform apply -target=resource`
-
-Apply only specific resources.
-
-```bash
-terraform apply -target=aws_instance.example
-```
-
----
-
-### 🔹 `terraform state mv`
-
-Moves/renames resources in the state.
-
-```bash
-terraform state mv aws_instance.old aws_instance.new
-```
-
----
-
-### 🔹 `terraform state rm`
-
-Removes resource from state (does NOT destroy it in the cloud).
-
-```bash
-terraform state rm aws_instance.example
+```hcl
+locals {
+  env = terraform.workspace
+}
 ```
 
 ---
 
 ### 🔹 `terraform console`
 
-Opens an interactive console to evaluate HCL expressions.
+Launches an interactive shell for evaluating expressions, testing built-in functions, and inspecting variables.
 
 ```bash
 terraform console
-> var.instance_type
+> max(5, 12, 9)
+12
+> format("web-%s-%02d", "prod", 1)
+"web-prod-01"
+> [for s in ["apple", "banana"] : upper(s)]
+[
+  "APPLE",
+  "BANANA",
+]
+> exit
 ```
 
 ---
 
-### 🔹 `terraform login`
+## 🔴 **Advanced Concepts & Modern Features (Terraform 1.5 - 1.10+)**
 
-Authenticates to Terraform Cloud or Enterprise.
+### 🔹 Declarative `import` Blocks (Terraform 1.5+)
 
-```bash
-terraform login
+Terraform 1.5 introduced declarative imports in `.tf` code alongside automatic configuration generation.
+
+```hcl
+# In imports.tf
+import {
+  to = aws_instance.web
+  id = "i-0123456789abcdef0"
+}
 ```
 
----
-
-### 🔹 `terraform logout`
-
-Logs out from Terraform Cloud.
+Generate configuration automatically:
 
 ```bash
-terraform logout
-```
+# Generates the HCL resource block into generated.tf
+terraform plan -generate-config-out=generated.tf
 
----
-
-### 🔹 `terraform force-unlock`
-
-Force-unlocks a state file after a failed operation.
-
-```bash
-terraform force-unlock <LOCK_ID>
-```
-
----
-
-## 📌 **Common Command Workflows**
-
-### 🛠 New Project
-
-```bash
-terraform init
-terraform plan
+# Apply the generated import
 terraform apply
 ```
 
-### 🔁 Make a Change
+Traditional CLI import:
 
 ```bash
-terraform fmt
-terraform validate
-terraform plan
-terraform apply
+terraform import aws_instance.web i-0123456789abcdef0
 ```
-
-### 🧽 Destroy Infra
-
-```bash
-terraform destroy
-```
-
-Great — here’s the full version of the `Terraform.md` cheat sheet with **introductory info at the top** and **additional learning resources at the bottom**, perfect for your repo:
 
 ---
 
-## 🧠 **Tips & Best Practices**
+### 🔹 Native Automated Testing (`terraform test`, 1.6+)
 
-* Keep `.tfstate` files **secure** (use S3 + DynamoDB for remote locking)
-* Use `terraform.tfvars` or `.auto.tfvars` for sensitive input variables
-* Mark secrets using `sensitive = true` in outputs
-* Use **modules** for reusable code
-* Always run `terraform plan` before `apply`
-* Version-lock providers in `required_providers`
+Terraform 1.6+ provides a built-in testing framework using `.tftest.hcl` files without external tools like Terratest.
+
+```hcl
+# tests/website.tftest.hcl
+variables {
+  bucket_name = "test-company-static-website-dev"
+}
+
+run "validate_bucket_creation" {
+  command = plan
+
+  assert {
+    condition     = aws_s3_bucket.website.bucket == var.bucket_name
+    error_message = "S3 bucket name did not match expected variable"
+  }
+}
+```
+
+Run test suites:
+
+```bash
+terraform test
+terraform test -verbose
+```
+
+---
+
+### 🔹 `check` Blocks (Continuous Validation, 1.5+)
+
+Assert conditions in your infrastructure without failing the entire `plan` or `apply`:
+
+```hcl
+check "health_check" {
+  data "http" "website_status" {
+    url = "https://${aws_lb.app.dns_name}/healthz"
+  }
+
+  assert {
+    condition     = data.http.website_status.status_code == 200
+    error_message = "${aws_lb.app.dns_name} returned non-200 status code."
+  }
+}
+```
+
+---
+
+### 🔹 Resource Lifecycle Meta-Arguments
+
+Control how Terraform creates, updates, and deletes individual resources:
+
+```hcl
+resource "aws_instance" "web" {
+  ami           = "ami-0c55b159cbfafe1f0"
+  instance_type = "t3.micro"
+
+  lifecycle {
+    # Create replacement resource before destroying the existing one
+    create_before_destroy = true
+
+    # Prevent accidental terraform destroy
+    prevent_destroy = false
+
+    # Ignore cloud-side changes to specific attributes (e.g. auto-scaled tags)
+    ignore_changes = [
+      tags["LastUpdated"],
+    ]
+
+    # Replace resource when a specific trigger condition changes
+    replace_triggered_by = [
+      aws_security_group.web.id
+    ]
+  }
+}
+```
+
+---
+
+### 🔹 `for_each` vs `count`
+
+| Feature | `count` | `for_each` |
+| --- | --- | --- |
+| **Identified By** | Index integer (`[0]`, `[1]`) | Map key or string set (`["web"]`, `["api"]`) |
+| **Shift Risk** | Removing middle items causes recreation of subsequent items | Safe removal; only the targeted key is destroyed |
+| **Use Case** | Identical copies | Distinct resources with unique names/keys |
+
+```hcl
+# Example with for_each:
+variable "subnets" {
+  type = map(string)
+  default = {
+    us-east-1a = "10.0.1.0/24"
+    us-east-1b = "10.0.2.0/24"
+  }
+}
+
+resource "aws_subnet" "main" {
+  for_each          = var.subnets
+  vpc_id            = aws_vpc.main.id
+  availability_zone = each.key
+  cidr_block        = each.value
+
+  tags = {
+    Name = "subnet-${each.key}"
+  }
+}
+```
+
+---
+
+### 🔹 `dynamic` Blocks
+
+Generate nested configuration blocks dynamically from maps or lists:
+
+```hcl
+variable "ingress_ports" {
+  type    = list(number)
+  default = [80, 443, 8080]
+}
+
+resource "aws_security_group" "web" {
+  name = "web-sg"
+
+  dynamic "ingress" {
+    for_each = var.ingress_ports
+    content {
+      from_port   = ingress.value
+      to_port     = ingress.value
+      protocol    = "tcp"
+      cidr_blocks = ["0.0.0.0/0"]
+    }
+  }
+}
+```
+
+---
+
+### 🔹 Remote Backend & State Locking (S3 + DynamoDB)
+
+Store state files centrally with concurrency locking to prevent state corruption:
+
+```hcl
+terraform {
+  required_version = ">= 1.5.0"
+
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+  }
+
+  backend "s3" {
+    bucket         = "my-company-terraform-state-prod"
+    key            = "networking/terraform.tfstate"
+    region         = "us-east-1"
+    encrypt        = true
+    dynamodb_table = "terraform-state-lock"
+  }
+}
+```
+
+> [!TIP]
+> **Terraform 1.10+ Native S3 Locking**: Terraform 1.10+ supports native S3 conditional writes, allowing state locking directly on S3 without needing a DynamoDB table!
+
+---
+
+### 🔹 Sensitive Values & Secret Protection
+
+Mask passwords and credentials in CLI logs and plan outputs:
+
+```hcl
+variable "db_password" {
+  type      = string
+  sensitive = true
+}
+
+output "database_url" {
+  value     = "postgresql://admin:${var.db_password}@${aws_db_instance.main.endpoint}/app"
+  sensitive = true
+}
+```
+
+View sensitive output explicitly when needed:
+
+```bash
+terraform output -raw database_url
+```
+
+---
+
+## 🛠 Useful Environment Variables
+
+| Variable | Description |
+| --- | --- |
+| `TF_LOG=TRACE\|DEBUG\|INFO\|WARN\|ERROR` | Configures logging verbosity for debugging |
+| `TF_LOG_PATH=terraform.log` | Writes logs to a file instead of stdout |
+| `TF_VAR_name=value` | Sets variable values via shell environment |
+| `TF_CLI_ARGS` | Appends default arguments to all CLI commands |
+| `TF_IN_AUTOMATION=1` | Adjusts output formatting for automated CI/CD runs |
+
+---
+
+## 🧠 **Tips & Production Best Practices**
+
+1. **Protect Your State**: Always use a remote backend (S3, GCS, Azure Blob, Terraform Cloud) with encryption enabled and state locking.
+2. **Never Commit State Files or Secrets**: Keep `.tfstate`, `*.tfvars`, and `.terraform/` in `.gitignore`.
+3. **Prefer `for_each` Over `count`**: Using `for_each` prevents cascading resource recreation when list order changes.
+4. **Pin Provider and Terraform Versions**: Lock versions in `required_providers` and `required_version` to prevent breaking changes across team members.
+5. **Enforce Modular Architecture**: Split large monolithic configs into small, decoupled modules (e.g. `networking`, `database`, `compute`).
+6. **Integrate Security Scanners in CI/CD**: Run static analysis tools like `checkov`, `tfsec`, or `trivy` before `terraform apply`.
 
 ---
 
 ## 📚 **Learning Resources**
 
-* 🔗 [Official Docs](https://developer.hashicorp.com/terraform/docs)
+* 🔗 [Official Terraform Documentation](https://developer.hashicorp.com/terraform/docs)
 * 📘 [Terraform Registry](https://registry.terraform.io/)
-* 🎓 [Learn Terraform (Free)](https://learn.hashicorp.com/terraform)
-* 🧪 [Checkov - IaC Scanning](https://www.checkov.io/)
-* 📖 [Terraform CLI Reference](https://developer.hashicorp.com/terraform/cli)
+* 🎓 [HashiCorp Developer Tutorials](https://developer.hashicorp.com/terraform/tutorials)
+* 📖 [Terraform CLI Command Reference](https://developer.hashicorp.com/terraform/cli)
+* 🛡️ [OpenTofu Documentation](https://opentofu.org/docs/)
+* 🧪 [Checkov - Static Analysis for IaC](https://www.checkov.io/)

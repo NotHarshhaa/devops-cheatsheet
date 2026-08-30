@@ -4,7 +4,9 @@
 
 ## 📘 Introduction
 
-Chef is a configuration management tool written in Ruby and Erlang. It automates the process of configuring, deploying, and managing servers and infrastructure.
+Chef (now part of Progress) is a powerful **Infrastructure as Code (IaC)** and configuration management tool written in Ruby and Erlang. It automates the process of provisioning, configuring, and maintaining servers and hybrid cloud infrastructure.
+
+Chef operates under an **agent-server** (Chef Infra Server + Chef Infra Client) or **standalone local mode** architecture.
 
 ---
 
@@ -12,15 +14,16 @@ Chef is a configuration management tool written in Ruby and Erlang. It automates
 
 ### 🔹 Key Concepts
 
-* **Node**: A machine (physical/virtual) managed by Chef.
-* **Cookbook**: A collection of recipes and other config files.
-* **Recipe**: The fundamental unit for configuration — contains Ruby code to define resources.
-* **Resource**: A statement of configuration like `package`, `service`, `file`, etc.
-* **Runlist**: A list of recipes/roles applied to a node.
+* **Node**: A physical server, virtual machine, or container managed by Chef Infra Client.
+* **Cookbook**: The fundamental unit of distribution and configuration containing recipes, attributes, templates, and files.
+* **Recipe**: A file (`.rb`) containing declarative Ruby instructions specifying resources to manage.
+* **Resource**: A statement of configuration describing the desired state of a system component (`package`, `service`, `file`, `template`, etc.).
+* **Run-list**: An ordered list of recipes and roles executed by the client on a specific node.
+* **Ohai**: The system profiling tool that automatically detects node attributes (OS, IP, CPU, memory).
 
 ---
 
-## 🍳 Chef Commands
+## 🍳 Chef Commands Quick Reference
 
 <details>
 <summary>🟢 Beginner Commands (Click to Expand)</summary>
@@ -28,18 +31,14 @@ Chef is a configuration management tool written in Ruby and Erlang. It automates
 ### 🔹 Check Version
 
 ```bash
-chef --version
+chef -v
+chef-client -v
 ```
 
-### 🔹 Generate Cookbook
+### 🔹 Generate Cookbook & Recipe
 
 ```bash
 chef generate cookbook my_cookbook
-```
-
-### 🔹 Generate Recipe
-
-```bash
 chef generate recipe my_cookbook default
 ```
 
@@ -49,10 +48,11 @@ chef generate recipe my_cookbook default
 chef-client --local-mode --runlist 'recipe[my_cookbook]'
 ```
 
-### 🔹 Validate Ruby Syntax
+### 🔹 Lint with Cookstyle
 
 ```bash
-ruby -c recipes/default.rb
+cookstyle
+cookstyle -a   # Auto-correct linting errors
 ```
 
 </details>
@@ -65,25 +65,29 @@ ruby -c recipes/default.rb
 ### 🔹 Knife Bootstrap Node
 
 ```bash
-knife bootstrap <IP_ADDRESS> -x user -P password --node-name node1
+knife bootstrap 192.168.1.50 -U ubuntu --sudo -N web-node-01 -r 'recipe[my_cookbook]'
 ```
 
-### 🔹 Upload Cookbook to Server
+### 🔹 Upload Cookbooks to Server
 
 ```bash
 knife cookbook upload my_cookbook
+knife cookbook list
 ```
 
-### 🔹 Show Node Information
+### 🔹 Node & Role Management
 
 ```bash
-knife node show node1
+knife node show web-node-01
+knife node list
+knife role list
+knife role show webserver
 ```
 
-### 🔹 Run Chef Client on Remote Node
+### 🔹 Run Chef Client Remotely
 
 ```bash
-knife ssh 'name:node1' 'sudo chef-client' -x user
+knife ssh 'name:web-node-*' 'sudo chef-client' -x ubuntu
 ```
 
 </details>
@@ -93,328 +97,373 @@ knife ssh 'name:node1' 'sudo chef-client' -x user
 <details>
 <summary>🔴 Advanced Commands (Click to Expand)</summary>
 
-### 🔹 Search Nodes or Data Bags
+### 🔹 Knife Search
 
 ```bash
-knife search node 'role:web'
-knife data bag show users
+knife search node 'role:webserver AND platform:ubuntu'
+knife search node 'ohai_time:[* TO 1600000000]'
 ```
 
-### 🔹 Edit Node or Role
+### 🔹 Data Bags
 
 ```bash
-knife node edit node1
-knife role edit webserver
+knife data bag create secrets
+knife data bag from file secrets db_creds.json --secret-file /path/to/encrypted_data_bag_secret
+knife data bag show secrets db_creds
 ```
 
-### 🔹 Generate Role or Environment
+### 🔹 Policyfiles
 
 ```bash
-chef generate role webserver
-chef generate environment dev
+chef install Policyfile.rb
+chef update Policyfile.rb
+chef push production Policyfile.lock.json
 ```
 
-### 🔹 Upload Roles/Environments
+### 🔹 Automated Testing (ChefSpec & Test Kitchen)
 
 ```bash
-knife role from file roles/webserver.rb
-knife environment from file environments/dev.rb
-```
-
-### 🔹 Test Cookbook (ChefSpec, InSpec)
-
-```bash
-chef exec rspec
-chef exec inspec exec test/integration/default
+chef exec rspec                               # Run ChefSpec unit tests
+kitchen test                                  # Full integration test cycle
+kitchen converge && kitchen verify            # Fast development iteration
 ```
 
 </details>
 
 ---
 
-### 🔹 Chef Setup
+## 🛠️ Installation & Setup
+
+### 🔹 Install Chef Workstation
+
+Chef Workstation includes the Chef CLI, Knife, Test Kitchen, Cookstyle, InSpec, and embedded Ruby.
 
 ```bash
-# Install Chef Workstation
-curl -LO https://packages.chef.io/files/stable/chef-workstation/latest/el/7/chef-workstation-*.rpm
-sudo rpm -Uvh chef-workstation-*.rpm
-```
+# Ubuntu / Debian
+curl https://omnitruck.chef.io/install.sh | sudo bash -s -- -P chef-workstation
 
-```bash
+# CentOS / RHEL / Fedora
+curl https://omnitruck.chef.io/install.sh | sudo bash -s -- -P chef-workstation
+
 # Verify installation
 chef -v
 ```
 
 ---
 
-### 🔹 Create a Cookbook
+## 📦 Cookbooks & Core Resources
+
+### 🔹 Generate Cookbook
 
 ```bash
 chef generate cookbook my_cookbook
 cd my_cookbook
 ```
 
----
+Cookbook Directory Structure:
 
-### 🔹 Basic Recipe
+```plaintext
+my_cookbook/
+├── Policyfile.rb
+├── README.md
+├── attributes/
+│   └── default.rb
+├── recipes/
+│   └── default.rb
+├── templates/
+├── files/
+├── resources/
+└── test/
+```
+
+### 🔹 Core Resource Examples
 
 ```ruby
 # recipes/default.rb
-package 'nginx'
+
+# Install package
+package 'nginx' do
+  action :install
+end
+
+# Manage file
+file '/var/www/html/index.html' do
+  content '<h1>Deployed by Chef Infra!</h1>'
+  mode '0644'
+  owner 'www-data'
+  group 'www-data'
+end
+
+# Manage service
+service 'nginx' do
+  action [:enable, :start]
+end
+```
+
+---
+
+## 🔔 Notifications & Subscriptions
+
+Notifications allow resources to communicate changes and trigger actions on other resources (e.g. restart a service when its configuration file updates).
+
+### 🔹 Forward Notification (`notifies`)
+
+```ruby
+template '/etc/nginx/nginx.conf' do
+  source 'nginx.conf.erb'
+  mode '0644'
+  notifies :restart, 'service[nginx]', :delayed  # :delayed (default) or :immediate
+end
 
 service 'nginx' do
   action [:enable, :start]
 end
 ```
 
-```bash
-# Run recipe on local machine (Test Kitchen or chef-run)
-chef-run 'localhost' my_cookbook
+### 🔹 Reverse Notification (`subscribes`)
+
+```ruby
+service 'nginx' do
+  action :nothing
+  subscribes :restart, 'template[/etc/nginx/nginx.conf]', :delayed
+end
 ```
-
----
-
-### 🔹 Common Resources
-
-| Resource  | Example                                        |
-| --------- | ---------------------------------------------- |
-| `package` | `package 'nginx'`                              |
-| `service` | `service 'nginx' { action [:start, :enable] }` |
-| `file`    | `file '/etc/motd' { content 'Hello Chef' }`    |
-| `user`    | `user 'deploy' { shell '/bin/bash' }`          |
 
 ---
 
 ## 🟡 Intermediate Level
 
-### 🔸 Attributes
+### 🔸 Attributes & Precedence
+
+Attributes are variables defined across cookbooks, environments, or roles.
 
 ```ruby
 # attributes/default.rb
-default['my_cookbook']['greeting'] = 'Welcome to Chef!'
+default['web']['port'] = 80
+default['web']['docroot'] = '/var/www/html'
+override['web']['max_clients'] = 250
+```
 
-# Use in recipe
-file '/etc/motd' do
-  content node['my_cookbook']['greeting']
+**Attribute Precedence Order (Lowest to Highest):**
+1. Default (`default`)
+2. Force Default (`force_default`)
+3. Normal (`normal`)
+4. Override (`override`)
+5. Force Override (`force_override`)
+6. Automatic (read-only from Ohai)
+
+Access attributes in recipes:
+
+```ruby
+file "#{node['web']['docroot']}/index.html" do
+  content "Port configured: #{node['web']['port']}"
 end
 ```
 
 ---
 
-### 🔸 Templates
+### 🔸 Templates (Embedded Ruby - ERB)
 
-Templates are ERB files used to manage config files.
+Create dynamic configuration files based on node attributes:
 
 ```bash
-# generate template
-mkdir templates/default
-touch templates/default/index.html.erb
+chef generate template my_cookbook nginx.conf
 ```
+
+Template file (`templates/nginx.conf.erb`):
 
 ```erb
-<!-- templates/default/index.html.erb -->
-<h1>Hello <%= node['hostname'] %>!</h1>
-```
+server {
+    listen <%= node['web']['port'] %>;
+    server_name <%= node['fqdn'] %>;
+    root <%= node['web']['docroot'] %>;
 
-```ruby
-# recipes/default.rb
-template '/var/www/html/index.html' do
-  source 'index.html.erb'
-end
-```
-
----
-
-### 🔸 Data Bags
-
-```bash
-# Create data bag and item
-knife data bag create users
-knife data bag from file users user1.json
-```
-
-```json
-// users/user1.json
-{
-  "id": "user1",
-  "uid": "1001",
-  "shell": "/bin/bash"
-}
-```
-
-```ruby
-# Use in recipe
-user_data = data_bag_item('users', 'user1')
-
-user user_data['id'] do
-  uid user_data['uid']
-  shell user_data['shell']
-end
-```
-
----
-
-### 🔸 Roles
-
-```bash
-# Create role file
-knife role create webserver
-```
-
-```json
-{
-  "name": "webserver",
-  "run_list": [
-    "recipe[my_cookbook::default]"
-  ]
-}
-```
-
----
-
-### 🔸 Environments
-
-Used to manage differences between dev, test, prod.
-
-```bash
-# Create environment
-knife environment create dev
-```
-
-```json
-{
-  "name": "dev",
-  "default_attributes": {
-    "my_cookbook": {
-      "greeting": "Welcome to Dev Environment"
+    location / {
+        try_files $uri $uri/ =404;
     }
-  }
 }
+```
+
+Recipe usage:
+
+```ruby
+template '/etc/nginx/sites-available/default' do
+  source 'nginx.conf.erb'
+  owner 'root'
+  group 'root'
+  mode '0644'
+  notifies :reload, 'service[nginx]'
+end
+```
+
+---
+
+### 🔸 Data Bags & Encrypted Secrets
+
+Data bags store global JSON data accessible by any node in your infrastructure.
+
+```json
+// data_bags/users/deploy.json
+{
+  "id": "deploy",
+  "uid": 2001,
+  "shell": "/bin/bash",
+  "comment": "Deployment Service Account"
+}
+```
+
+Accessing in recipes:
+
+```ruby
+deploy_user = data_bag_item('users', 'deploy')
+
+user deploy_user['id'] do
+  uid deploy_user['uid']
+  shell deploy_user['shell']
+  comment deploy_user['comment']
+  manage_home true
+end
 ```
 
 ---
 
 ## 🔴 Advanced Level
 
-### 🔹 Custom Resources
+### 🔹 Modern Custom Resources (Chef 17/18)
 
-```bash
-# inside cookbooks/my_cookbook/resources/hello.rb
-resource_name :hello
+Custom resources allow you to build reusable domain-specific abstractions.
 
-property :name, String, name_property: true
+File: `resources/website.rb`:
+
+```ruby
+resource_name :my_website
+provides :my_website
+unified_mode true
+
+property :site_name, String, name_property: true
+property :port, Integer, default: 80
 
 action :create do
-  file "/tmp/#{name}" do
-    content "Hello, #{name}!"
+  directory "/var/www/#{new_resource.site_name}" do
+    owner 'www-data'
+    mode '0755'
+    recursive true
+  end
+
+  file "/var/www/#{new_resource.site_name}/index.html" do
+    content "<h1>Welcome to #{new_resource.site_name} on port #{new_resource.port}</h1>"
+  end
+end
+
+action :delete do
+  directory "/var/www/#{new_resource.site_name}" do
+    action :delete
+    recursive true
   end
 end
 ```
 
-```ruby
-# recipes/default.rb
-hello 'chef_user'
-```
-
----
-
-### 🔹 ChefSpec (Unit Testing)
+Usage in recipe:
 
 ```ruby
-# spec/unit/recipes/default_spec.rb
-require 'chefspec'
-
-describe 'my_cookbook::default' do
-  let(:chef_run) { ChefSpec::SoloRunner.new.converge(described_recipe) }
-
-  it 'installs nginx' do
-    expect(chef_run).to install_package('nginx')
-  end
+my_website 'internal-portal' do
+  port 8080
+  action :create
 end
 ```
 
-Run tests:
+---
+
+### 🔹 Policyfiles (Modern Replacement for Roles & Environments)
+
+Policyfiles lock cookbook dependencies and run-lists into an immutable, versioned artifact (`Policyfile.lock.json`).
+
+File: `Policyfile.rb`:
+
+```ruby
+name 'webserver_policy'
+default_source :supermarket
+run_list 'my_cookbook::default'
+
+cookbook 'my_cookbook', path: '.'
+cookbook 'nginx', '~> 12.0'
+```
+
+CLI commands:
 
 ```bash
-rspec
+# Compile and lock dependencies
+chef install Policyfile.rb
+
+# Push policy to Chef Infra Server
+chef push production Policyfile.lock.json
 ```
 
 ---
 
-### 🔹 Test Kitchen (Integration Testing)
+### 🔹 Testing with InSpec & Test Kitchen
 
-```bash
-# .kitchen.yml
+File: `.kitchen.yml`:
+
+```yaml
+---
 driver:
   name: vagrant
 
 provisioner:
   name: chef_zero
+  enforce_idempotency: true
 
 platforms:
-  - name: ubuntu-20.04
+  - name: ubuntu-22.04
 
 suites:
   - name: default
-    run_list:
-      - recipe[my_cookbook::default]
+    verifier:
+      inspec_tests:
+        - test/integration/default
 ```
+
+Run tests:
 
 ```bash
-kitchen converge
-kitchen verify
+kitchen converge   # Boots VM and runs Chef Client
+kitchen verify     # Executes InSpec compliance tests
+kitchen destroy    # Tears down test VM
 ```
 
----
-
-### 🔹 Policyfiles
-
-Alternative to Berkshelf and runlists.
-
-```bash
-chef generate policyfile my_policy
-```
+InSpec Test Example (`test/integration/default/default_test.rb`):
 
 ```ruby
-# Policyfile.rb
-name 'my_policy'
-run_list 'my_cookbook::default'
-default_source :supermarket
-cookbook 'my_cookbook', path: '.'
-```
+describe package('nginx') do
+  it { should be_installed }
+end
 
-```bash
-chef install
-chef push my_org my_policy.lock.json
-```
+describe service('nginx') do
+  it { should be_running }
+  it { should be_enabled }
+end
 
----
-
-### 🔹 Chef Automate
-
-Chef Automate provides UI and compliance, visibility, and workflow capabilities.
-
-* Setup dashboards
-* Integrate with InSpec for audits
-* Workflow pipelines for cookbook CI/CD
-
----
-
-### 🔹 Knife Tips
-
-```bash
-knife bootstrap IP_ADDRESS -x user -P password --node-name NODE_NAME
-knife node list
-knife cookbook upload my_cookbook
-knife role from file webserver.json
+describe port(80) do
+  it { should be_listening }
+end
 ```
 
 ---
 
 ## 📌 Best Practices
 
-* Keep cookbooks modular and reusable.
-* Use Berkshelf or Policyfiles to manage dependencies.
-* Write tests (ChefSpec/Test Kitchen) for stability.
-* Avoid hardcoding; use attributes or data bags.
-* Prefer custom resources over LWRPs.
+1. **Always enable `unified_mode true`**: Ensures execution phase matches compile phase behavior in modern Chef.
+2. **Lint with Cookstyle**: Run `cookstyle` before committing code to enforce RuboCop and Chef standards.
+3. **Prefer Policyfiles over Berkshelf/Roles**: Provides deterministic builds and eliminates environment dependency conflicts.
+4. **Use `:delayed` Notifications**: Prevents repeated service restarts during cookbook runs.
+5. **Encrypt Sensitive Data**: Always use Encrypted Data Bags or HashiCorp Vault integrations for passwords and keys.
+
+---
+
+## 📚 Learning Resources
+
+* 🔗 [Official Chef Documentation](https://docs.chef.io/)
+* 📦 [Chef Supermarket (Community Cookbooks)](https://supermarket.chef.io/)
+* 🛡️ [Chef InSpec Documentation](https://docs.chef.io/inspec/)
+* 🧪 [Test Kitchen](https://kitchen.ci/)
