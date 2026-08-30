@@ -1,69 +1,254 @@
-# Consul Cheatsheet
+# 🌐 Consul Cheatsheet
 
 ![text](https://imgur.com/RWncIhL.png)
 
-## **Overview**
+**HashiCorp Consul** is a full-featured service networking and service mesh platform. It provides automated service discovery, health monitoring, a distributed key/value store, and secure service-to-service communication with mutual TLS (mTLS) and fine-grained access intentions.
 
-Consul by HashiCorp is a service mesh and service discovery tool that provides distributed service networking, configuration management, and segmentation. It’s widely used for managing microservices in dynamic environments like Kubernetes.
+---
 
-### **Basic Concepts**
+## **1. Architecture & Core Concepts**
 
-- **Service Discovery:** Consul automatically detects services in your network, allowing them to register and discover each other without hardcoding IP addresses or DNS names. This is especially useful in dynamic environments where services are constantly scaling.
+| Concept | Description |
+| --- | --- |
+| **Agent** | The core Consul daemon running on every cluster node in either **Server** or **Client** mode. |
+| **Server Mode** | Maintains cluster state via Raft consensus, handles queries, and preserves catalog data (3 or 5 per DC recommended). |
+| **Client Mode** | Lightweight process forwarding RPCs to servers and running local health checks. |
+| **Service Discovery** | Automated registration and discovery via HTTP API or DNS interface (`.service.consul`). |
+| **Consul Connect** | The service mesh feature providing encrypted mTLS and proxy-based traffic authorization. |
+| **Intentions** | Declarative L4/L7 authorization rules defining which services can talk to each other. |
 
-- **Key/Value Store:** Consul includes a distributed key/value store that can be used for dynamic configuration management. This allows applications to retrieve configuration data at runtime without restarting.
+---
 
-- **Health Checking:** Consul monitors the health of services through health checks. If a service fails its health check, Consul can automatically remove it from the service registry, preventing traffic from being routed to unhealthy instances.
+## **2. CLI Quick Reference**
 
-- **Agent:** Each node in a Consul cluster runs an agent that provides a local interface for service registration, health checking, and querying. Agents communicate with each other to ensure consistent service data across the cluster.
+### 🔹 Starting & Inspecting Clusters
 
-### **Service Mesh Features**
+```bash
+# Start a local development server
+consul agent -dev -client=0.0.0.0
 
-- **Connect:** Consul’s service mesh feature, Connect, provides secure service-to-service communication using mutual TLS (mTLS). It ensures that all traffic between services is encrypted and authenticated.
+# Start an agent using a configuration file
+consul agent -config-file=/etc/consul.d/consul.hcl
 
-- **Intention:** Intentions in Consul define policies that control which services are allowed to communicate with each other. This fine-grained access control enhances security by ensuring that only authorized services can connect.
+# List all known cluster members and their gossip states
+consul members
 
-- **Sidecar Proxy:** Consul uses Envoy as a sidecar proxy to manage and secure service communication. The sidecar handles tasks such as load balancing, mTLS, and observability.
+# Check Raft cluster leader and peers
+consul operator raft list-peers
 
-### **Traffic Management**
+# Reload agent configuration without restarting
+consul reload
+```
 
-- **Service Segmentation:** Consul’s intentions allow you to segment traffic by defining which services can communicate. For example, you can ensure that only the web service can talk to the payment service, preventing unauthorized access.
+---
 
-- **Service Failover:** If a service instance becomes unhealthy or fails, Consul can automatically reroute traffic to healthy instances. This ensures high availability and resilience in your applications.
+## **3. Service Registration & Health Checks**
 
-- **Ingress Gateways:** Consul manages ingress gateways that control and secure traffic entering the service mesh. These gateways can enforce policies and provide TLS termination for incoming traffic.
+Services can be registered via configuration files located in `/etc/consul.d/` or via the HTTP API.
 
-### **Security**
+### Service Definition (`/etc/consul.d/web.hcl`)
 
-- **ACLs (Access Control Lists):** Consul’s ACL system provides fine-grained security controls. You can create policies that determine which users or services have access to specific resources, enhancing security in multi-tenant environments.
+```hcl
+service {
+  name = "web"
+  id   = "web-1"
+  port = 8080
+  tags = ["primary", "v1"]
 
-- **mTLS:** Consul uses mutual TLS to secure communication between services. mTLS not only encrypts traffic but also ensures that both the client and server are authenticated before communication is allowed.
+  # Service health check
+  check {
+    id       = "web-check"
+    name     = "HTTP Health Check"
+    http     = "http://localhost:8080/healthz"
+    method   = "GET"
+    interval = "10s"
+    timeout  = "2s"
+  }
 
-- **Service Mesh Policies:** Consul allows you to define policies that control various aspects of service communication, such as rate limiting, traffic shaping, and access control. These policies help you manage and secure your service mesh.
+  # Service Mesh Connect Sidecar definition
+  connect {
+    sidecar_service {
+      proxy {
+        upstreams = [
+          {
+            destination_name = "payment"
+            local_bind_port  = 9001
+          }
+        ]
+      }
+    }
+  }
+}
+```
 
-### **Observability**
+Register and query:
 
-- **Metrics:** Consul provides detailed metrics about service health, traffic patterns, and performance. These metrics can be exported to monitoring systems like Prometheus for further analysis.
+```bash
+# Register services defined in config directory
+consul services register /etc/consul.d/web.hcl
 
-- **Logs:** Consul collects and stores logs related to service health, configuration changes, and traffic routing. These logs are useful for auditing and troubleshooting.
+# List all registered services
+consul catalog services
 
-- **Tracing:** Consul integrates with tracing systems like Jaeger and Zipkin to provide visibility into service communication. Tracing helps you understand how requests flow through your services and identify bottlenecks or failures.
+# List healthy nodes running the "web" service
+consul catalog nodes -service=web
+```
 
-### **Advanced Concepts**
+---
 
-- **Mesh Gateways:** Mesh gateways allow Consul to manage traffic between services in different datacenters or regions. This extends the service mesh beyond a single cluster, enabling global service networking.
+## **4. DNS Interface Queries**
 
-- **Network Middleware Integration:** Consul can integrate with firewalls, load balancers, and other network devices to enforce policies outside the service mesh. This is useful for securing traffic at the network edge.
+Consul runs a built-in DNS server (default port `8600`). Query service records directly using `dig`:
 
-- **Service Failover Across Datacenters:** In multi-datacenter deployments, Consul can automatically failover services to another datacenter if the primary one fails. This ensures continuity and resilience.
+```bash
+# Discover IP addresses of a service
+dig @127.0.0.1 -p 8600 web.service.consul
 
-- **Consul-Terraform Sync:** Consul can automatically configure network infrastructure by syncing its service data with Terraform. This allows you to dynamically manage network devices based on the state of your services.
+# Query SRV records (includes port and target hostname)
+dig @127.0.0.1 -p 8600 web.service.consul SRV
 
-### **Example Use Case**
+# Query services in a specific datacenter
+dig @127.0.0.1 -p 8600 web.service.dc2.consul
+```
 
-Consider a microservices architecture where services need to be dynamically discovered, secured, and managed across multiple environments:
+---
 
-1. **Service Discovery:** Use Consul to automatically register services and make them discoverable to other services without manual intervention.
-2. **Secure Communication:** Implement mTLS with Consul Connect to ensure all service-to-service communication is encrypted and authenticated.
-3. **High Availability:** Configure service failover to reroute traffic to healthy instances if a service fails.
-4. **Access Control:** Use ACLs to restrict access to sensitive services like payment processing, ensuring that only authorized services can communicate with them.
-5. **Multi-Datacenter Resilience:** Deploy mesh gateways to manage traffic between services across different datacenters, ensuring global service availability.
+## **5. Distributed Key/Value (KV) Store**
+
+The KV store provides dynamic configuration management without service restarts.
+
+```bash
+# Set a key-value pair
+consul kv put config/web/db_host "192.168.1.100"
+consul kv put config/web/db_port "5432"
+
+# Retrieve a value
+consul kv get config/web/db_host
+
+# List all keys recursively
+consul kv get -recurse config/
+
+# Delete a key
+consul kv delete config/web/db_host
+
+# Delete an entire path recursively
+consul kv delete -recurse config/web/
+```
+
+---
+
+## **6. Service Mesh: Connect & Intentions**
+
+Consul Connect injects Envoy sidecars to provide mutual TLS (mTLS) and traffic segmentation.
+
+### 🔹 Starting Envoy Sidecar Proxy
+
+```bash
+consul connect envoy -sidecar-for=web-1
+```
+
+### 🔹 Traffic Authorization (Intentions)
+
+Intentions control which services are allowed to establish connections:
+
+```bash
+# Deny all traffic by default (Zero-Trust)
+consul intention create -deny "* " "* "
+
+# Allow the web service to talk to the payment service
+consul intention create -allow web payment
+
+# Check if web is allowed to connect to payment
+consul intention check web payment
+
+# List all defined intentions
+consul intention list
+
+# Delete an intention
+consul intention delete web payment
+```
+
+---
+
+## **7. Access Control Lists (ACLs)**
+
+Consul uses tokens and policies to secure cluster APIs, KV data, and service registration.
+
+```bash
+# Bootstrap the ACL system (creates initial management token)
+consul acl bootstrap
+
+# Create a policy from HCL file
+consul acl policy create -name "web-policy" -rules @web-rules.hcl
+
+# Generate a token linked to a policy
+consul acl token create -description "Web Service Token" -policy-name "web-policy"
+```
+
+Example Policy (`web-rules.hcl`):
+
+```hcl
+service "web" {
+  policy = "write"
+}
+
+key_prefix "config/web/" {
+  policy = "read"
+}
+```
+
+---
+
+## **8. Consul on Kubernetes**
+
+Deploy Consul using the official Helm chart:
+
+```bash
+helm repo add hashicorp https://helm.releases.hashicorp.com
+helm repo update
+helm install consul hashicorp/consul --create-namespace -n consul --values values.yaml
+```
+
+Example `values.yaml`:
+
+```yaml
+global:
+  name: consul
+  datacenter: dc1
+connectInject:
+  enabled: true
+syncCatalog:
+  enabled: true
+```
+
+### 🔹 Automatic Sidecar Injection in Pods
+
+Add annotations to your Kubernetes deployment:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+spec:
+  template:
+    metadata:
+      annotations:
+        consul.hashicorp.com/connect-inject: "true"
+        consul.hashicorp.com/connect-service-upstreams: "payment:9001"
+    spec:
+      containers:
+        - name: web
+          image: my-app:v1
+          env:
+            - name: PAYMENT_SERVICE_URL
+              value: "http://localhost:9001"
+```
+
+---
+
+## 📚 **Learning Resources**
+
+* 🔗 [Official Consul Documentation](https://developer.hashicorp.com/consul/docs)
+* 🎓 [HashiCorp Developer Tutorials](https://developer.hashicorp.com/consul/tutorials)
+* 📦 [Consul Helm Chart Reference](https://developer.hashicorp.com/consul/docs/k8s/helm)

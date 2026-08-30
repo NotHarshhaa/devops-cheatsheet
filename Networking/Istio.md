@@ -1,78 +1,233 @@
-# Istio Cheatsheet
+# ⛵ Istio Cheatsheet
 
 ![text](https://imgur.com/QLlMSCp.png)
 
-## **Overview**
+**Istio** is an open-source, CNCF-graduated service mesh that provides an advanced networking and security layer across distributed Kubernetes microservices. It delivers transparent traffic management, zero-trust security (mTLS), and rich telemetry without requiring code changes to applications.
 
-Istio is an open-source service mesh that layers transparently onto existing distributed applications. It provides a way to control how microservices share data with one another. Key features of Istio include traffic management, security, and observability.
+---
 
-### **Basic Concepts**
+## **1. Modern Architecture: Istiod & Ambient Mesh**
 
-- **Service Mesh:** Istio creates a service mesh, which is an infrastructure layer that enables microservices to communicate with each other securely and efficiently. It also allows for traffic management and monitoring without requiring changes to the microservices themselves.
-  
-- **Control Plane vs. Data Plane:** Istio's architecture is divided into two planes:
-  - **Control Plane:** Manages and configures the proxies (Envoy) to route traffic, enforce policies, and collect telemetry.
-  - **Data Plane:** Consists of Envoy proxies deployed as sidecars to the microservices, handling all network traffic between services.
+### 🔹 Consolidated Control Plane (`istiod`)
 
-### **Key Components**
+> [!IMPORTANT]
+> **Modern Architecture Update**: Legacy Istio microservices (Pilot, Citadel, Galley, and Mixer) were consolidated. **Mixer was completely removed**, and remaining control plane functions run inside a single unified binary: **`istiod`**.
 
-- **Envoy Proxy:** The core component of Istio’s data plane. Envoy is deployed as a sidecar to each service and intercepts all inbound and outbound traffic.
+* **`istiod`**: Translates high-level routing rules and security policies into Envoy xDS configuration and serves as the Certificate Authority (CA) issuing mTLS identities.
+* **Data Plane**:
+  * **Sidecar Mode**: Envoy proxy deployed in each application pod (`istio-proxy`).
+  * **Ambient Mode (Sidecar-less)**: A shared node-level Layer 4 secure transport proxy (**ztunnel**) paired with optional Layer 7 **waypoint proxies**, eliminating per-pod proxy overhead.
 
-- **Pilot:** Manages the configuration of the Envoy proxies, distributing routing rules and policies across the mesh.
+---
 
-- **Mixer:** Enforces access control and usage policies, and collects telemetry data. It interacts with the Envoy proxies and provides insights into traffic patterns and security.
+## **2. `istioctl` CLI Quick Reference**
 
-- **Citadel:** Manages certificates and keys for mutual TLS (mTLS) and service identities within the mesh, ensuring secure communication between services.
+### 🔹 Installation & Pre-Flight Checks
 
-- **Galley:** Istio’s configuration validation component. It ensures that configurations are correct and distributes them to the appropriate components within the mesh.
+```bash
+# Verify Kubernetes cluster compatibility before installation
+istioctl x precheck
 
-### **Traffic Management**
+# Install Istio with the default profile
+istioctl install --set profile=default -y
 
-- **VirtualService:** A resource that defines how traffic is routed to a service. It allows you to configure complex routing rules like request matching, traffic splitting, and more.
+# Verify control plane installation
+istioctl verify-install
 
-- **DestinationRule:** Defines policies that apply to traffic after it has been routed to a destination. These policies can include load balancing settings, connection pool sizes, and outlier detection.
+# Upgrade Istio control plane
+istioctl upgrade
+```
 
-- **Gateway:** Manages external traffic entering the mesh. It controls how traffic from outside the cluster is directed into the mesh and routed to the appropriate services.
+### 🔹 Namespace Injection & Troubleshooting
 
-- **Sidecar:** This resource configures the behavior of the sidecar proxies deployed alongside the microservices. It allows for fine-grained control over traffic management and resource usage.
+```bash
+# Enable automatic sidecar injection on a namespace
+kubectl label namespace default istio-injection=enabled
 
-### **Security**
+# Analyze cluster configurations for errors and misconfigurations
+istioctl analyze
 
-- **mTLS (Mutual TLS):** Istio supports mTLS to secure service-to-service communication. mTLS ensures that the identity of both the client and the server is authenticated and that the communication between them is encrypted.
+# Check synchronization status of all Envoy data plane proxies
+istioctl proxy-status
 
-- **Authorization Policies:** These policies define access control rules, determining which services or users can access specific resources. Policies can be applied globally, per namespace, or per workload.
+# Retrieve detailed cluster configuration from a specific pod
+istioctl proxy-config clusters <pod-name>.default
 
-- **Ingress/Egress Control:** Istio manages both inbound and outbound traffic to ensure that it complies with security policies. Ingress controls how external traffic enters the mesh, while egress manages how traffic leaves the mesh.
+# View Envoy routes inside a pod
+istioctl proxy-config routes <pod-name>.default
 
-### **Observability**
+# Open Kiali observability dashboard
+istioctl dashboard kiali
 
-- **Telemetry:** Istio collects telemetry data such as metrics, logs, and traces, providing deep insights into the behavior of your microservices. This data is essential for monitoring and debugging applications.
+# Open Jaeger distributed tracing dashboard
+istioctl dashboard jaeger
+```
 
-- **Prometheus:** Istio integrates with Prometheus, a monitoring system that scrapes metrics from the Envoy proxies. These metrics can be visualized using tools like Grafana.
+---
 
-- **Grafana:** A visualization tool used to create dashboards that display the metrics collected by Prometheus. Istio provides pre-built Grafana dashboards to monitor your service mesh.
+## **3. Traffic Management Manifests**
 
-- **Jaeger/Zipkin:** Distributed tracing tools integrated with Istio. They allow you to trace the path of a request as it travels through various services in the mesh, helping to identify performance bottlenecks and errors.
+### 🔹 Ingress Gateway (`Gateway`)
 
-### **Advanced Concepts**
+Exposes mesh services to external traffic:
 
-- **Canary Deployments:** Istio enables canary deployments by allowing you to gradually roll out a new version of a service to a small percentage of users while monitoring its performance before fully deploying it.
+```yaml
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: my-gateway
+  namespace: default
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+    - port:
+        number: 80
+        name: http
+        protocol: HTTP
+      hosts:
+        - "api.example.com"
+```
 
-- **Traffic Mirroring:** This feature allows you to mirror a portion of live traffic to a new service version without impacting production traffic. It’s useful for testing new versions in a real-world environment.
+---
 
-- **Circuit Breaking:** Prevents services from being overwhelmed by limiting the number of concurrent connections or requests. If the limit is reached, Istio can return an error or route traffic to a backup service.
+### 🔹 Routing & Canary Traffic Splitting (`VirtualService`)
 
-- **Rate Limiting:** Controls the rate at which requests are sent to a service, preventing overloads. Rate limits can be defined based on various factors, such as user identity or source IP.
+Splits traffic between two versions (`v1` 90%, `v2` 10%) and sets route timeouts:
 
-- **Ingress/Egress Policies:** These policies control what traffic is allowed to enter or leave the service mesh, enhancing security by restricting access based on predefined rules.
+```yaml
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: my-service-routing
+  namespace: default
+spec:
+  hosts:
+    - "api.example.com"
+  gateways:
+    - my-gateway
+    - mesh
+  http:
+    - match:
+        - uri:
+            prefix: "/api/v1"
+      route:
+        - destination:
+            host: my-service
+            subset: v1
+          weight: 90
+        - destination:
+            host: my-service
+            subset: v2
+          weight: 10
+      timeout: 5s
+      retries:
+        attempts: 3
+        perTryTimeout: 1s
+        retryOn: "5xx,connect-failure,refused-stream"
+```
 
-- **Service Entries:** Extend the mesh to services outside of the mesh, allowing them to be treated as if they were inside the mesh. This is useful for managing and securing external services.
+---
 
-### **Example Use Case**
+### 🔹 Subsets & Circuit Breaking (`DestinationRule`)
 
-Consider a microservices architecture where you need to manage traffic between different versions of a service. With Istio, you can:
+Defines version subsets, load balancing algorithms, and connection pool thresholds:
 
-1. **Deploy a New Version:** Use a VirtualService to route 10% of traffic to a new version of your service.
-2. **Monitor the New Version:** Collect telemetry data to ensure the new version behaves as expected.
-3. **Gradually Increase Traffic:** If the new version is stable, gradually increase the traffic percentage.
-4. **Roll Back if Needed:** If issues are detected, quickly route all traffic back to the previous version using Istio’s traffic management capabilities.
+```yaml
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: my-service-destrules
+  namespace: default
+spec:
+  host: my-service
+  trafficPolicy:
+    loadBalancer:
+      simple: ROUND_ROBIN
+    connectionPool:
+      tcp:
+        maxConnections: 100
+      http:
+        http1MaxPendingRequests: 10
+        maxRequestsPerConnection: 10
+    outlierDetection:
+      consecutive5xxErrors: 3
+      interval: 10s
+      baseEjectionTime: 30s
+      maxEjectionPercent: 100
+  subsets:
+    - name: v1
+      labels:
+        version: v1
+    - name: v2
+      labels:
+        version: v2
+```
+
+---
+
+## **4. Zero-Trust Security & Policies**
+
+### 🔹 Enforce Mutual TLS (`PeerAuthentication`)
+
+Enforce strict mTLS across all services in a namespace:
+
+```yaml
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: default
+  namespace: default
+spec:
+  mtls:
+    mode: STRICT  # STRICT (all mTLS) or PERMISSIVE (accepts both plaintext and mTLS)
+```
+
+---
+
+### 🔹 Role-Based Access Control (`AuthorizationPolicy`)
+
+Allow only the `frontend` service account to access the `backend` service via HTTP GET:
+
+```yaml
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: backend-rbac
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: backend
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            principals: ["cluster.local/ns/default/sa/frontend-service-account"]
+      to:
+        - operation:
+            methods: ["GET"]
+            paths: ["/api/v1/*"]
+```
+
+---
+
+## **5. Observability & Telemetry Integration**
+
+Install standard telemetry add-ons from the official Istio distribution samples:
+
+```bash
+kubectl apply -f https://raw.githubusercontent.com/istio/istio/master/samples/addons/prometheus.yaml
+kubectl apply -f https://raw.githubusercontent.com/istio/istio/master/samples/addons/grafana.yaml
+kubectl apply -f https://raw.githubusercontent.com/istio/istio/master/samples/addons/kiali.yaml
+kubectl apply -f https://raw.githubusercontent.com/istio/istio/master/samples/addons/jaeger.yaml
+```
+
+---
+
+## 📚 **Learning Resources**
+
+* 🔗 [Official Istio Documentation](https://istio.io/latest/docs/)
+* 📦 [Istio GitHub Repository](https://github.com/istio/istio)
+* 🛡️ [Istio Ambient Mesh Overview](https://istio.io/latest/docs/ambient/overview/)
+* 🔍 [Istioctl Command Reference](https://istio.io/latest/docs/reference/commands/istioctl/)

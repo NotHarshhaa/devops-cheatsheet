@@ -1,63 +1,202 @@
-# Envoy Cheatsheet
+# 🚀 Envoy Proxy Cheatsheet
 
 ![text](https://imgur.com/iw5sG1a.png)
 
-## **Overview**
+**Envoy** is a high-performance, open-source C++ edge and service proxy designed for cloud-native architectures. Developed by Lyft and graduated under the CNCF, Envoy serves as the primary data plane proxy for leading service meshes (such as Istio, Consul Connect, and AWS App Mesh) and modern API Gateways.
 
-Envoy is a high-performance, open-source edge and service proxy. Originally developed by Lyft, Envoy is now widely adopted for managing microservices communication, especially within service meshes. Envoy handles tasks such as load balancing, security, observability, and routing.
+---
 
-### **Basic Concepts**
+## **1. Core Architecture & Concepts**
 
-- **Proxy:** Envoy acts as a proxy, sitting between services and managing all incoming and outgoing traffic. It intercepts, processes, and forwards requests based on predefined configurations.
+```plaintext
+Downstream Client
+      ↓
+[Listener: Port 10000]
+      ↓
+[Filter Chain: HTTP Connection Manager]
+      ↓
+[Route: /api/v1 -> cluster_backend]
+      ↓
+[Cluster: Load Balancer (Round Robin)]
+      ↓
+Upstream Endpoints (IP:Port, IP:Port)
+```
 
-- **Listener:** A listener is a configuration that defines how Envoy should accept incoming connections. It specifies the port and protocols (e.g., HTTP, TCP) Envoy listens to.
+| Term | Description |
+| --- | --- |
+| **Downstream** | The client initiating requests to Envoy. |
+| **Upstream** | The backend service instances receiving forwarded requests. |
+| **Listener** | Named network location (e.g. port 80, 443) that accepts incoming connections. |
+| **Filter / Filter Chain** | Pipeline that inspects and transforms data (HTTP parsing, rate limiting, TLS termination). |
+| **Route** | Maps match conditions (paths, headers, methods) to target upstream clusters. |
+| **Cluster** | A logical group of upstream endpoints with load balancing and health check rules. |
 
-- **Cluster:** In Envoy, a cluster represents a group of upstream services that Envoy proxies traffic to. A cluster typically consists of multiple instances of a service, allowing Envoy to distribute requests across them.
+---
 
-- **Route:** Routes define how requests are processed and forwarded by Envoy. A route maps incoming requests to the appropriate cluster based on various criteria like URL paths or headers.
+## **2. Complete Working Configuration (`envoy.yaml`)**
 
-### **Traffic Management**
+The following complete configuration listens on port `10000` and forwards HTTP requests to an upstream cluster with round-robin load balancing and connection timeouts:
 
-- **Load Balancing:** Envoy provides several load balancing algorithms to distribute traffic across service instances. Common algorithms include round-robin, least-request, and ring-hash. Load balancing ensures that no single instance is overwhelmed with too much traffic.
+```yaml
+admin:
+  address:
+    socket_address:
+      address: 0.0.0.0
+      port_value: 9901
 
-- **Retries:** Envoy can automatically retry failed requests based on configurable policies. For example, if an upstream service fails to respond, Envoy can retry the request on a different instance.
+static_resources:
+  listeners:
+    - name: listener_http
+      address:
+        socket_address:
+          address: 0.0.0.0
+          port_value: 10000
+      filter_chains:
+        - filters:
+            - name: envoy.filters.network.http_connection_manager
+              typed_config:
+                "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+                stat_prefix: ingress_http
+                access_log:
+                  - name: envoy.access_loggers.stdout
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.access_loggers.stream.v3.StdoutAccessLog
+                route_config:
+                  name: local_route
+                  virtual_hosts:
+                    - name: backend_service
+                      domains: ["*"]
+                      routes:
+                        - match:
+                            prefix: "/"
+                          route:
+                            cluster: service_backend
+                            timeout: 15s
+                            retry_policy:
+                              retry_on: "5xx,connect-failure,reset"
+                              num_retries: 3
+                http_filters:
+                  - name: envoy.filters.http.router
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
 
-- **Circuit Breakers:** Circuit breakers prevent a service from becoming overwhelmed by limiting the number of concurrent connections or requests. If a service exceeds the defined thresholds, Envoy will stop sending traffic to it until it recovers.
+  clusters:
+    - name: service_backend
+      connect_timeout: 0.25s
+      type: STRICT_DNS
+      lb_policy: ROUND_ROBIN
+      load_assignment:
+        cluster_name: service_backend
+        endpoints:
+          - lb_endpoints:
+              - endpoint:
+                  address:
+                    socket_address:
+                      address: web-app
+                      port_value: 8080
+```
 
-- **Rate Limiting:** Envoy allows you to define rate limits on incoming requests, controlling how many requests are allowed over a given period. This is useful for preventing abuse or overloading of services.
+---
 
-### **Security**
+## **3. Running & Validating Envoy**
 
-- **TLS Termination:** Envoy can handle TLS termination, decrypting inbound traffic, and encrypting outbound traffic. This simplifies the management of secure communications within your services.
+### 🔹 Run with Docker
 
-- **mTLS (Mutual TLS):** Envoy supports mutual TLS for securing service-to-service communication. This ensures that both parties in a communication exchange authenticate each other and that their communication is encrypted.
+```bash
+# Run Envoy container mounting your configuration
+docker run -d \
+  --name envoy \
+  -p 10000:10000 \
+  -p 9901:9901 \
+  -v $(pwd)/envoy.yaml:/etc/envoy/envoy.yaml \
+  envoyproxy/envoy:v1.30-latest
+```
 
-- **RBAC (Role-Based Access Control):** Envoy implements RBAC to control access to services based on predefined roles and permissions. This adds an additional layer of security, ensuring that only authorized services or users can access specific resources.
+### 🔹 CLI Validation
 
-### **Observability**
+```bash
+# Validate configuration file without starting proxy
+envoy -c envoy.yaml --mode validate
 
-- **Metrics:** Envoy provides detailed metrics about network traffic, including request counts, latency, error rates, and more. These metrics are essential for monitoring the health and performance of your services.
+# Run Envoy with debug logging
+envoy -c envoy.yaml -l debug
+```
 
-- **Access Logs:** Envoy generates detailed access logs for each request it handles. These logs include information about the request’s origin, the response status, and any errors encountered. Access logs are valuable for auditing and debugging.
+---
 
-- **Tracing:** Envoy integrates with distributed tracing systems like Jaeger and Zipkin. Tracing provides a detailed view of a request’s journey through various services, helping you identify bottlenecks and failures in your application.
+## **4. Dynamic Configuration: The xDS APIs**
 
-### **Advanced Concepts**
+Instead of static YAML files, modern production meshes configure Envoy dynamically over gRPC using the **xDS** family of APIs:
 
-- **Filter Chains:** Envoy’s filter chains allow for complex request processing. Filters can modify, route, or reject requests based on various conditions. Common filters include authentication, rate limiting, and request transformation.
+| API | Name | Purpose |
+| --- | --- | --- |
+| **LDS** | Listener Discovery Service | Dynamically adds, updates, or deletes listeners and filter chains. |
+| **RDS** | Route Discovery Service | Dynamically updates routing tables and virtual hosts. |
+| **CDS** | Cluster Discovery Service | Dynamically adds or removes upstream clusters and load balancer settings. |
+| **EDS** | Endpoint Discovery Service | Dynamically discovers IP addresses of upstream service pods/instances. |
+| **SDS** | Secret Discovery Service | Dynamically delivers and rotates TLS certificates without restarting the proxy. |
 
-- **Dynamic Configuration with xDS APIs:** Envoy supports dynamic configuration through a set of APIs known as xDS (e.g., ADS, CDS, LDS, RDS, EDS). These APIs allow Envoy to update its configuration in real-time without restarting. This capability is crucial for environments where services are constantly changing.
+---
 
-- **Sidecar Proxy:** In a service mesh, Envoy is typically deployed as a sidecar proxy alongside each microservice. The sidecar intercepts all traffic to and from the service, providing security, observability, and traffic management features.
+## **5. Envoy Admin Interface (`:9901`)**
 
-### **Example Use Case**
+Envoy exposes an HTTP administrative interface for real-time diagnostics:
 
-Imagine you are running an e-commerce application with multiple microservices such as payment, inventory, and user services. Here’s how
+```bash
+# Check all aggregated metrics and counters
+curl http://localhost:9901/stats
 
- Envoy can help:
+# Filter metrics for error rates or specific cluster
+curl http://localhost:9901/stats?filter=cluster.service_backend
 
-1. **Secure Communication:** Use Envoy’s TLS termination to encrypt all traffic between the microservices.
-2. **Load Balancing:** Distribute incoming requests evenly across multiple instances of the payment service using Envoy’s round-robin load balancing.
-3. **Rate Limiting:** Protect the user service from abuse by setting a rate limit on login attempts.
-4. **Observability:** Monitor the health of all microservices using Envoy’s metrics and integrate with Prometheus for alerting.
-5. **Resilience:** Use circuit breakers to prevent the inventory service from becoming overwhelmed during high traffic periods.
+# Dump active merged configuration (static + dynamic xDS)
+curl http://localhost:9901/config_dump
+
+# View upstream cluster health and endpoints status
+curl http://localhost:9901/clusters
+
+# Change logging verbosity dynamically at runtime
+curl -X POST http://localhost:9901/logging?level=debug
+```
+
+---
+
+## **6. Resilience: Circuit Breaking & Outlier Detection**
+
+Configure circuit breaking within a cluster definition to prevent cascading failures:
+
+```yaml
+clusters:
+  - name: service_backend
+    connect_timeout: 0.5s
+    type: STRICT_DNS
+    circuit_breakers:
+      thresholds:
+        - priority: DEFAULT
+          max_connections: 1024
+          max_pending_requests: 100
+          max_requests: 1024
+          max_retries: 3
+    outlier_detection:
+      consecutive_5xx: 3
+      interval: 10s
+      base_ejection_time: 30s
+      max_ejection_percent: 50
+```
+
+---
+
+## **7. Production Best Practices**
+
+1. **Always Set Explicit Timeouts**: Never rely on infinite timeouts; set both per-route request timeouts and cluster connection timeouts.
+2. **Enable Outlier Detection**: Automatically eject misbehaving instances from the load-balancing pool.
+3. **Use SDS for Certificate Rotation**: Never bake TLS certificates into containers; use SDS to rotate keys automatically.
+4. **Secure the Admin Port**: Never expose port `9901` to public traffic; bind it strictly to `127.0.0.1` or protect it behind firewall policies.
+
+---
+
+## 📚 **Learning Resources**
+
+* 🔗 [Official Envoy Documentation](https://www.envoyproxy.io/docs/envoy/latest/)
+* 📦 [Envoy GitHub Repository](https://github.com/envoyproxy/envoy)
+* 🎓 [Envoy Katacoda & Interactive Tutorials](https://www.envoyproxy.io/community)

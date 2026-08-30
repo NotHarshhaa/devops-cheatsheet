@@ -1,63 +1,173 @@
-# Linkerd Cheatsheet
+# ⚡ Linkerd Cheatsheet
 
 ![text](https://imgur.com/xyQcgGf.png)
 
-## **Overview**
+**Linkerd** is an ultralight, security-first service mesh for Kubernetes. Built in Rust and Go, Linkerd is known for its simplicity, minimal resource footprint, and zero-configuration automatic mutual TLS (mTLS). It is a graduated project under the CNCF.
 
-Linkerd is a lightweight service mesh designed to be simple to operate while providing powerful features for observability, security, and reliability. Unlike some other service meshes, Linkerd focuses on minimal configuration and performance.
+---
 
-### **Basic Concepts**
+## **1. Core Concepts & Architecture**
 
-- **Service Mesh:** Linkerd provides an infrastructure layer that enables secure, reliable, and observable communication between microservices. It operates transparently, requiring minimal changes to your services.
+| Component | Description |
+| --- | --- |
+| **Control Plane** | Lightweight Go daemons (`destination`, `identity`, `proxy-injector`) managing policies and mTLS certificates. |
+| **Data Plane** | Ultra-fast `linkerd2-proxy` written in Rust, injected transparently into Kubernetes pods as a sidecar. |
+| **Automatic mTLS** | Encrypts and authenticates all TCP and HTTP traffic between meshed pods by default without manual CA configuration. |
+| **Extensions** | Modular features installed separately (e.g. `viz` for observability, `smi` for traffic splitting, `multicluster`). |
 
-- **Control Plane:** Linkerd’s control plane manages the configuration and behavior of the service mesh. It includes components for managing policies, collecting telemetry, and issuing certificates.
+---
 
-- **Data Plane:** The data plane consists of lightweight proxies deployed as sidecars to each service. These proxies handle all inbound and outbound traffic, providing features like mTLS, retries, and load balancing.
+## **2. `linkerd` CLI Quick Reference**
 
-### **Traffic Management**
+### 🔹 Installation & Verification
 
-- **Routing:** Linkerd automatically manages routing for service-to-service communication. It handles retries and timeouts, ensuring that requests are routed efficiently and reliably.
+```bash
+# Validate Kubernetes cluster readiness
+linkerd check --pre
 
-- **Load Balancing:** Linkerd distributes traffic across available service instances to prevent any single instance from being overwhelmed. It uses algorithms like random and least-request to balance traffic effectively.
+# Install Linkerd Custom Resource Definitions (CRDs)
+linkerd install --crds | kubectl apply -f -
 
-- **Traffic Splitting:** Linkerd allows you to split traffic between different versions of a service. This is useful for canary deployments, where a small percentage of traffic is sent to a new version before full rollout.
+# Install Linkerd control plane
+linkerd install | kubectl apply -f -
 
-### **Security**
+# Verify control plane health
+linkerd check
+```
 
-- **mTLS:** Linkerd provides out-of-the-box mutual TLS (mTLS) for all communication between services. This ensures that all traffic is encrypted and that both the client and server are authenticated.
+### 🔹 Installing Observability Extension (`viz`)
 
-- **Identity Service:** Linkerd includes an identity service that issues and renews TLS certificates for the proxies. This service manages the cryptographic identities used for mTLS.
+```bash
+# Install the visualization & metrics extension
+linkerd viz install | kubectl apply -f -
 
-- **Authorization:** Linkerd’s mTLS also acts as an authorization mechanism, ensuring that only authorized services can communicate with each other. This enhances security by preventing unauthorized access.
+# Check viz component health
+linkerd viz check
 
-### **Observability**
+# Launch the Linkerd web dashboard in your browser
+linkerd viz dashboard
+```
 
-- **Metrics:** Linkerd automatically collects and exposes metrics such as latency, success rates, and request volumes. These metrics are essential for monitoring the health and performance of your services.
+---
 
-- **Prometheus Integration:** Linkerd integrates seamlessly with Prometheus, allowing you to scrape and visualize metrics. Prometheus can be used to create alerts based on Linkerd’s metrics.
+## **3. Meshing Applications & Sidecar Injection**
 
-- **Grafana Dashboards:** Linkerd provides pre-built Grafana dashboards for visualizing metrics. These dashboards offer insights into service performance and help in identifying issues.
+Linkerd injects the micro-proxy via Kubernetes annotations.
 
-- **Distributed Tracing:** Linkerd supports distributed tracing, allowing you to track requests as they flow through different services. This helps in understanding the service interaction and diagnosing issues.
+### 🔹 Mesh a Namespace
 
-### **Advanced Concepts**
+```bash
+# Label a namespace for automatic proxy injection
+kubectl annotate namespace default linkerd.io/inject=enabled
+```
 
-- **Service Profiles:** Service profiles allow you to define expected behavior for services, such as retries, timeouts, and traffic shaping. They provide fine-grained control over how traffic is handled.
+### 🔹 Mesh an Existing Deployment via CLI
 
-- **Tap API:** The Tap API provides real-time visibility into live traffic. You can use it to inspect requests and responses, making it a powerful tool for debugging and monitoring.
+```bash
+kubectl get deploy my-app -o yaml | linkerd inject - | kubectl apply -f -
+```
 
-- **Traffic Shifting:** Linkerd supports traffic shifting, enabling you to gradually shift traffic from one version of a service to another. This is particularly useful for rolling out updates safely.
+---
 
-- **Multicluster Support:** Linkerd can extend its service mesh across multiple Kubernetes clusters, allowing you to manage services that span different environments. This is useful for high availability and disaster recovery.
+## **4. Real-Time Telemetry & Diagnostics**
 
-- **Policy Enforcement:** Linkerd allows you to define policies that control traffic routing, access control, and rate limiting. These policies help ensure that services behave as expected under various conditions.
+Linkerd provides live, production-safe diagnostic commands directly from the terminal.
 
-### **Example Use Case**
+```bash
+# View real-time request rates, success rates, and latency percentiles
+linkerd viz stat deploy
 
-Suppose you are managing a microservices application where you need a lightweight service mesh to provide observability and security with minimal overhead:
+# Stat specific service in a namespace
+linkerd viz stat svc -n default
 
-1. **Simplified Deployment:** Deploy Linkerd with minimal configuration and start benefiting from automatic mTLS and load balancing.
-2. **Canary Releases:** Use traffic splitting to gradually route traffic to a new version of a service, reducing the risk of full deployment.
-3. **Real-time Monitoring:** Utilize the Tap API to monitor live traffic and quickly identify any issues with requests.
-4. **Secure Communication:** Rely on Linkerd’s mTLS to secure all service-to-service communication without the need for complex certificate management.
-5. **Cross-Cluster Management:** Extend Linkerd’s service mesh across multiple Kubernetes clusters to ensure high availability and disaster recovery.
+# Real-time top requests by path (similar to Unix top)
+linkerd viz top deploy/web
+
+# Inspect live HTTP requests and headers in real time (Tap API)
+linkerd viz tap deploy/web --namespace default
+
+# Filter live tap traffic by route and status code
+linkerd viz tap deploy/web --path /api/v1 --status 500
+```
+
+---
+
+## **5. Policy & Zero-Trust Security (Linkerd 2.12+)**
+
+Linkerd uses `Server` and `AuthorizationPolicy` CRDs to enforce zero-trust inbound access control.
+
+### 🔹 Define a Protected Server (`Server`)
+
+```yaml
+apiVersion: policy.linkerd.io/v1beta1
+kind: Server
+metadata:
+  name: admin-http
+  namespace: default
+spec:
+  podSelector:
+    matchLabels:
+      app: web
+  port: 8080
+  proxyProtocol: HTTP/1
+```
+
+### 🔹 Authorize Client Access (`AuthorizationPolicy`)
+
+Allow only the `ingress-controller` service account to access the `admin-http` server:
+
+```yaml
+apiVersion: policy.linkerd.io/v1alpha1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-ingress-to-admin
+  namespace: default
+spec:
+  targetRef:
+    group: policy.linkerd.io
+    kind: Server
+    name: admin-http
+  requiredAuthenticationRefs:
+    - group: policy.linkerd.io
+      kind: MeshTLSAuthentication
+      name: ingress-controller-auth
+---
+apiVersion: policy.linkerd.io/v1alpha1
+kind: MeshTLSAuthentication
+metadata:
+  name: ingress-controller-auth
+  namespace: default
+spec:
+  identities:
+    - "ingress-controller.ingress-nginx.serviceaccount.identity.linkerd.cluster.local"
+```
+
+---
+
+## **6. Canary Releases & Traffic Splitting (`TrafficSplit`)**
+
+Split traffic between stable and canary versions using the Service Mesh Interface (SMI):
+
+```yaml
+apiVersion: split.smi-spec.io/v1alpha2
+kind: TrafficSplit
+metadata:
+  name: web-traffic-split
+  namespace: default
+spec:
+  service: web-svc
+  backends:
+    - service: web-svc-v1
+      weight: 900m   # 90%
+    - service: web-svc-v2
+      weight: 100m   # 10%
+```
+
+---
+
+## 📚 **Learning Resources**
+
+* 🔗 [Official Linkerd Documentation](https://linkerd.io/2/overview/)
+* 📦 [Linkerd GitHub Repository](https://github.com/linkerd/linkerd2)
+* 🛡️ [Linkerd Policy Reference](https://linkerd.io/2/features/server-policy/)
+* 🎓 [Service Mesh Academy](https://buoyant.io/service-mesh-academy)
