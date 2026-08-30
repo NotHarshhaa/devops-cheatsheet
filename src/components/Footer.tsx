@@ -2,25 +2,22 @@
 
 import Link from "next/link";
 import {
-  FaGithub,
-  FaTelegram,
-  FaLinkedin,
-  FaRocket,
-  FaHeart,
-  FaCodeBranch,
-  FaSearch,
-  FaTools,
-  FaBookOpen,
-  FaStar,
-  FaHandsHelping,
-  FaEnvelope,
-  FaArrowRight,
-} from "react-icons/fa";
-import { HiChevronRight } from "react-icons/hi";
+  Github,
+  Terminal,
+  ShieldCheck,
+  Zap,
+  Heart,
+  ArrowRight,
+  Sparkles,
+  Command as CommandIcon,
+  CheckCircle2
+} from "lucide-react";
 import { useState } from "react";
-import { motion, Variants, Transition } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Kbd } from "@/components/ui/kbd";
+import { triggerCommandMenu } from "./CommandMenu";
 
 export function Footer() {
   const [email, setEmail] = useState("");
@@ -29,257 +26,195 @@ export function Footer() {
   const handleSubscribe = (e: React.FormEvent) => {
     e.preventDefault();
     if (email) {
-      // This would connect to your newsletter service in a real app
       setSubscribed(true);
       setEmail("");
     }
   };
 
-  const containerVariants: Variants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        type: "tween",
-        staggerChildren: 0.1,
-      } as Transition,
-    },
-  };
-
-  const itemVariants: Variants = {
-    hidden: { y: 20, opacity: 0 },
-    visible: {
-      y: 0,
-      opacity: 1,
-      transition: {
-        type: "tween",
-        duration: 0.5,
-      } as Transition,
-    },
-  };
-
   return (
-    <footer className="relative overflow-hidden bg-gradient-to-b from-gray-50 via-gray-50 to-white dark:from-gray-900 dark:via-gray-900 dark:to-black text-gray-800 dark:text-gray-200">
-      {/* Decorative Elements */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute -right-10 -bottom-20 w-48 sm:w-64 h-48 sm:h-64 rounded-full bg-blue-500/5 dark:bg-blue-500/10 blur-3xl" />
-        <div className="absolute -left-10 -bottom-10 w-56 sm:w-72 h-56 sm:h-72 rounded-full bg-purple-500/5 dark:bg-purple-500/10 blur-3xl" />
-        <div className="absolute top-1/3 left-1/4 w-16 sm:w-24 h-16 sm:h-24 rounded-full bg-blue-500/5 dark:bg-blue-500/10 blur-xl" />
+    <footer className="relative border-t border-border/80 bg-background text-foreground overflow-hidden">
+      {/* Background ambient lighting */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden -z-10">
+        <div className="absolute -left-20 bottom-0 w-80 h-80 bg-cyan-500/5 dark:bg-cyan-500/10 rounded-full blur-3xl" />
+        <div className="absolute -right-20 bottom-0 w-80 h-80 bg-purple-500/5 dark:bg-purple-500/10 rounded-full blur-3xl" />
       </div>
 
-      {/* Wave Pattern Top */}
-      <div className="relative w-full overflow-hidden">
-        <svg
-          className="w-full h-auto text-gray-50 dark:text-gray-900 fill-current transform rotate-180"
-          viewBox="0 0 1440 60"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path d="M0,32L60,37.3C120,43,240,53,360,48C480,43,600,21,720,16C840,11,960,21,1080,26.7C1200,32,1320,32,1380,32L1440,32L1440,60L1380,60C1320,60,1200,60,1080,60C960,60,840,60,720,60C600,60,480,60,360,60C240,60,120,60,60,60L0,60Z"></path>
-        </svg>
-      </div>
+      {/* Telemetry Status Ribbon */}
+      <div className="border-b border-border/60 bg-muted/30 py-3 px-4 sm:px-8">
+        <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3 text-xs font-mono">
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
+            <span className="font-semibold text-foreground">STATUS: ALL HUBS OPERATIONAL</span>
+            <span className="hidden sm:inline text-muted-foreground/60">//</span>
+            <span className="hidden sm:inline text-muted-foreground">200+ CHEATSHEETS SYNCED</span>
+          </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16 relative z-10">
-        {/* Main Footer Grid */}
-        <motion.div
-          className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 md:gap-10"
-          variants={containerVariants}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: "-50px" }}
-        >
-          {/* Brand and Newsletter */}
-          <motion.div
-            variants={itemVariants}
-            className="col-span-1 sm:col-span-2 space-y-6 sm:space-y-8"
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={triggerCommandMenu}
+            className="h-7 text-xs font-mono gap-1.5 text-muted-foreground hover:text-foreground cursor-pointer px-2"
           >
-            <Link href="/" className="flex items-center gap-2 sm:gap-3 group">
-              <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl blur-md opacity-70 group-hover:opacity-100 transition-all duration-300"></div>
-                <div className="relative w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-white dark:bg-gray-900 flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-all duration-300">
-                  <FaRocket className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 dark:text-blue-400" />
-                </div>
+            <span>Command Palette:</span>
+            <Kbd>⌘K</Kbd>
+          </Button>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
+        <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-5 gap-10">
+          {/* Brand & Mission */}
+          <div className="md:col-span-2 lg:col-span-2 space-y-5">
+            <Link href="/" className="flex items-center gap-2.5 group">
+              <div className="w-9 h-9 rounded-xl bg-primary/10 border border-primary/30 flex items-center justify-center text-primary group-hover:scale-105 transition-transform">
+                <Terminal className="w-4 h-4" />
               </div>
-              <div className="text-xl sm:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400">
-                DevOps Cheatsheet
-              </div>
+              <span className="text-xl font-black font-mono tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-600">
+                DEVOPS<span className="text-foreground">//</span>HUB
+              </span>
             </Link>
 
-            <p className="text-gray-600 dark:text-gray-400 max-w-md leading-relaxed">
-              A comprehensive collection of DevOps tools, best practices, and
-              resources for modern software development and operations teams.
-              Updated regularly with the latest insights.
+            <p className="text-sm text-muted-foreground leading-relaxed max-w-sm">
+              The modern open-source command reference for DevOps engineers, cloud architects, and SREs. Clean syntax, real production patterns, and verified terminal snippets.
             </p>
 
-            {/* Newsletter Form */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-4 sm:p-6 transform transition-all duration-300 hover:shadow-xl">
-              <h4 className="font-semibold text-base sm:text-lg text-gray-900 dark:text-white mb-1 sm:mb-2 flex items-center gap-2">
-                <FaEnvelope className="text-blue-500 dark:text-blue-400" />
-                Get DevOps updates
-              </h4>
-              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-3 sm:mb-4">
-                Stay updated with the latest DevOps tools and best practices
+            {/* Newsletter Dock */}
+            <div className="rounded-2xl border border-border/80 bg-card p-4 shadow-sm max-w-sm">
+              <div className="flex items-center gap-2 text-xs font-mono font-semibold text-foreground mb-1">
+                <Zap className="w-3.5 h-3.5 text-amber-500" />
+                <span>DevOps Dispatch Weekly</span>
+              </div>
+              <p className="text-[11px] text-muted-foreground mb-3">
+                New tool guides and architecture patterns delivered to your inbox.
               </p>
 
               {!subscribed ? (
-                <form
-                  onSubmit={handleSubscribe}
-                  className="flex flex-col sm:flex-row gap-2 sm:gap-3"
-                >
+                <form onSubmit={handleSubscribe} className="flex gap-1.5">
                   <Input
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Enter your email"
-                    className="flex-grow h-10 px-3 sm:px-4 text-sm rounded-xl"
+                    placeholder="engineer@domain.com"
+                    className="h-9 text-xs rounded-xl bg-background font-mono"
                     required
                   />
-                  <Button
-                    type="submit"
-                    className="h-10 px-4 text-sm font-medium gap-2 whitespace-nowrap"
-                  >
-                    Subscribe
-                    <FaArrowRight className="w-3 h-3" />
+                  <Button type="submit" size="sm" className="h-9 px-3 rounded-xl font-mono text-xs shrink-0 cursor-pointer">
+                    Join
                   </Button>
                 </form>
               ) : (
-                <div className="bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 p-2 sm:p-3 rounded-lg text-center text-sm">
-                  Thanks for subscribing! Check your email to confirm.
+                <div className="flex items-center gap-2 text-xs text-emerald-500 font-mono py-1">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>Subscribed! Check your inbox.</span>
                 </div>
               )}
             </div>
-          </motion.div>
+          </div>
 
-          {/* Quick Links */}
-          <motion.div variants={itemVariants}>
-            <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mb-4 sm:mb-6 flex items-center gap-2">
-              <FaBookOpen className="text-blue-500 dark:text-blue-400 w-4 h-4 sm:w-5 sm:h-5" />
-              Quick Links
-            </h3>
-            <ul className="space-y-4">
+          {/* Architecture Hubs */}
+          <div className="space-y-4">
+            <div className="text-xs font-mono font-bold uppercase tracking-wider text-foreground">
+              Architecture Hubs
+            </div>
+            <ul className="space-y-2.5 text-xs">
               {[
-                {
-                  icon: <FaTools className="w-4 h-4" />,
-                  text: "Categories",
-                  href: "/categories",
-                },
-                {
-                  icon: <FaSearch className="w-4 h-4" />,
-                  text: "Search",
-                  href: "/search",
-                },
-                {
-                  icon: <FaStar className="w-4 h-4" />,
-                  text: "Getting Started",
-                  href: "/getting-started",
-                },
-                {
-                  icon: <FaHandsHelping className="w-4 h-4" />,
-                  text: "Contribute",
-                  href: "/contribute",
-                },
-              ].map((item, index) => (
-                <li key={index}>
+                { name: "Containerization", path: "/Containerization" },
+                { name: "CI/CD Automation", path: "/CI-CD" },
+                { name: "Cloud Architecture", path: "/Cloud" },
+                { name: "Infrastructure as Code", path: "/Infrastructure-Management" },
+                { name: "Security & Vault", path: "/Security" },
+                { name: "Observability", path: "/Monitoring" },
+              ].map((link) => (
+                <li key={link.name}>
                   <Link
-                    href={item.href}
-                    className="flex items-center text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors group text-sm sm:text-base"
+                    href={link.path}
+                    className="text-muted-foreground hover:text-primary transition-colors inline-block"
                   >
-                    <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center mr-2 sm:mr-3 group-hover:bg-blue-100 dark:group-hover:bg-blue-900/30 transition-colors">
-                      {item.icon}
-                    </span>
-                    <span className="font-medium">{item.text}</span>
-                    <HiChevronRight className="w-4 h-4 ml-auto opacity-0 group-hover:opacity-100 transform group-hover:translate-x-1 transition-all" />
+                    {link.name}
                   </Link>
                 </li>
               ))}
             </ul>
-          </motion.div>
+          </div>
 
-          {/* Social Links */}
-          <motion.div variants={itemVariants}>
-            <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mb-4 sm:mb-6 flex items-center gap-2">
-              <FaCodeBranch className="text-purple-500 dark:text-purple-400 w-4 h-4 sm:w-5 sm:h-5" />
-              Connect With Us
-            </h3>
-            <ul className="space-y-4">
+          {/* Popular Reference */}
+          <div className="space-y-4">
+            <div className="text-xs font-mono font-bold uppercase tracking-wider text-foreground">
+              Popular Cheatsheets
+            </div>
+            <ul className="space-y-2.5 text-xs">
               {[
-                {
-                  icon: <FaGithub className="w-4 h-4" />,
-                  text: "GitHub",
-                  href: "https://github.com/NotHarshhaa",
-                },
-                {
-                  icon: <FaTelegram className="w-4 h-4" />,
-                  text: "Telegram",
-                  href: "https://t.me/prodevopsguy",
-                },
-                {
-                  icon: <FaLinkedin className="w-4 h-4" />,
-                  text: "LinkedIn",
-                  href: "https://linkedin.com/in/harshhaa-vardhan-reddy",
-                },
-              ].map((item, index) => (
-                <li key={index}>
-                  <a
-                    href={item.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors group text-sm sm:text-base"
+                { name: "Docker Reference", path: "/containerization/docker" },
+                { name: "Kubernetes Commands", path: "/containerization/kubernetes" },
+                { name: "Terraform IaC Syntax", path: "/infrastructure-management/terraform" },
+                { name: "GitHub Actions Workflows", path: "/ci-cd/github-actions" },
+                { name: "Prometheus Monitoring", path: "/monitoring/prometheus" },
+                { name: "Linux Networking", path: "/networking/linux-networking" },
+              ].map((link) => (
+                <li key={link.name}>
+                  <Link
+                    href={link.path}
+                    className="text-muted-foreground hover:text-primary transition-colors inline-block font-mono text-[11px]"
                   >
-                    <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center mr-2 sm:mr-3 group-hover:bg-purple-100 dark:group-hover:bg-purple-900/30 transition-colors">
-                      {item.icon}
-                    </span>
-                    <span className="font-medium">{item.text}</span>
-                    <HiChevronRight className="w-4 h-4 ml-auto opacity-0 group-hover:opacity-100 transform group-hover:translate-x-1 transition-all" />
-                  </a>
+                    {link.name}
+                  </Link>
                 </li>
               ))}
             </ul>
+          </div>
 
-            {/* Community Stats */}
-            <div className="mt-6 sm:mt-8 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-xl p-3 sm:p-4 border border-blue-100 dark:border-blue-800/30">
-              <h4 className="font-medium text-gray-900 dark:text-white text-xs sm:text-sm mb-2 sm:mb-3">
-                Community Stats
-              </h4>
-              <div className="grid grid-cols-2 gap-3 sm:gap-4">
-                <div className="text-center">
-                  <div className="text-xl sm:text-2xl font-bold text-blue-600 dark:text-blue-400">
-                    5.2K
-                  </div>
-                  <div className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-400">
-                    GitHub Stars
-                  </div>
-                </div>
-                <div className="text-center">
-                  <div className="text-xl sm:text-2xl font-bold text-purple-600 dark:text-purple-400">
-                    2.1K
-                  </div>
-                  <div className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-400">
-                    Community Members
-                  </div>
-                </div>
-              </div>
+          {/* Community & GitHub */}
+          <div className="space-y-4">
+            <div className="text-xs font-mono font-bold uppercase tracking-wider text-foreground">
+              Community & Project
             </div>
-          </motion.div>
-        </motion.div>
+            <ul className="space-y-2.5 text-xs">
+              <li>
+                <Link href="/getting-started" className="text-muted-foreground hover:text-primary transition-colors">
+                  Getting Started Guide
+                </Link>
+              </li>
+              <li>
+                <Link href="/about" className="text-muted-foreground hover:text-primary transition-colors">
+                  About DevOps Hub
+                </Link>
+              </li>
+              <li>
+                <Link href="/contribute" className="text-muted-foreground hover:text-primary transition-colors flex items-center gap-1.5 text-primary font-medium">
+                  <Heart className="w-3.5 h-3.5 fill-current" />
+                  <span>Submit Cheatsheet</span>
+                </Link>
+              </li>
+              <li>
+                <a
+                  href="https://github.com/NotHarshhaa/devops-cheatsheet"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-muted-foreground hover:text-primary transition-colors inline-flex items-center gap-1.5 font-mono"
+                >
+                  <Github className="w-3.5 h-3.5" />
+                  <span>GitHub Repository</span>
+                </a>
+              </li>
+            </ul>
+          </div>
+        </div>
 
-        {/* Divider */}
-        <div className="mt-10 sm:mt-16 pt-6 sm:pt-8 border-t border-gray-200 dark:border-gray-800 flex flex-col md:flex-row justify-between items-center">
-          <p className="text-gray-500 dark:text-gray-400 text-xs sm:text-sm">
-            © {new Date().getFullYear()} DevOps Cheatsheet Hub. All rights
-            reserved.
-          </p>
-          <div className="mt-3 md:mt-0 flex items-center gap-1 sm:gap-2 text-gray-500 dark:text-gray-400 text-xs sm:text-sm">
-            <span>Made with</span>
-            <FaHeart className="w-3 h-3 sm:w-4 sm:h-4 text-red-500 animate-pulse" />
-            <span>by</span>
-            <a
-              href="https://github.com/NotHarshhaa"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-medium text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              H A R S H H A A
-            </a>
+        {/* Bottom bar */}
+        <div className="mt-12 pt-6 border-t border-border/60 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-muted-foreground font-mono">
+          <div>
+            © {new Date().getFullYear()} DevOps Cheatsheet Hub. Built for open-source engineers.
+          </div>
+          <div className="flex items-center gap-4">
+            <span className="flex items-center gap-1">
+              <ShieldCheck className="w-3.5 h-3.5 text-primary" />
+              <span>Production Tested</span>
+            </span>
+            <span>·</span>
+            <span>MIT License</span>
           </div>
         </div>
       </div>

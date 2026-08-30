@@ -2,197 +2,276 @@ import { SearchBar } from "@/components/SearchBar";
 import { HomeFilters } from "@/components/HomeFilters";
 import Link from "next/link";
 import { categories, categoryData } from "@/utils/categoryData";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { 
+  ArrowRight, 
+  Sparkles, 
+  Terminal, 
+  ShieldCheck, 
+  Zap, 
+  Cpu, 
+  Server, 
+  GitBranch, 
+  Box, 
+  Cloud, 
+  Shield, 
+  Network, 
+  BarChart2, 
+  Github, 
+  Layers,
+  CheckCircle2,
+  Copy
+} from "lucide-react";
 import { CategoryIcon } from "@/components/CategoryIcon";
 import { CategoryActions } from "@/components/CategoryActions";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Suspense } from "react";
 
-// Force static generation
 export const dynamic = 'force-static';
 export const revalidate = false;
 
-// Particle component for the hero section
-const Particle = ({ className = "" }) => (
-  <div className={`absolute rounded-full mix-blend-plus-lighter filter blur-3xl opacity-20 ${className}`} />
-);
+// Sample preview tools per category for the bento tags
+const CATEGORY_TAGS: Record<string, string[]> = {
+  'CI-CD': ['GitHub Actions', 'GitLab CI', 'Jenkins', 'ArgoCD'],
+  'Containerization': ['Docker', 'Kubernetes', 'Helm', 'Podman'],
+  'Cloud': ['AWS', 'Google Cloud', 'Azure', 'Cloudflare'],
+  'Infrastructure-Management': ['Terraform', 'Ansible', 'Pulumi', 'Vagrant'],
+  'Version-Control': ['Git Flow', 'Branching', 'Rebase', 'Hooks'],
+  'Security': ['Vault', 'Trivy', 'Falco', 'OWASP'],
+  'Networking': ['Nginx', 'Envoy', 'DNS', 'Cilium'],
+  'Monitoring': ['Prometheus', 'Grafana', 'ELK Stack', 'OpenTelemetry'],
+};
 
-// This ensures the page is static and not server-rendered
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-900">
-      {/* Hero Section with Search */}
-      <div id="top" className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-blue-700 to-purple-700 text-white">
-        {/* Animated Particles */}
-        <div className="absolute inset-0 overflow-hidden">
-          <Particle className="w-[800px] h-[800px] bg-purple-500/20 top-[-400px] right-[-200px]" />
-          <Particle className="w-[600px] h-[600px] bg-blue-500/20 bottom-[-300px] left-[-200px]" />
-        </div>
+    <div className="min-h-screen bg-background text-foreground relative overflow-hidden">
+      {/* Ambient background glows */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[650px] pointer-events-none overflow-hidden -z-10">
+        <div className="absolute top-[-150px] left-1/4 w-[500px] h-[500px] bg-cyan-500/15 dark:bg-cyan-500/20 rounded-full blur-[140px]" />
+        <div className="absolute top-[-100px] right-1/4 w-[550px] h-[550px] bg-purple-500/15 dark:bg-purple-600/20 rounded-full blur-[160px]" />
+        <div className="absolute top-[250px] left-1/2 -translate-x-1/2 w-[700px] h-[300px] bg-blue-600/10 dark:bg-blue-600/15 rounded-full blur-[130px]" />
+      </div>
 
-        {/* Grid Pattern */}
-        <div 
-          className="absolute inset-0 bg-[url('/grid-pattern.svg')] bg-repeat [mask-image:radial-gradient(white,transparent_90%)] pointer-events-none opacity-20"
-          style={{ backgroundSize: '30px 30px' }}
-        />
+      {/* Hero Section */}
+      <section className="relative pt-8 pb-16 sm:pt-14 sm:pb-24 bg-cyber-grid">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Status telemetry pill */}
+          <div className="flex justify-center mb-6">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-secondary/80 dark:bg-muted/60 border border-border/80 shadow-sm backdrop-blur-md">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
+              <span className="font-mono text-xs font-medium text-foreground tracking-wide">
+                DEVOPS COMMAND CENTER // 200+ PRODUCTION CHEATSHEETS
+              </span>
+              <Badge variant="outline" className="hidden sm:inline-flex text-[10px] py-0 px-1 font-mono text-primary border-primary/30">
+                ACTIVE
+              </Badge>
+            </div>
+          </div>
 
-        {/* Content Container */}
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 sm:pt-24 pb-24 sm:pb-40">
-          {/* Supercharge Badge */}
-          <div className="flex justify-center mb-8 sm:mb-12">
-            <div className="relative">
-              <div className="absolute inset-0 blur-lg bg-yellow-200/30 rounded-full"></div>
-              <div className="relative flex items-center gap-2 bg-white/10 backdrop-blur-md px-4 sm:px-6 py-1.5 sm:py-2 rounded-full border border-white/20">
-                <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-300" />
-                <span className="text-xs sm:text-sm font-medium text-white">Supercharge your DevOps workflow</span>
+          {/* Main Headline */}
+          <div className="text-center max-w-4xl mx-auto">
+            <h1 className="text-4xl sm:text-6xl md:text-7xl font-black tracking-tight text-foreground leading-[1.08] mb-6">
+              Production DevOps <br />
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-cyan-500 via-blue-600 to-purple-600 dark:from-cyan-400 dark:via-blue-400 dark:to-purple-400 font-mono">
+                Command Cheatsheets
+              </span>
+            </h1>
+
+            <p className="text-base sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed font-normal">
+              Instant syntax, cloud architecture templates, container commands, and automation scripts curated for engineers who build fast.
+            </p>
+
+            {/* Elevated Search Bar */}
+            <div className="max-w-2xl mx-auto mb-6">
+              <Suspense fallback={<div className="h-14 bg-muted animate-pulse rounded-2xl" />}>
+                <SearchBar />
+              </Suspense>
+            </div>
+
+            {/* Quick Filter Tag Pills */}
+            <div className="flex flex-wrap items-center justify-center gap-2 max-w-2xl mx-auto mb-14 text-xs">
+              <span className="text-muted-foreground font-mono text-[11px] mr-1">Trending:</span>
+              {[
+                { label: 'kubernetes', path: '/containerization/kubernetes' },
+                { label: 'docker', path: '/containerization/docker' },
+                { label: 'terraform', path: '/infrastructure-management/terraform' },
+                { label: 'github-actions', path: '/ci-cd/github-actions' },
+                { label: 'prometheus', path: '/monitoring/prometheus' },
+                { label: 'security', path: '/security' },
+              ].map((tag) => (
+                <Link
+                  key={tag.label}
+                  href={tag.path}
+                  className="font-mono text-xs px-2.5 py-1 rounded-lg bg-secondary/80 hover:bg-primary/10 hover:text-primary border border-border/60 transition-colors"
+                >
+                  #{tag.label}
+                </Link>
+              ))}
+            </div>
+
+            {/* Live Interactive Terminal Mockup */}
+            <div className="max-w-3xl mx-auto text-left relative group">
+              <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500/20 via-blue-500/20 to-purple-500/20 rounded-3xl blur-xl opacity-80 group-hover:opacity-100 transition-opacity"></div>
+              
+              <div className="relative rounded-2xl bg-zinc-950 border border-zinc-800 shadow-2xl overflow-hidden font-mono text-xs sm:text-sm text-zinc-300">
+                {/* Terminal top header bar */}
+                <div className="flex items-center justify-between px-4 py-3 bg-zinc-900/90 border-b border-zinc-800/80">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-red-500/80" />
+                    <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
+                    <div className="w-3 h-3 rounded-full bg-green-500/80" />
+                    <span className="ml-2 text-xs text-zinc-400 font-sans font-medium">
+                      bash — devops-cli v1.1.0
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 text-zinc-400 text-xs font-sans">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>connected: hub-cluster-prod</span>
+                  </div>
+                </div>
+
+                {/* Terminal Content Body */}
+                <div className="p-4 sm:p-5 space-y-3 leading-relaxed overflow-x-auto">
+                  <div className="flex items-center gap-2 text-cyan-400">
+                    <span className="text-zinc-500">$</span>
+                    <span>devops-hub query --category=all --verified</span>
+                  </div>
+                  <div className="text-zinc-400 pl-4 border-l border-zinc-800 space-y-1">
+                    <p className="text-emerald-400 font-semibold">✓ 8 Core Engineering Hubs synchronized</p>
+                    <p className="text-zinc-300">✓ 200+ Production Reference Cheatsheets ready</p>
+                    <p className="text-zinc-500 text-xs">CI/CD · Containers · Cloud · IaC · Security · Networking · Observability</p>
+                  </div>
+
+                  <div className="flex items-center gap-2 text-cyan-400 pt-1">
+                    <span className="text-zinc-500">$</span>
+                    <span>kubectl get cheatsheet --output=ready</span>
+                  </div>
+                  <div className="text-zinc-400 text-xs pl-4 border-l border-zinc-800 space-y-0.5">
+                    <p><span className="text-purple-400">NAME</span>                             <span className="text-cyan-400">STATUS</span>    <span className="text-amber-400">CATEGORY</span></p>
+                    <p>docker-engine-reference          Ready     Containerization</p>
+                    <p>k8s-pod-networking-guide        Ready     Containerization</p>
+                    <p>terraform-state-locking-iac     Ready     Infrastructure</p>
+                    <p>github-actions-ci-matrix        Ready     CI/CD</p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Main Title */}
-          <h1 className="text-center text-5xl sm:text-7xl md:text-8xl font-black mb-4 sm:mb-8 text-white">
-            DevOps Tools<br />Cheatsheet
-          </h1>
-
-          <p className="text-center text-lg sm:text-xl text-white/90 max-w-3xl mx-auto mb-8 sm:mb-12 leading-relaxed font-light px-4">
-            A comprehensive collection of DevOps tools, best practices, and
-            resources for modern software development and operations.
-          </p>
-
-          {/* Search Bar Component with enhanced styling */}
-          <div className="relative max-w-2xl mx-auto mb-16 sm:mb-24 px-2 sm:px-0">
-            <div className="absolute -inset-1 bg-white/20 rounded-2xl blur-xl opacity-50"></div>
-            <Suspense
-              fallback={
-                <div className="h-12 sm:h-14 bg-white/20 animate-pulse rounded-2xl"></div>
-              }
-            >
-              <SearchBar />
-            </Suspense>
-          </div>
-
-          {/* Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-6 max-w-4xl mx-auto relative z-20">
+          {/* High-Tech Metrics Strip */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 max-w-5xl mx-auto mt-16">
             {[
-              { label: "Tools", value: "200+" },
-              { label: "Categories", value: "8" },
-              { label: "Best Practices", value: "50+" },
-              { label: "Resources", value: "100+" },
-            ].map((stat, i) => (
-              <div
-                key={i}
-                className="group relative"
-              >
-                <div className="absolute -inset-0.5 bg-white/20 rounded-2xl opacity-0 group-hover:opacity-100 transition-all duration-300 blur-lg"></div>
-                <div className="relative bg-white/10 backdrop-blur-md rounded-2xl p-3 sm:p-6 border border-white/20">
-                  <div className="text-2xl sm:text-4xl font-black text-white mb-1 sm:mb-2">
+              { value: "200+", label: "Curated Guides", icon: Zap, color: "text-amber-500" },
+              { value: "8 Domains", label: "Core Hubs", icon: Layers, color: "text-cyan-500" },
+              { value: "100%", label: "Free & Open Source", icon: ShieldCheck, color: "text-emerald-500" },
+              { value: "Active", label: "Community Maintained", icon: Cpu, color: "text-purple-500" },
+            ].map((stat, i) => {
+              const Icon = stat.icon;
+              return (
+                <div
+                  key={i}
+                  className="relative group p-4 sm:p-5 rounded-2xl bg-card border border-border/80 hover:border-primary/40 transition-all duration-300 shadow-sm hover:shadow-md"
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-mono uppercase text-muted-foreground tracking-wider">
+                      {stat.label}
+                    </span>
+                    <Icon className={`w-4 h-4 ${stat.color}`} />
+                  </div>
+                  <div className="text-2xl sm:text-3xl font-black font-mono text-foreground">
                     {stat.value}
                   </div>
-                  <div className="text-sm sm:text-base text-white/80">{stat.label}</div>
                 </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* Filter / Explore Section */}
+      <section className="py-14 border-t border-b border-border/60 bg-muted/20">
+        <HomeFilters />
+      </section>
+
+      {/* Bento Grid Categories Section */}
+      <section className="py-20 sm:py-28">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between mb-12 gap-4">
+            <div>
+              <div className="flex items-center gap-2 text-primary text-xs font-mono uppercase tracking-wider mb-2">
+                <Terminal className="w-4 h-4" />
+                <span>Architectural Domains</span>
               </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Wave divider */}
-        <div className="absolute bottom-0 left-0 right-0 h-40">
-          <svg
-            className="absolute bottom-0 w-full h-full"
-            viewBox="0 0 1440 320"
-            xmlns="http://www.w3.org/2000/svg"
-            preserveAspectRatio="none"
-          >
-            <path
-              className="fill-white dark:fill-gray-900"
-              d="M0,32L48,42.7C96,53,192,75,288,101.3C384,128,480,160,576,165.3C672,171,768,149,864,128C960,107,1056,85,1152,80C1248,75,1344,85,1392,90.7L1440,96L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"
-            ></path>
-          </svg>
-        </div>
-      </div>
-
-      {/* Rest of the content */}
-      <div className="bg-gray-50 dark:bg-gray-900">
-        {/* Filters Section */}
-        <div className="py-16 backdrop-blur-lg border-t border-b border-gray-200 dark:border-gray-800">
-          <div className="max-w-7xl mx-auto">
-            <HomeFilters />
-          </div>
-        </div>
-
-        {/* Categories Grid with enhanced cards */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
-          <div className="text-center mb-20">
-            <h2 className="text-4xl font-black text-gray-900 dark:text-white mb-6">
-              Explore DevOps Categories
-            </h2>
-            <p className="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-              Discover specialized tools and resources organized by category to
-              optimize your DevOps workflow
+              <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-foreground">
+                Explore DevOps Categories
+              </h2>
+            </div>
+            <p className="text-sm sm:text-base text-muted-foreground max-w-md">
+              Specialized cheatsheets, command tables, and best practices organized by infrastructure pillar.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {categories.map((category) => {
+          {/* Bento Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {categories.map((category, index) => {
               const data = categoryData[category];
+              const tags = CATEGORY_TAGS[category] || [];
+              const isFeatured = index === 1 || index === 3; // Containerization and Infrastructure
 
               return (
                 <Link
                   key={category}
-                  href={`/${category}/`}
-                  className="block group"
+                  href={`/${category}`}
+                  className={`block group ${isFeatured ? 'md:col-span-2 lg:col-span-1' : ''}`}
                 >
-                  <Card className="transition-all duration-300 h-full hover:shadow-lg hover:border-primary/40 relative overflow-hidden">
-                    <CardContent className="p-8 flex flex-col h-full">
-                      {/* Top section with icon and badge */}
-                      <div className="flex items-start justify-between mb-6">
-                        {/* Icon */}
-                        <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center group-hover:scale-105 transition-transform">
-                          <div className="w-6 h-6">
-                            <CategoryIcon category={category} />
-                          </div>
+                  <Card className="h-full rounded-2xl border-border/80 hover:border-primary/50 transition-all duration-300 hover:shadow-xl hover:shadow-primary/5 flex flex-col justify-between overflow-hidden relative group/card">
+                    {/* Glowing background gradient on hover */}
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-2xl group-hover/card:bg-primary/15 transition-all duration-500 pointer-events-none" />
+
+                    <CardContent className="p-6 sm:p-7 flex flex-col h-full z-10">
+                      {/* Top bar with icon and count */}
+                      <div className="flex items-start justify-between gap-2 mb-5">
+                        <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center group-hover/card:scale-110 group-hover/card:bg-primary group-hover/card:text-primary-foreground transition-all duration-300 shadow-sm">
+                          <CategoryIcon category={category} />
                         </div>
-                        
-                        {/* Tool Count Badge */}
-                        <Badge variant="secondary" className="font-medium text-xs">
-                          {data.toolCount}+ Tools
+                        <Badge variant="secondary" className="font-mono text-xs font-medium gap-1">
+                          {data.toolCount}+ Cheatsheets
                         </Badge>
                       </div>
 
-                      {/* Category Title */}
-                      <h2 className="text-xl font-bold text-foreground mb-3 capitalize group-hover:text-primary transition-colors">
+                      {/* Title & Description */}
+                      <h3 className="text-xl font-bold text-foreground mb-2 group-hover/card:text-primary transition-colors capitalize">
                         {category.replace(/-/g, " ")}
-                      </h2>
+                      </h3>
 
-                      {/* Description */}
-                      <p className="text-muted-foreground mb-6 text-sm flex-1">
+                      <p className="text-sm text-muted-foreground leading-relaxed mb-6 flex-1">
                         {data.description}
                       </p>
 
-                      {/* Metadata */}
-                      <div className="flex items-center gap-4 text-xs text-muted-foreground mb-6">
-                        <div className="flex items-center gap-2">
-                          <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                          <span>Updated recently</span>
-                        </div>
-                        <span>5 min read</span>
+                      {/* Tool Tags */}
+                      <div className="flex flex-wrap gap-1.5 mb-6">
+                        {tags.map((tag) => (
+                          <span
+                            key={tag}
+                            className="font-mono text-[11px] px-2 py-0.5 rounded-md bg-secondary/80 text-secondary-foreground border border-border/40"
+                          >
+                            {tag}
+                          </span>
+                        ))}
                       </div>
 
-                      {/* Action Buttons */}
-                      <div className="flex items-center justify-between pt-4 border-t border-border mt-auto">
-                        <span className="flex items-center gap-1.5 text-primary text-sm font-medium group-hover:underline">
-                          Explore tools
-                          <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                      {/* Bottom action bar */}
+                      <div className="flex items-center justify-between pt-4 border-t border-border/60 mt-auto">
+                        <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary group-hover/card:translate-x-0.5 transition-transform">
+                          <span>Browse Hub</span>
+                          <ArrowRight className="w-3.5 h-3.5" />
                         </span>
-                        <CategoryActions category={category} />
-                      </div>
 
-                      {/* Progress Bar */}
-                      <div className="absolute bottom-0 left-0 right-0 h-1">
-                        <div
-                          className="h-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                          style={{ width: `${Math.min(data.toolCount * 3, 100)}%` }}
-                        />
+                        <CategoryActions category={category} />
                       </div>
                     </CardContent>
                   </Card>
@@ -201,54 +280,58 @@ export default function HomePage() {
             })}
           </div>
         </div>
+      </section>
 
-        {/* Featured Section */}
-        <div className="py-24 bg-gradient-to-b from-transparent to-gray-50 dark:to-gray-900">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="relative group">
-              <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 to-purple-500 rounded-3xl blur-md opacity-75 group-hover:opacity-100 transition-opacity duration-500" />
-              <div className="relative bg-gradient-to-r from-blue-600 to-purple-600 rounded-3xl overflow-hidden shadow-2xl">
-                <div className="relative p-12 md:p-16 lg:p-20">
-                  {/* Enhanced Background Pattern */}
-                  <div className="absolute inset-0 opacity-10">
-                    <svg className="w-full h-full" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                      <defs>
-                        <pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse">
-                          <path d="M 10 0 L 0 0 0 10" fill="none" stroke="currentColor" strokeWidth="0.5"/>
-                        </pattern>
-                      </defs>
-                      <rect width="100" height="100" fill="url(#grid)" />
-                    </svg>
-                  </div>
+      {/* Cyber Contribute Section */}
+      <section className="py-16 sm:py-24 border-t border-border/60 bg-muted/10 relative">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="relative rounded-3xl bg-card border border-border/80 p-8 sm:p-12 shadow-2xl overflow-hidden">
+            {/* Glow orb */}
+            <div className="absolute top-0 right-0 w-80 h-80 bg-gradient-to-br from-cyan-500/20 to-purple-600/20 blur-3xl pointer-events-none" />
 
-                  {/* Content */}
-                  <div className="relative">
-                    <h2 className="text-4xl font-black text-white mb-8">
-                      Want to Contribute?
-                    </h2>
-                    <p className="text-xl text-blue-100 mb-10 max-w-2xl font-light leading-relaxed">
-                      Help us make this resource better! Share your knowledge,
-                      suggest improvements, or add new tools to help fellow DevOps
-                      engineers.
-                    </p>
-                    <Link
-                      href="https://github.com/yourusername/devops-cheatsheet"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-3 bg-white/10 hover:bg-white/20 text-white px-8 py-4 rounded-xl transition-all duration-300 text-lg font-medium group border border-white/20 hover:border-white/40"
-                    >
-                      <span>Contribute on GitHub</span>
-                      <ArrowRight className="w-5 h-5 transform group-hover:translate-x-1 transition-transform" />
-                    </Link>
-                  </div>
+            <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
+              <div className="max-w-xl text-left">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-mono uppercase mb-4 font-semibold">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Open Source Initiative</span>
                 </div>
+                <h2 className="text-2xl sm:text-4xl font-black text-foreground mb-4">
+                  Contribute New Tools & Command Cheatsheets
+                </h2>
+                <p className="text-muted-foreground text-sm sm:text-base leading-relaxed">
+                  DevOps Cheatsheet Hub is built by engineers for engineers. Add new tools, enhance existing commands, or share your production workflows with the global DevOps community.
+                </p>
+              </div>
+
+              <div className="flex flex-col sm:flex-row md:flex-col gap-3 w-full sm:w-auto shrink-0">
+                <Link href="/contribute">
+                  <Button
+                    size="lg"
+                    className="w-full bg-gradient-to-r from-cyan-500 via-blue-600 to-purple-600 hover:from-cyan-600 hover:to-purple-700 text-white rounded-xl shadow-lg border-0 cursor-pointer font-semibold gap-2"
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    <span>Submit a Cheatsheet</span>
+                  </Button>
+                </Link>
+                <a
+                  href="https://github.com/NotHarshhaa/devops-cheatsheet"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="w-full rounded-xl border-border/80 hover:bg-accent gap-2 cursor-pointer font-mono text-xs"
+                  >
+                    <Github className="w-4 h-4" />
+                    <span>Star on GitHub</span>
+                  </Button>
+                </a>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      </section>
     </div>
   );
 }
-
-

@@ -183,7 +183,7 @@
     }
 }
 
-/* Custom animations */
+/* Custom animations and high-tech utilities */
 @layer utilities {
     .animate-reverse {
         animation-direction: reverse;
@@ -216,5 +216,58 @@
         body {
             -webkit-text-size-adjust: 100%;
         }
+    }
+
+    /* High-Tech Cyber Grid Background */
+    .bg-cyber-grid {
+        background-size: 32px 32px;
+        background-image: 
+            linear-gradient(to right, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+            linear-gradient(to bottom, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+    }
+
+    .dark .bg-cyber-grid {
+        background-size: 32px 32px;
+        background-image: 
+            linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+            linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    }
+
+    .bg-cyber-dots {
+        background-image: radial-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+        background-size: 24px 24px;
+    }
+
+    .dark .bg-cyber-dots {
+        background-image: radial-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+        background-size: 24px 24px;
+    }
+
+    /* Glassmorphism surfaces */
+    .glass-surface {
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .dark .glass-surface {
+        background: rgba(15, 23, 42, 0.65);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    /* Glow utilities */
+    .glow-cyan {
+        box-shadow: 0 0 25px -5px rgba(6, 182, 212, 0.35);
+    }
+
+    .glow-purple {
+        box-shadow: 0 0 25px -5px rgba(168, 85, 247, 0.35);
+    }
+
+    .glow-blue {
+        box-shadow: 0 0 25px -5px rgba(59, 130, 246, 0.35);
     }
 }

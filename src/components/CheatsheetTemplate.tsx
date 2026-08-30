@@ -1,122 +1,33 @@
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { Copy, Share2, Bookmark, Clock, Star, ChevronRight, ChevronLeft, Activity, Box, Cloud, Shield, GitBranch, Server, Network, BarChart } from 'lucide-react';
+import { 
+  Copy, 
+  Share2, 
+  Bookmark, 
+  Clock, 
+  Star, 
+  ChevronRight, 
+  ChevronLeft, 
+  Activity, 
+  Box, 
+  Cloud, 
+  Shield, 
+  GitBranch, 
+  Server, 
+  Network, 
+  BarChart,
+  Terminal,
+  Check,
+  List
+} from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
 import { MarkdownContent } from '@/components/MarkdownContent';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Card } from '@/components/ui/card';
-
-// Define the CSS for dark mode and scrollbars
-const darkModeStyles = `
-  .dark .prose {
-    color: rgba(229, 231, 235, 1);
-  }
-  
-  .dark .prose strong {
-    color: white;
-  }
-  
-  .dark .prose h1,
-  .dark .prose h2,
-  .dark .prose h3,
-  .dark .prose h4 {
-    color: white;
-  }
-  
-  .dark .prose a {
-    color: #93c5fd;
-  }
-  
-  .dark .prose code {
-    color: #e5e7eb;
-    background-color: rgba(31, 41, 55, 0.5);
-    padding: 0.2rem 0.4rem;
-    border-radius: 0.25rem;
-  }
-
-  .dark .prose p {
-    color: rgba(229, 231, 235, 1);
-  }
-
-  .dark .prose li {
-    color: rgba(229, 231, 235, 1);
-  }
-
-  .dark .prose blockquote {
-    color: rgba(209, 213, 219, 1);
-    border-left-color: rgba(75, 85, 99, 1);
-  }
-  
-  /* Custom scrollbar for code blocks */
-  pre::-webkit-scrollbar {
-    height: 10px;
-  }
-  
-  pre::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  
-  pre::-webkit-scrollbar-thumb {
-    background-color: rgba(156, 163, 175, 0.5);
-    border-radius: 20px;
-  }
-  
-  .dark pre::-webkit-scrollbar-thumb {
-    background-color: rgba(75, 85, 99, 0.7);
-  }
-  
-  pre::-webkit-scrollbar-thumb:hover {
-    background-color: rgba(107, 114, 128, 0.7);
-  }
-  
-  .dark pre::-webkit-scrollbar-thumb:hover {
-    background-color: rgba(107, 114, 128, 0.8);
-  }
-
-  /* Improved code blocks */
-  .dark pre {
-    background-color: #1e293b !important;
-    border: 1px solid #334155 !important;
-    position: relative;
-  }
-
-  .dark pre code {
-    color: #e2e8f0 !important;
-    background-color: transparent !important;
-    padding: 0 !important;
-  }
-
-  /* Copy button styles */
-  .copy-button {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    background-color: rgba(229, 231, 235, 0.1);
-    border-radius: 6px;
-    padding: 6px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s;
-    z-index: 10;
-  }
-
-  .copy-button:hover {
-    background-color: rgba(229, 231, 235, 0.2);
-  }
-
-  .dark .copy-button {
-    background-color: rgba(51, 65, 85, 0.9);
-    color: rgba(226, 232, 240, 1);
-  }
-
-  .dark .copy-button:hover {
-    background-color: rgba(71, 85, 105, 0.9);
-  }
-`;
+import { Card, CardContent } from '@/components/ui/card';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 
 interface CheatsheetSection {
   type: string;
@@ -153,7 +64,7 @@ const getIconComponent = (iconString: string) => {
   };
   
   const IconComponent = iconMap[iconString as keyof typeof iconMap];
-  return IconComponent ? <IconComponent className="w-8 h-8 text-blue-600 dark:text-blue-400" /> : null;
+  return IconComponent ? <IconComponent className="w-8 h-8 text-primary" /> : <Terminal className="w-8 h-8 text-primary" />;
 };
 
 export function CheatsheetTemplate({
@@ -168,6 +79,7 @@ export function CheatsheetTemplate({
 }: CheatsheetTemplateProps) {
   const [currentSection, setCurrentSection] = useState(0);
   const [isSaved, setIsSaved] = useState(false);
+  const [copiedIndex, setCopiedIndex] = useState<string | null>(null);
   const [scrollProgress, setScrollProgress] = useState(0);
 
   // Handle scroll progress
@@ -176,7 +88,7 @@ export function CheatsheetTemplate({
       const windowHeight = window.innerHeight;
       const documentHeight = document.documentElement.scrollHeight - windowHeight;
       const scrolled = window.scrollY;
-      const progress = (scrolled / documentHeight) * 100;
+      const progress = documentHeight > 0 ? (scrolled / documentHeight) * 100 : 0;
       setScrollProgress(progress);
     };
 
@@ -184,7 +96,7 @@ export function CheatsheetTemplate({
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Only show sections that have content
+  // Filter sections that have actual content
   const filteredSections = sections.filter(section => {
     if (section.type === 'list') {
       return Array.isArray(section.content[0]?.value) && section.content[0].value.length > 0;
@@ -192,9 +104,15 @@ export function CheatsheetTemplate({
     return section.content[0]?.value && section.content[0].value.toString().trim() !== '';
   });
 
-  const handleCopyCode = (code: string) => {
-    navigator.clipboard.writeText(code);
-    toast.success('Code copied to clipboard!');
+  const handleCopyCode = async (code: string, id: string) => {
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopiedIndex(id);
+      toast.success('Code copied to clipboard!');
+      setTimeout(() => setCopiedIndex(null), 2000);
+    } catch {
+      toast.error('Failed to copy code');
+    }
   };
 
   const handleShare = async () => {
@@ -205,13 +123,21 @@ export function CheatsheetTemplate({
           text: description,
           url: window.location.href,
         });
+        toast.success('Shared successfully!');
       } catch {
-        navigator.clipboard.writeText(window.location.href);
-        toast.success('Link copied to clipboard!');
+        handleFallbackShare();
       }
     } else {
-      navigator.clipboard.writeText(window.location.href);
+      handleFallbackShare();
+    }
+  };
+
+  const handleFallbackShare = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
       toast.success('Link copied to clipboard!');
+    } catch {
+      toast.error('Failed to copy link');
     }
   };
 
@@ -231,200 +157,236 @@ export function CheatsheetTemplate({
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-950 dark:to-gray-900">
-      {/* Progress bar */}
-      <div className="fixed top-0 left-0 w-full h-1 z-50">
+    <div className="min-h-screen bg-background text-foreground relative">
+      {/* Top progress bar */}
+      <div className="fixed top-0 left-0 w-full h-1 z-50 bg-border/40">
         <div
-          className="h-full bg-gradient-to-r from-blue-500 to-purple-500"
+          className="h-full bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-600 transition-all duration-150"
           style={{ width: `${scrollProgress}%` }}
         />
       </div>
 
-      <style dangerouslySetInnerHTML={{ __html: darkModeStyles }} />
-      
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {/* Hero Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="relative bg-white dark:bg-gray-900 rounded-2xl p-8 shadow-lg border border-gray-100 dark:border-gray-800 mb-8 overflow-hidden"
-        >
-          {/* Background Pattern */}
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-purple-500/5 dark:from-blue-500/10 dark:to-purple-500/10" />
-          
-          <div className="relative">
-            <div className="flex items-center gap-4 mb-6">
-              <motion.div
-                whileHover={{ scale: 1.05, rotate: 5 }}
-                className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-500 p-0.5"
-              >
-                <div className="w-full h-full rounded-2xl bg-white dark:bg-gray-900 flex items-center justify-center">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16">
+        {/* Header HUD Card */}
+        <Card className="rounded-3xl border-border/80 shadow-xl overflow-hidden mb-10 bg-card/80 backdrop-blur-xl relative">
+          <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
+
+          <CardContent className="p-6 sm:p-10 relative z-10">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mb-8">
+              <div className="flex items-start gap-4 sm:gap-6">
+                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0 shadow-inner">
                   {getIconComponent(icon)}
                 </div>
-              </motion.div>
-              <div className="flex-1">
-                <motion.h1 
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  className="text-4xl font-black bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400"
-                >
-                  {title}
-                </motion.h1>
-                <p className="text-gray-600 dark:text-gray-400 mt-2 text-lg">{description}</p>
+                <div>
+                  <div className="flex items-center gap-2 mb-2 font-mono text-xs text-primary font-semibold">
+                    <Terminal className="w-3.5 h-3.5" />
+                    <span>{category.toUpperCase()} // GUIDE</span>
+                  </div>
+                  <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-foreground mb-3 font-mono">
+                    {title}
+                  </h1>
+                  <p className="text-base sm:text-lg text-muted-foreground max-w-3xl leading-relaxed">
+                    {description}
+                  </p>
+                </div>
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-3">
-              <Badge variant="secondary" className="px-3 py-1 text-sm font-medium">
-                {category}
-              </Badge>
-              <Badge
-                variant={
-                  difficulty === 'Beginner'
-                    ? 'secondary'
-                    : difficulty === 'Advanced'
-                    ? 'destructive'
-                    : 'outline'
-                }
-                className="px-3 py-1 text-sm font-medium"
-              >
-                {difficulty}
-              </Badge>
-              <Badge variant="outline" className="gap-1.5 px-3 py-1 text-sm font-medium">
-                <Clock className="w-3.5 h-3.5" />
-                {readingTime}
-              </Badge>
-              <Badge variant="outline" className="gap-1.5 px-3 py-1 text-sm font-medium">
-                <Star className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500" />
-                {popularity}+ uses
-              </Badge>
+            {/* Badges & Meta strip */}
+            <div className="flex flex-wrap items-center justify-between gap-4 pt-6 border-t border-border/60">
+              <div className="flex flex-wrap items-center gap-2.5">
+                <Badge variant="secondary" className="px-3 py-1 font-mono text-xs font-semibold">
+                  {category}
+                </Badge>
+                <Badge
+                  variant={
+                    difficulty === 'Beginner'
+                      ? 'secondary'
+                      : difficulty === 'Advanced'
+                      ? 'destructive'
+                      : 'outline'
+                  }
+                  className="px-3 py-1 font-mono text-xs font-semibold"
+                >
+                  {difficulty}
+                </Badge>
+                <Badge variant="outline" className="gap-1.5 px-3 py-1 font-mono text-xs">
+                  <Clock className="w-3.5 h-3.5 text-muted-foreground" />
+                  {readingTime}
+                </Badge>
+                <Badge variant="outline" className="gap-1.5 px-3 py-1 font-mono text-xs">
+                  <Star className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500" />
+                  {popularity}+ uses
+                </Badge>
+              </div>
+
+              {/* Actions */}
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleShare}
+                  className="gap-2 rounded-xl border-border/80 font-medium text-xs cursor-pointer"
+                >
+                  <Share2 className="w-3.5 h-3.5" />
+                  <span>Share</span>
+                </Button>
+                <Button
+                  variant={isSaved ? "default" : "outline"}
+                  size="sm"
+                  onClick={handleSave}
+                  className="gap-2 rounded-xl font-medium text-xs cursor-pointer"
+                >
+                  <Bookmark className={`w-3.5 h-3.5 ${isSaved ? 'fill-current' : ''}`} />
+                  <span>{isSaved ? 'Saved' : 'Save'}</span>
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Reader Layout with Table of Contents */}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          {/* Table of Contents Sticky Sidebar */}
+          <div className="hidden lg:block lg:col-span-1">
+            <div className="sticky top-24 p-5 rounded-2xl bg-card border border-border/80 shadow-sm space-y-4">
+              <div className="flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-wider text-muted-foreground border-b border-border/60 pb-3">
+                <List className="w-4 h-4 text-primary" />
+                <span>On This Page</span>
+              </div>
+              <nav className="space-y-1 text-xs">
+                {filteredSections.map((sec, idx) => (
+                  <a
+                    key={sec.id}
+                    href={`#section-${idx}`}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setCurrentSection(idx);
+                      document.getElementById(`section-${idx}`)?.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                    className={`block py-1.5 px-2.5 rounded-lg transition-colors font-medium ${
+                      currentSection === idx 
+                        ? 'bg-primary/10 text-primary font-semibold' 
+                        : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
+                    }`}
+                  >
+                    <span className="font-mono text-[10px] opacity-70 mr-1.5">{idx + 1}.</span>
+                    {sec.title}
+                  </a>
+                ))}
+              </nav>
             </div>
           </div>
-        </motion.div>
 
-        {/* Action Buttons */}
-        <div className="flex flex-wrap gap-3 mb-8">
-          <Button
-            size="lg"
-            className="gap-2 shadow-md cursor-pointer"
-            onClick={() => handleCopyCode(filteredSections[0]?.content.find(c => c.type === 'code')?.value as string || title)}
-          >
-            <Copy className="w-4 h-4" />
-            Copy Code
-          </Button>
-          <Button
-            size="lg"
-            variant="outline"
-            className="gap-2 shadow-sm cursor-pointer"
-            onClick={handleShare}
-          >
-            <Share2 className="w-4 h-4" />
-            Share
-          </Button>
-          <Button
-            size="lg"
-            variant={isSaved ? "secondary" : "outline"}
-            className="gap-2 shadow-sm cursor-pointer"
-            onClick={handleSave}
-          >
-            <Bookmark className={`w-4 h-4 ${isSaved ? 'fill-current text-primary' : ''}`} />
-            {isSaved ? 'Saved' : 'Save'}
-          </Button>
-        </div>
-
-        {/* Content */}
-        <div className="prose prose-lg max-w-none dark:prose-invert">
-          <AnimatePresence mode="wait">
+          {/* Main Sections */}
+          <div className="lg:col-span-3 space-y-8">
             {filteredSections.map((section, index) => (
-              <motion.section
+              <Card
                 key={section.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
                 id={`section-${index}`}
-                className="group bg-white dark:bg-gray-900 rounded-2xl p-8 shadow-lg border border-gray-100 dark:border-gray-800 mb-8 hover:shadow-xl transition-all"
+                className="scroll-mt-28 rounded-2xl border-border/80 shadow-sm overflow-hidden hover:border-primary/40 transition-colors"
               >
-                <div className="flex items-center gap-4 mb-6">
-                  <span className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-500 text-white flex items-center justify-center font-bold text-lg">
-                    {index + 1}
-                  </span>
-                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                    {section.title}
-                  </h2>
-                </div>
+                <CardContent className="p-6 sm:p-8">
+                  {/* Section Title Header */}
+                  <div className="flex items-center gap-3 mb-6 pb-4 border-b border-border/60">
+                    <span className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-mono font-bold text-xs shrink-0">
+                      {index + 1}
+                    </span>
+                    <h2 className="text-xl sm:text-2xl font-bold text-foreground">
+                      {section.title}
+                    </h2>
+                  </div>
 
-                <div className="space-y-6">
-                  {section.content.map((item, i) => (
-                    <div key={i} className="mt-4">
-                      {item.type === 'text' && item.value && (
-                        <MarkdownContent content={item.value as string} />
-                      )}
-                      {item.type === 'code' && item.value && (
-                        <div className="relative mt-6 group">
-                          <div className="absolute -inset-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl opacity-0 group-hover:opacity-100 blur transition duration-500" />
-                          <div className="relative bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
-                            <div className="flex items-center justify-between px-4 py-2 bg-gray-200/50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-600">
-                              <div className="flex space-x-2">
-                                <div className="w-3 h-3 rounded-full bg-red-500" />
-                                <div className="w-3 h-3 rounded-full bg-yellow-500" />
-                                <div className="w-3 h-3 rounded-full bg-green-500" />
+                  {/* Section Content Items */}
+                  <div className="space-y-6">
+                    {section.content.map((item, i) => (
+                      <div key={i}>
+                        {item.type === 'text' && item.value && (
+                          <div className="prose prose-neutral dark:prose-invert max-w-none text-muted-foreground leading-relaxed text-sm sm:text-base">
+                            <MarkdownContent content={item.value as string} />
+                          </div>
+                        )}
+
+                        {item.type === 'code' && item.value && (
+                          <div className="rounded-2xl bg-zinc-950 border border-zinc-800 shadow-xl overflow-hidden font-mono text-xs sm:text-sm text-zinc-200 my-4">
+                            {/* Mac window header */}
+                            <div className="flex items-center justify-between px-4 py-2.5 bg-zinc-900/90 border-b border-zinc-800/80">
+                              <div className="flex items-center gap-2">
+                                <div className="w-2.5 h-2.5 rounded-full bg-red-500/80" />
+                                <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/80" />
+                                <div className="w-2.5 h-2.5 rounded-full bg-green-500/80" />
+                                <span className="ml-2 text-xs text-zinc-400 font-sans">
+                                  terminal snippet
+                                </span>
                               </div>
-                              <button
-                                onClick={() => handleCopyCode(item.value as string)}
-                                className="copy-button"
-                                aria-label="Copy code"
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleCopyCode(item.value as string, `${index}-${i}`)}
+                                className="h-7 px-2 text-xs text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg gap-1.5 cursor-pointer font-sans"
                               >
-                                <Copy className="w-4 h-4 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300" />
-                              </button>
+                                {copiedIndex === `${index}-${i}` ? (
+                                  <>
+                                    <Check className="w-3.5 h-3.5 text-emerald-400" />
+                                    <span className="text-emerald-400">Copied!</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Copy className="w-3.5 h-3.5" />
+                                    <span>Copy</span>
+                                  </>
+                                )}
+                              </Button>
                             </div>
-                            <pre className="p-4 overflow-x-auto text-gray-900 dark:text-gray-100 relative">
-                              <code className="text-sm leading-relaxed font-mono">{item.value as string}</code>
+                            <pre className="p-4 sm:p-5 overflow-x-auto text-zinc-200 leading-relaxed font-mono">
+                              <code>{item.value as string}</code>
                             </pre>
                           </div>
-                        </div>
-                      )}
-                      {item.type === 'list' && Array.isArray(item.value) && item.value.length > 0 && (
-                        <ul className="space-y-2">
-                          {item.value.map((tag: string, j: number) => (
-                            <li 
-                              key={j}
-                              className="flex items-center gap-2 text-gray-800 dark:text-gray-300"
-                            >
-                              <span className="w-2 h-2 rounded-full bg-blue-500" />
-                              {tag}
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </motion.section>
+                        )}
+
+                        {item.type === 'list' && Array.isArray(item.value) && item.value.length > 0 && (
+                          <ul className="space-y-2 my-3">
+                            {item.value.map((tag: string, j: number) => (
+                              <li 
+                                key={j}
+                                className="flex items-center gap-2.5 text-sm text-foreground"
+                              >
+                                <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
+                                <span>{tag}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
             ))}
-          </AnimatePresence>
+          </div>
         </div>
 
-        {/* Navigation Buttons */}
-        <div className="fixed bottom-8 right-8 flex gap-3 z-40">
+        {/* Floating Bottom Section Navigation */}
+        <div className="fixed bottom-6 right-6 flex items-center gap-2 z-40">
           <AnimatePresence>
             {currentSection > 0 && (
               <Button
-                size="lg"
+                size="sm"
                 variant="outline"
                 onClick={() => handleNavigation('prev')}
-                className="gap-2 shadow-lg bg-background/95 backdrop-blur-sm cursor-pointer"
+                className="gap-1.5 shadow-xl bg-background/95 backdrop-blur-md rounded-xl font-mono text-xs cursor-pointer border-border"
               >
                 <ChevronLeft className="w-4 h-4" />
-                Previous
+                <span>Prev</span>
               </Button>
             )}
             {currentSection < filteredSections.length - 1 && (
               <Button
-                size="lg"
+                size="sm"
                 onClick={() => handleNavigation('next')}
-                className="gap-2 shadow-lg cursor-pointer"
+                className="gap-1.5 shadow-xl rounded-xl font-mono text-xs cursor-pointer bg-primary text-primary-foreground font-semibold"
               >
-                Next Section
+                <span>Next</span>
                 <ChevronRight className="w-4 h-4" />
               </Button>
             )}
@@ -433,4 +395,4 @@ export function CheatsheetTemplate({
       </main>
     </div>
   );
-} 
+}

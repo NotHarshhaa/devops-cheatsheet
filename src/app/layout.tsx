@@ -8,6 +8,7 @@ import { GlobalLoader } from "@/components/GlobalLoader";
 import { Toaster } from "react-hot-toast";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { CommandMenu } from "@/components/CommandMenu";
 import { cn } from "@/lib/utils";
 
 const manrope = Manrope({subsets:['latin'],variable:'--font-sans'});
@@ -102,6 +103,7 @@ export default function RootLayout({
         <ThemeProvider>
           <TooltipProvider>
             <GlobalLoader />
+            <CommandMenu />
             <Header />
             <main className="flex-grow pt-24">{children}</main>
             <Footer />
