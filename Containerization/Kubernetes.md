@@ -46,6 +46,30 @@
   kubectl get nodes
   ```
 
+### Modern Kubectl Operations & Ephemeral Debugging
+
+- **Server-Side Apply**:
+
+  ```bash
+  kubectl apply --server-side -f deployment.yaml
+  ```
+
+- **Ephemeral Container Debugging (`kubectl debug`)**:
+
+  ```bash
+  # Attach an ephemeral debug container into a running pod without restart
+  kubectl debug -it mypod --image=nicolaka/netshoot --target=mycontainer -- sh
+
+  # Debug a worker node by spawning a container with host namespaces
+  kubectl debug node/worker-node-1 -it --image=busybox
+  ```
+
+- **Live Streaming Events**:
+
+  ```bash
+  kubectl events -n default --types=Warning --watch
+  ```
+
 ### Managing Pods
 
 - **Create a Pod**:
@@ -113,7 +137,7 @@
 - **Update a Deployment**:
 
   ```bash
-  kubectl set image deployment/myapp nginx=nginx:1.16
+  kubectl set image deployment/myapp nginx=nginx:1.27-alpine
   ```
 
 - **Rollback a Deployment**:
@@ -367,6 +391,36 @@
 
 ---
 
+### Kubernetes Gateway API (Next-Gen Ingress)
+
+> [!TIP]
+> **Gateway API** (`gateway.networking.k8s.io`) is the modern evolution of Kubernetes Ingress, providing role-oriented, expressive, and cross-namespace routing.
+
+- **HTTPRoute Example**:
+
+  ```yaml
+  apiVersion: gateway.networking.k8s.io/v1
+  kind: HTTPRoute
+  metadata:
+    name: api-route
+    namespace: default
+  spec:
+    parentRefs:
+      - name: production-gateway
+    hostnames:
+      - "api.example.com"
+    rules:
+      - matches:
+          - path:
+              type: PathPrefix
+              value: /v1
+        backendRefs:
+          - name: api-service
+            port: 80
+  ```
+
+---
+
 ## 8. Kubernetes Security
 
 ### Role-Based Access Control (RBAC)
@@ -403,7 +457,25 @@
     apiGroup: rbac.authorization.k8s.io
   ```
 
-### Pod Security Policies (PSP)
+### Pod Security Standards (PSS / PSA)
+
+> [!IMPORTANT]
+> Pod Security Policies (PSP) have been removed from Kubernetes. Modern clusters use **Pod Security Standards** via Namespace labels (`enforce`, `audit`, `warn` with levels `privileged`, `baseline`, `restricted`).
+
+- **Enforce Restricted Profile on Namespace**:
+
+  ```yaml
+  apiVersion: v1
+  kind: Namespace
+  metadata:
+    name: secure-apps
+    labels:
+      pod-security.kubernetes.io/enforce: restricted
+      pod-security.kubernetes.io/enforce-version: latest
+      pod-security.kubernetes.io/warn: restricted
+  ```
+
+### Legacy Pod Security Policies (PSP) [Deprecated/Removed]
 
 - **Create a PSP**:
 

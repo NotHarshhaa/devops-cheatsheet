@@ -27,7 +27,7 @@
    - Service Accounts
    - Managing Quotas and Limits
 5. **Networking**
-   - OpenShift SDN Overview
+   - OVN-Kubernetes (Default) and OpenShift SDN Overview
    - Ingress and Egress Traffic Management
    - Configuring Routes and DNS
    - NetworkPolicies for Pod Security
@@ -58,6 +58,7 @@
     - Customizing OpenShift SDN
 11. **CI/CD Pipelines**
     - OpenShift Pipelines with Tekton
+   - OpenShift GitOps with Argo CD
     - Integrating Jenkins with OpenShift
     - Automating Builds with BuildConfigs
     - Continuous Delivery Strategies
@@ -207,6 +208,10 @@
 
 ### Deployments and DeploymentConfigs
 
+> [!NOTE]
+> In modern OpenShift 4, native Kubernetes **`Deployment`** resources are recommended for all new workloads over `DeploymentConfig` to ensure full GitOps and ecosystem compatibility.
+
+
 - **Create a Deployment**:
 
   ```bash
@@ -325,7 +330,36 @@
 
 ## 5. Networking
 
-### OpenShift SDN Overview
+### OVN-Kubernetes (Default CNI in OpenShift 4)
+
+> [!TIP]
+> OpenShift 4 standardizes on **OVN-Kubernetes** as the default network provider, superseding legacy OpenShift SDN. It provides native support for Open Virtual Network (OVN), egress IPs, egress firewalls, and hardware offloading.
+
+- **Check Network Operator Status**:
+
+  ```bash
+  oc get network.operator.openshift.io cluster -o yaml
+  ```
+
+- **Configure Egress Firewall (DNS & CIDR rules)**:
+
+  ```yaml
+  apiVersion: k8s.ovn.org/v1
+  kind: EgressFirewall
+  metadata:
+    name: default
+    namespace: production
+  spec:
+    egress:
+      - type: Allow
+        to:
+          cidrSelector: 1.2.3.0/24
+      - type: Deny
+        to:
+          cidrSelector: 0.0.0.0/0
+  ```
+
+### OpenShift SDN Overview (Legacy)
 
 - **Default Network**: OpenShift uses the OpenShift SDN by default, which provides networking capabilities to connect pods and services.
 
@@ -510,7 +544,18 @@
 - **Access Prometheus**: Typically available at `<openshift-master>:9090`.
 - **Access Grafana**: Access via the OpenShift Web Console under Monitoring > Dashboards.
 
-### Logging with Elasticsearch, Fluentd, and Kibana (EFK)
+### Modern OpenShift Logging (Vector & Loki)
+
+> [!NOTE]
+> Modern OpenShift 4 clusters replace the legacy EFK (Elasticsearch/Fluentd/Kibana) stack with the **OpenShift Logging Operator** utilizing **Vector** (high-performance log collector) and **Loki** (scalable log storage).
+
+- **Inspect Logging Operator Instance**:
+
+  ```bash
+  oc get clusterlogging -n openshift-logging
+  ```
+
+### Logging with Elasticsearch, Fluentd, and Kibana (EFK) [Legacy]
 
 - **View Logs in Kibana**: Access Kibana via the OpenShift Web Console.
 - **Search Logs**:
@@ -632,6 +677,35 @@
 
 - **Implement CI/CD with Jenkins**: Create pipelines in Jenkins integrated with OpenShift to manage the full application lifecycle.
 - **Use Tekton for GitOps**: Automate deployments using GitOps principles with Tekton pipelines.
+
+---
+
+### OpenShift GitOps with Argo CD
+
+- **Overview**: Declarative, continuous delivery platform integrated into OpenShift console and RBAC.
+
+- **Sample Argo CD Application Manifest**:
+
+  ```yaml
+  apiVersion: argoproj.io/v1alpha1
+  kind: Application
+  metadata:
+    name: production-workloads
+    namespace: openshift-gitops
+  spec:
+    project: default
+    source:
+      repoURL: 'https://github.com/my-org/gitops-repo'
+      targetRevision: main
+      path: environments/production
+    destination:
+      server: 'https://kubernetes.default.svc'
+      namespace: production
+    syncPolicy:
+      automated:
+        prune: true
+        selfHeal: true
+  ```
 
 ---
 

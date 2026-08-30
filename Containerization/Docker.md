@@ -23,7 +23,28 @@
 
 ## 2. Installing Docker
 
-### Install Docker on Linux
+### Modern Docker Engine Installation (APT Keyrings)
+
+```bash
+# Add Docker's official GPG key
+sudo apt-get update && sudo apt-get install -y ca-certificates curl
+sudo install -m 0755 -d /etc/apt/keyrings
+sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+sudo chmod a+r /etc/apt/keyrings/docker.asc
+
+# Add the repository to Apt sources
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
+  $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+# Install Docker Engine, containerd, Buildx, and Compose plugin
+sudo apt-get update
+sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+sudo usermod -aG docker $USER
+```
+
+### Install Docker on Linux (Standard / Distribution Package)
 
 - **Install Docker Engine**:
 
@@ -192,13 +213,49 @@
 
 ---
 
+### High-Performance Building with BuildKit & Docker Buildx
+
+- **Multi-Platform Image Builds**:
+
+  ```bash
+  # Create and bootstrap a multi-architecture builder
+  docker buildx create --name multi-builder --driver docker-container --use
+  docker buildx inspect --bootstrap
+
+  # Build and push an image for both x86_64 (amd64) and ARM64 (Apple Silicon / AWS Graviton)
+  docker buildx build --platform linux/amd64,linux/arm64 -t ghcr.io/my-org/my-app:v1.0.0 --push .
+  ```
+
+- **BuildKit Cache Mounts & Secrets**:
+
+  ```dockerfile
+  # syntax=docker/dockerfile:1
+  FROM node:20-alpine AS builder
+  WORKDIR /app
+  COPY package*.json ./
+  # Mount cache for fast installs without saving cache in final image layers
+  RUN --mount=type=cache,target=/root/.npm npm ci --prefer-offline
+  COPY . .
+  RUN npm run build
+
+  FROM node:20-alpine AS runner
+  WORKDIR /app
+  USER node
+  COPY --chown=node:node --from=builder /app/dist ./dist
+  COPY --chown=node:node --from=builder /app/node_modules ./node_modules
+  EXPOSE 3000
+  CMD ["node", "dist/main.js"]
+  ```
+
+---
+
 ## 5. Docker Compose
 
 ### Introduction to Docker Compose
 
 - **Docker Compose** is a tool for defining and running multi-container Docker applications. You use a YAML file to configure your application's services, and then use a single command to create and start all the services.
 
-### Sample `docker-compose.yml` File
+### Sample `docker compose.yml` File
 
 ```yaml
 version: '3'
@@ -218,19 +275,19 @@ services:
 - **Start Services**:
 
   ```bash
-  docker-compose up
+  docker compose up
   ```
 
 - **Stop Services**:
 
   ```bash
-  docker-compose down
+  docker compose down
   ```
 
 - **Scale Services**:
 
   ```bash
-  docker-compose up --scale web=3
+  docker compose up --scale web=3
   ```
 
 ### Managing Volumes with Docker Compose
@@ -388,6 +445,34 @@ services:
 
 ---
 
+### Vulnerability Scanning with Docker Scout & SBOM
+
+- **Quick Security Evaluation**:
+
+  ```bash
+  docker scout quickview my-image:latest
+  ```
+
+- **Inspect CVEs**:
+
+  ```bash
+  docker scout cves my-image:latest
+  ```
+
+- **Compare Image Vulnerabilities**:
+
+  ```bash
+  docker scout compare --to my-image:v1.0.0 my-image:v1.1.0
+  ```
+
+- **Generate Software Bill of Materials (SBOM)**:
+
+  ```bash
+  docker scout sbom --format spdx my-image:latest > sbom.json
+  ```
+
+---
+
 ## 9. Advanced Docker Features
 
 ### Docker Swarm
@@ -407,7 +492,7 @@ services:
 - **Deploy a Stack**:
 
   ```bash
-  docker stack deploy -c docker-compose.yml mystack
+  docker stack deploy -c docker compose.yml mystack
   ```
 
 ### Multi-Stage Builds

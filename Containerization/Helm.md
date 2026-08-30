@@ -23,7 +23,7 @@
 - **Add a Helm Repository:**
 
   ```bash
-  helm repo add stable https://charts.helm.sh/stable
+  helm repo add bitnami https://charts.bitnami.com/bitnami
   helm repo update
   ```
 
@@ -32,7 +32,7 @@
 - **Install a Chart:**
 
   ```bash
-  helm install my-release stable/nginx
+  helm install my-release bitnami/nginx
   ```
 
 - **List Releases:**
@@ -44,7 +44,20 @@
 - **Upgrade a Release:**
 
   ```bash
-  helm upgrade my-release stable/nginx
+  helm upgrade my-release bitnami/nginx
+  ```
+
+- **Atomic Upgrade with Automatic Rollback**:
+
+  ```bash
+  helm upgrade --install my-release bitnami/nginx --atomic --timeout 5m
+  ```
+
+- **Inspect Changes before Deploying (Helm Diff Plugin)**:
+
+  ```bash
+  helm plugin install https://github.com/databus23/helm-diff
+  helm diff upgrade my-release ./my-chart
   ```
 
 - **Uninstall a Release:**
@@ -148,6 +161,30 @@
   ```bash
   helm serve --address 0.0.0.0:8879
   ```
+
+**7.1. Modern OCI Registries (Chart Distribution):**
+
+- Helm 3 natively supports Open Container Initiative (OCI) registries (Docker Hub, GitHub Packages, AWS ECR, Harbor).
+
+- **Registry Login**:
+
+  ```bash
+  helm registry login ghcr.io -u my-username
+  ```
+
+- **Package and Push to OCI**:
+
+  ```bash
+  helm package ./my-chart --version 1.0.0
+  helm push my-chart-1.0.0.tgz oci://ghcr.io/my-org/charts
+  ```
+
+- **Install from OCI Registry**:
+
+  ```bash
+  helm install my-release oci://ghcr.io/my-org/charts/my-chart --version 1.0.0
+  ```
+
 
 **8. Helm Hooks:**
 

@@ -92,6 +92,9 @@
 
 **7. Networking:**
 
+- **Modern Rootless Networking (pasta & Netavark)**:
+  - Podman 5 defaults to **`pasta`** for user-mode networking, delivering higher throughput and lower CPU overhead than legacy slirp4netns.
+
 - **Podman Network Command:**
 
   ```bash
@@ -151,6 +154,34 @@
   ```bash
   podman-compose up
   ```
+
+**10.1. Production Podman Quadlets (Systemd Integration):**
+
+- **Quadlet** is the modern standard for running Podman containers managed natively by systemd.
+- Create `~/.config/containers/systemd/webapp.container`:
+
+  ```ini
+  [Unit]
+  Description=Production Web App
+  After=network-online.target
+
+  [Container]
+  Image=nginx:alpine
+  PublishPort=8080:80
+  Restart=always
+
+  [Install]
+  WantedBy=default.target
+  ```
+
+- **Manage via Systemd**:
+
+  ```bash
+  systemctl --user daemon-reload
+  systemctl --user enable --now webapp.service
+  systemctl --user status webapp.service
+  ```
+
 
 **11. Troubleshooting Podman:**
 

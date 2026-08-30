@@ -90,7 +90,35 @@
 - **Supported OS**: CRI-O supports various Linux distributions including Fedora, CentOS, and Ubuntu.
 - **Kernel Version**: Ensure that your Linux kernel is 4.19 or higher for optimal compatibility.
 
-### Installing CRI-O on Linux
+### Modern Installation via Kubernetes Community Repositories (`pkgs.k8s.io`)
+
+```bash
+# Enable required kernel modules
+sudo modprobe overlay
+sudo modprobe br_netfilter
+
+# Configure sysctl network parameters
+cat <<EOF | sudo tee /etc/sysctl.d/99-kubernetes-cri.conf
+net.bridge.bridge-nf-call-iptables  = 1
+net.ipv4.ip_forward                 = 1
+net.bridge.bridge-nf-call-ip6tables = 1
+EOF
+sudo sysctl --system
+
+# Add CRI-O repository for Kubernetes v1.30
+CRIO_VERSION="v1.30"
+sudo mkdir -p /etc/apt/keyrings
+curl -fsSL https://pkgs.k8s.io/addons:/cri-o:/stable:/$CRIO_VERSION/deb/Release.key | \
+  sudo gpg --dearmor -o /etc/apt/keyrings/cri-o-apt-keyring.gpg
+
+echo "deb [signed-by=/etc/apt/keyrings/cri-o-apt-keyring.gpg] https://pkgs.k8s.io/addons:/cri-o:/stable:/$CRIO_VERSION/deb/ /" | \
+  sudo tee /etc/apt/sources.list.d/cri-o.list
+
+sudo apt-get update && sudo apt-get install -y cri-o
+sudo systemctl enable --now crio
+```
+
+### Installing CRI-O on Linux (Distribution Packages)
 
 - **Fedora/CentOS**:
 
@@ -254,7 +282,15 @@
 
 ## 7. Security
 
-### Pod Security Policies (PSPs)
+### Pod Security Standards (PSS) & Admission (PSA)
+
+> [!IMPORTANT]
+> Pod Security Policies (PSPs) have been removed from modern Kubernetes versions. CRI-O enforces container security boundaries according to Kubernetes **Pod Security Standards** (`privileged`, `baseline`, `restricted`) along with native Linux primitives:
+> - **SELinux**: Mandatory Access Control (MAC) labeling
+> - **Seccomp**: System call filtering (`/etc/crio/seccomp.json`)
+> - **AppArmor / Capabilities**: Dropping unnecessary kernel privileges
+
+### Legacy Pod Security Policies (PSPs) [Removed in K8s 1.25+]
 
 - **Enable PSPs**: Configure PSPs in Kubernetes to apply security restrictions on CRI-O managed containers.
 
@@ -302,6 +338,28 @@
 ### Runtime Configuration
 
 - **Specify Runtime**: Use the `runtime` section in `crio.conf` to set the container runtime (e.g., runc, kata).
+
+### Cgroups v2 & Alternative OCI Runtimes (`crun`, `kata`)
+
+Create `/etc/crio/crio.conf.d/10-cgroup-systemd.conf`:
+
+```toml
+[crio.runtime]
+# Modern Linux requires systemd cgroup manager
+cgroup_manager = "systemd"
+
+# Use crun for faster, lower-overhead C-based container execution
+default_runtime = "crun"
+
+[crio.runtime.runtimes.crun]
+runtime_path = "/usr/bin/crun"
+runtime_type = "oci"
+
+# Hardware-isolated VM container runtime
+[crio.runtime.runtimes.kata]
+runtime_path = "/usr/bin/kata-runtime"
+runtime_type = "oci"
+```
 
 ### Resource Limits and Cgroups
 
