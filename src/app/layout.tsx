@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Manrope } from "next/font/google";
+import { Manrope } from "next/font/google";
 import "./globals.css";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
@@ -11,13 +11,10 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { CommandMenu } from "@/components/CommandMenu";
 import { cn } from "@/lib/utils";
 
-const manrope = Manrope({subsets:['latin'],variable:'--font-sans'});
-
-const inter = Inter({
+const manrope = Manrope({
   subsets: ["latin"],
+  variable: "--font-sans",
   display: "swap",
-  preload: true,
-  fallback: ["system-ui", "sans-serif"],
 });
 
 // Force static generation
@@ -95,10 +92,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={cn("h-full", "font-sans", manrope.variable)}>
+    <html lang="en" className={cn("h-full", manrope.variable)}>
       <head />
       <body
-        className={`${inter.className} min-h-screen bg-gray-50 dark:bg-black flex flex-col overflow-x-hidden`}
+        className={`${manrope.className} min-h-screen bg-background text-foreground flex flex-col overflow-x-hidden font-sans`}
       >
         <ThemeProvider>
           <TooltipProvider>

@@ -36,7 +36,7 @@ export function ThemeToggleComponent() {
         render={
           <motion.button
             onClick={handleToggle}
-            className="relative p-2 rounded-full bg-secondary hover:bg-muted text-foreground transition-colors shadow-sm cursor-pointer"
+            className="relative flex items-center justify-center h-9 w-9 rounded-xl border border-border/60 bg-muted/40 hover:bg-muted/80 text-foreground transition-colors cursor-pointer"
             whileTap={isLowEnd ? undefined : { scale: 0.9 }}
             whileHover={isLowEnd ? undefined : { scale: 1.05 }}
             aria-label={`Switch to ${isDarkMode ? "light" : "dark"} mode`}
@@ -50,11 +50,11 @@ export function ThemeToggleComponent() {
               {...animationProps}
               className="text-yellow-400"
             >
-              <FaMoon className="w-4 h-4 sm:w-5 sm:h-5" />
+              <FaMoon className="w-4 h-4" />
             </motion.div>
           ) : (
             <motion.div key="sun" {...animationProps} className="text-primary">
-              <FaSun className="w-4 h-4 sm:w-5 sm:h-5" />
+              <FaSun className="w-4 h-4" />
             </motion.div>
           )}
         </AnimatePresence>

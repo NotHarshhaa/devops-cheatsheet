@@ -74,6 +74,10 @@ export default {
         terraform: "#7B42BC",
         ansible: "#EE0000",
       },
+      fontFamily: {
+        sans: ["var(--font-sans)", "system-ui", "-apple-system", "sans-serif"],
+        heading: ["var(--font-sans)", "system-ui", "-apple-system", "sans-serif"],
+      },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",

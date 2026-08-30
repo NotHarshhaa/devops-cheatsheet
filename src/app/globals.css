@@ -5,6 +5,8 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme inline {
+  --font-sans: var(--font-sans), system-ui, -apple-system, sans-serif;
+  --font-heading: var(--font-sans), system-ui, -apple-system, sans-serif;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
