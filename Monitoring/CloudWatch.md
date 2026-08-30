@@ -1,318 +1,319 @@
-# CloudWatch Cheatsheet
+# 📊 CloudWatch Cheatsheet
 
 ![text](https://imgur.com/BU5g7ce.png)
 
-Amazon CloudWatch is a comprehensive monitoring and management service designed for AWS and hybrid cloud applications. This guide covers everything from basic concepts to advanced configurations, helping you leverage CloudWatch for performance monitoring, troubleshooting, and operational insights.
+Amazon CloudWatch is a comprehensive monitoring, observability, and management service designed for AWS cloud and hybrid infrastructures. It collects operational data in the form of logs, metrics, and events, providing unified visibility of AWS resources, applications, and services.
 
 ---
 
-## **1. Introduction to CloudWatch**
+## **1. Core Architecture & Concepts**
 
-### What is CloudWatch?
-
-- Amazon CloudWatch is a monitoring and observability service for AWS resources and custom applications.
-- Provides actionable insights through metrics, logs, alarms, and dashboards.
-- Supports both infrastructure and application-level monitoring.
-
-### Key Features:
-
-- **Metrics**: Collect and monitor key performance data.
-- **Logs**: Aggregate, analyze, and search logs.
-- **Alarms**: Set thresholds for metrics to trigger automated actions.
-- **Dashboards**: Visualize data in real time.
-- **CloudWatch Events**: Trigger actions based on changes in AWS resources.
+| Component | Description |
+| --- | --- |
+| **Metrics** | Time-ordered data points representing resource performance (CPU, memory, latency). |
+| **Namespaces** | Containers for metrics (e.g., `AWS/EC2`, `AWS/RDS`, `CustomApp/Production`). |
+| **Dimensions** | Key-value pairs that uniquely identify a metric (e.g., `InstanceId=i-12345`). |
+| **Logs** | Log events organized into **Log Streams**, which belong to parent **Log Groups**. |
+| **Alarms** | Watchers over single metrics or composite alarms triggering notifications or auto-remediation. |
+| **Synthetics** | Configurable canaries that monitor endpoints and APIs around the clock. |
+| **Evidently / Rum** | Real-user monitoring and feature flagging for front-end telemetry. |
 
 ---
 
-## **2. CloudWatch Architecture Overview**
+## **2. CLI Quick Reference**
 
-- **Data Sources**:
-  - AWS Services: EC2, RDS, Lambda, etc.
-  - On-premises servers or hybrid setups using CloudWatch Agent.
-- **Core Components**:
-  - **Metrics**: Quantifiable data points (e.g., CPU utilization).
-  - **Logs**: Application and system logs.
-  - **Alarms**: Notifications or automated responses.
-  - **Dashboards**: Custom visualizations.
-  - **Insights**: Advanced log analytics.
+```bash
+# Stream live logs directly to your terminal (follow mode)
+aws logs tail /aws/lambda/my-function --follow
+
+# Stream logs with a pattern filter
+aws logs tail /aws/lambda/my-function --filter-pattern "ERROR" --since 1h
+
+# Publish a custom metric data point
+aws cloudwatch put-metric-data \
+  --namespace "EcommerceApp" \
+  --metric-name "CheckoutLatency" \
+  --unit "Milliseconds" \
+  --value 245.5 \
+  --dimensions Service=Payment,Environment=Prod
+
+# List active alarms in ALARM state
+aws cloudwatch describe-alarms --state-value ALARM
+
+# Temporarily disable an alarm during maintenance
+aws cloudwatch disable-alarm-actions --alarm-names "High-CPU-Alert"
+```
 
 ---
 
-## **3. Setting Up CloudWatch**
+## **3. CloudWatch Agent Setup**
 
-### Accessing CloudWatch
+The unified CloudWatch Agent collects both system-level metrics (RAM, swap, disk space) and server log files from EC2 or on-premises servers.
 
-1. Go to the **AWS Management Console**.
-2. Navigate to **CloudWatch** under the **Management & Governance** section.
+### Installation
 
-### CloudWatch Agent Installation
+```bash
+# Ubuntu / Debian
+wget https://s3.amazonaws.com/amazoncloudwatch-agent/ubuntu/amd64/latest/amazon-cloudwatch-agent.deb
+sudo dpkg -i -E ./amazon-cloudwatch-agent.deb
 
-To monitor custom metrics or on-premises resources:
+# Amazon Linux 2 / RHEL 8+
+sudo dnf install -y amazon-cloudwatch-agent
+```
 
-1. Install the CloudWatch Agent on your instance:
+### Production Configuration (`/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json`)
 
+```json
+{
+  "agent": {
+    "metrics_collection_interval": 60,
+    "run_as_user": "cwagent"
+  },
+  "metrics": {
+    "metrics_collected": {
+      "mem": {
+        "measurement": [
+          "mem_used_percent",
+          "mem_available_percent"
+        ]
+      },
+      "disk": {
+        "measurement": [
+          "used_percent"
+        ],
+        "resources": [
+          "/"
+        ]
+      }
+    },
+    "append_dimensions": {
+      "InstanceId": "${aws:InstanceId}"
+    }
+  },
+  "logs": {
+    "logs_collected": {
+      "files": {
+        "collect_list": [
+          {
+            "file_path": "/var/log/nginx/access.log",
+            "log_group_name": "/app/web/nginx/access",
+            "log_stream_name": "{instance_id}",
+            "retention_in_days": 30
+          }
+        ]
+      }
+    }
+  }
+}
+```
+
+Start the agent:
+
+```bash
+sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl \
+  -a fetch-config \
+  -m ec2 \
+  -s \
+  -c file:/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json
+```
+
+---
+
+## **4. CloudWatch Logs Insights (Real-World Queries)**
+
+Logs Insights provides an interactive query language to analyze unstructured and JSON log streams.
+
+### 🔹 Top 20 Slowest Requests (Latency Analysis)
+
+```sql
+fields @timestamp, @message, duration
+| filter duration > 1000
+| sort duration desc
+| limit 20
+```
+
+### 🔹 Calculate 50th, 90th, and 99th Percentile Latency
+
+```sql
+stats pct(duration, 50) as p50,
+      pct(duration, 90) as p90,
+      pct(duration, 99) as p99 by bin(5m)
+```
+
+### 🔹 Count HTTP Status Codes Over Time
+
+```sql
+filter @message like /HTTP\//
+| parse @message "* * * [*] \"* * *\" * *" as host, client_ip, user, time, method, uri, protocol, status, bytes
+| stats count(*) as total by status, bin(5m)
+| sort total desc
+```
+
+### 🔹 Identify Top Application Exceptions
+
+```sql
+fields @timestamp, @message
+| filter @message like /(?i)(Exception|Error|Fatal)/
+| stats count(*) as exception_count by @message
+| sort exception_count desc
+| limit 15
+```
+
+---
+
+## **5. Metric Math Production Recipes**
+
+Metric Math allows you to create calculated metrics from multiple raw time series.
+
+### 🔹 Calculate Request Error Rate Percentage
+
+Let:
+* `m1` = 5xx Server Errors (`HTTPCode_Target_5XX_Count`)
+* `m2` = Total Requests (`RequestCount`)
+
+**Expression:**
+```text
+(m1 / m2) * 100
+```
+
+### 🔹 Network Throughput in Megabytes/sec (MB/s)
+
+Let `m1` = `NetworkIn` (bytes per period, period = 300s):
+
+**Expression:**
+```text
+m1 / 300 / 1024 / 1024
+```
+
+### 🔹 Dynamic Anomaly Detection Band
+
+Using built-in anomaly functions:
+
+**Expression:**
+```text
+ANOMALY_DETECTION_BAND(m1, 2)
+```
+
+---
+
+## **6. CloudWatch Alarms & Composite Alarms**
+
+### Creating a High CPU Alarm with AWS CLI
+
+```bash
+aws cloudwatch put-metric-alarm \
+  --alarm-name "EC2-HighCPU-Utilization" \
+  --alarm-description "Triggers when CPU exceeds 80% for 10 minutes" \
+  --metric-name CPUUtilization \
+  --namespace AWS/EC2 \
+  --statistic Average \
+  --period 300 \
+  --threshold 80.0 \
+  --comparison-operator GreaterThanOrEqualToThreshold \
+  --evaluation-periods 2 \
+  --alarm-actions arn:aws:sns:us-east-1:123456789012:ops-alerts \
+  --dimensions Name=InstanceId,Value=i-0123456789abcdef0
+```
+
+### Composite Alarms (Reducing Alert Fatigue)
+
+Composite alarms evaluate boolean logic (`ALARM("alarm1") AND ALARM("alarm2")`) before triggering notifications:
+
+```json
+{
+  "AlarmRule": "ALARM(\"HighCPU-Prod\") AND ALARM(\"HighLatency-Prod\") AND NOT ALARM(\"Deployment-InProgress\")"
+}
+```
+
+---
+
+## **7. CloudWatch Synthetics (API & Web Canaries)**
+
+CloudWatch Synthetics monitors your customer-facing endpoints, REST APIs, and multi-step user workflows 24/7 using headless Chromium (Puppeteer/Node.js or Python/Selenium).
+
+Canary Script Example (Heartbeat API Check):
+
+```javascript
+const syn = require('Synthetics');
+const log = require('SyntheticsLogger');
+
+const apiCanaryBlueprint = async function () {
+    let requestOptions = {
+        hostname: 'api.example.com',
+        path: '/healthz',
+        method: 'GET',
+        port: 443,
+        protocol: 'https:'
+    };
+
+    let stepConfig = {
+        stepName: 'CheckAPIHealth',
+        includeRequestHeaders: true
+    };
+
+    await syn.executeHttpStep('CheckAPIHealth', requestOptions, async function (res) {
+        if (res.statusCode !== 200) {
+            throw new Error('API returned status code ' + res.statusCode);
+        }
+    }, stepConfig);
+};
+
+exports.handler = async () => {
+    return await apiCanaryBlueprint();
+};
+```
+
+---
+
+## **8. Container Insights (EKS & ECS)**
+
+Container Insights collects, aggregates, and summarizes metrics and logs from containerized applications.
+
+* **Amazon ECS**: Enable in cluster settings (`settings: [ { name: "containerInsights", value: "enabled" } ]`).
+* **Amazon EKS**: Deploy the CloudWatch Agent and Fluent Bit as daemonsets via the **AWS Distro for OpenTelemetry (ADOT)** or official Helm chart:
+
+```bash
+helm upgrade --install aws-cloudwatch-metrics \
+  --namespace amazon-cloudwatch \
+  --create-namespace \
+  oci://public.ecr.aws/aws-observability/cloudwatch-agent-chart
+```
+
+---
+
+## **9. Amazon EventBridge (Formerly CloudWatch Events)**
+
+Amazon EventBridge has superseded CloudWatch Events, providing schema registries and multi-source event buses.
+
+Example Rule: Intercept EC2 State Changes and trigger an AWS Lambda remediation function:
+
+```json
+{
+  "source": ["aws.ec2"],
+  "detail-type": ["EC2 Instance State-change Notification"],
+  "detail": {
+    "state": ["shutting-down", "stopped"]
+  }
+}
+```
+
+---
+
+## **💰 Cost Optimization & Retention Strategies**
+
+1. **Set Log Retention Periods**: By default, log groups retain logs indefinitely. Always configure retention:
    ```bash
-   sudo yum install amazon-cloudwatch-agent
+   aws logs put-retention-policy --log-group-name "/aws/lambda/my-app" --retention-in-days 14
    ```
-
-2. Configure the agent:
-
-   ```bash
-   sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-config-wizard
-   ```
-
-3. Start the agent:
-
-   ```bash
-   sudo /opt/aws/amazon-cloudwatch-agent/bin/start-amazon-cloudwatch-agent
-   ```
-
-### Setting IAM Permissions
-
-Attach the **CloudWatchFullAccess** policy to the IAM role or user managing CloudWatch.
+2. **Export to S3 for Cold Archival**: Export historical log streams to S3 Glacier for compliance auditing at a fraction of CloudWatch storage costs.
+3. **Use Metric Filters Wisely**: Extract only actionable numbers into custom metrics instead of indexing redundant text.
+4. **Clean Up Unused Canaries & Dashboards**: Synthetics canaries incur continuous execution charges per run.
 
 ---
 
-## **4. Metrics Monitoring**
-
-### Viewing Metrics
-
-1. In the CloudWatch console, go to **Metrics**.
-2. Select a namespace (e.g., `AWS/EC2`, `AWS/Lambda`).
-3. Choose metrics like `CPUUtilization`, `DiskWriteOps`, etc.
-
-### Common Metrics:
-
-- **EC2**:
-  - `CPUUtilization`
-  - `DiskReadBytes`
-  - `NetworkIn/Out`
-- **RDS**:
-  - `DatabaseConnections`
-  - `ReadIOPS`
-  - `WriteLatency`
-- **Lambda**:
-  - `Invocations`
-  - `Duration`
-  - `Errors`
-
-### Custom Metrics
-
-To send custom metrics:
-
-1. Install the AWS CLI.
-2. Publish a metric:
-
-   ```bash
-   aws cloudwatch put-metric-data --namespace "CustomNamespace" --metric-name "MetricName" --value 100
-   ```
-
----
-
-## **5. CloudWatch Logs**
-
-### Setting Up Log Groups and Streams
-
-1. Navigate to **Logs** in the CloudWatch console.
-2. Create a **Log Group** (e.g., `/aws/lambda/my-function`).
-3. Each application/service writes to a **Log Stream** under the group.
-
-### Exporting Logs to S3
-
-1. Go to **Logs** → Select a log group.
-2. Click **Actions** → **Export data to Amazon S3**.
-3. Configure the export with the desired time range.
-
-### Querying Logs with CloudWatch Logs Insights
-
-1. Navigate to **Logs Insights**.
-2. Write queries for analysis:
-
-   ```sql
-   fields @timestamp, @message
-   | filter @message like /ERROR/
-   | sort @timestamp desc
-   | limit 20
-   ```
-
----
-
-## **6. CloudWatch Alarms**
-
-### Creating an Alarm
-
-1. Go to **Alarms** in the CloudWatch console.
-2. Click **Create Alarm**.
-3. Select a metric (e.g., `CPUUtilization`).
-4. Set a threshold (e.g., `> 80%` for 5 minutes).
-5. Choose an action (e.g., send an SNS notification).
-
-### Alarm States:
-
-- **OK**: Metric is within the defined threshold.
-- **ALARM**: Metric breaches the threshold.
-- **INSUFFICIENT DATA**: No data available.
-
-### Advanced Alarm Configurations
-
-- Composite Alarms: Combine multiple alarms.
-- Actions:
-  - Notify via SNS.
-  - Trigger Lambda functions.
-  - Stop/start EC2 instances.
-
----
-
-## **7. CloudWatch Dashboards**
-
-### Creating a Dashboard
-
-1. Go to **Dashboards** in the CloudWatch console.
-2. Click **Create Dashboard**.
-3. Add widgets:
-   - **Line** for metrics.
-   - **Number** for single values.
-   - **Text** for notes.
-
-### Customizing Widgets
-
-- Choose metrics from different namespaces.
-- Configure time ranges and granularity.
-
-### Example: Multi-Service Dashboard
-
-- **EC2 Metrics**: CPU, Disk, Network.
-- **RDS Metrics**: Connections, IOPS.
-- **Lambda Metrics**: Invocations, Errors.
-
----
-
-## **8. CloudWatch Events (EventBridge)**
-
-### Creating Rules
-
-1. Navigate to **Rules** under **Events** in the CloudWatch console.
-2. Create a rule with an event pattern (e.g., EC2 state change).
-3. Add a target (e.g., SNS, Lambda, Step Functions).
-
-### Example: Automate Instance Shutdown
-
-1. Event Pattern:
-
-   ```json
-   {
-     "source": ["aws.ec2"],
-     "detail-type": ["EC2 Instance State-change Notification"],
-     "detail": {
-       "state": ["stopped"]
-     }
-   }
-   ```
-
-2. Target: Send an SNS notification.
-
----
-
-## **9. Advanced Configurations**
-
-### Cross-Account Monitoring
-
-1. Create a cross-account role with permissions to access CloudWatch in the target account.
-2. Use the `CloudWatch:ListMetrics` and `CloudWatch:GetMetricData` APIs.
-
-### Anomaly Detection
-
-Enable anomaly detection for metrics:
-
-1. Go to **Metrics** → Select a metric.
-2. Click **Actions** → **Enable anomaly detection**.
-
-### Metric Math
-
-Perform calculations across metrics:
-
-- Example: Combine CPU utilization across instances.
-
-  ```bash
-  (m1+m2)/2
-  ```
-
----
-
-## **10. Integration with Other Services**
-
-### AWS Lambda
-
-- Use `console.log()` to write logs to CloudWatch.
-- Monitor Lambda-specific metrics like `Errors` and `Throttles`.
-
-### ECS/EKS
-
-- Enable CloudWatch Container Insights for detailed monitoring.
-- Use `awslogs` driver to send container logs to CloudWatch.
-
-### Integration with Third-Party Tools
-
-- Use **DataDog** or **Grafana** for enhanced visualization.
-- Integrate CloudWatch metrics into these platforms using APIs.
-
----
-
-## **11. Security Best Practices**
-
-### Log Retention
-
-- Set retention policies for logs to reduce costs:
-
-  ```bash
-  aws logs put-retention-policy --log-group-name "/aws/lambda/my-function" --retention-in-days 30
-  ```
-
-### Fine-Grained Access Control
-
-- Use IAM policies to restrict access to specific metrics, logs, or dashboards.
-
----
-
-## **12. CloudWatch Pricing**
-
-### Pricing Model
-
-1. **Metrics**: Charged per metric, per month.
-2. **Logs**:
-   - Ingestion: Cost per GB ingested.
-   - Storage: Cost per GB stored.
-3. **Dashboards**: Charged per dashboard, per month.
-
-### Cost Optimization Tips
-
-- Use metric filters to limit data collection.
-- Set shorter retention periods for logs.
-
----
-
-## **13. Best Practices**
-
-1. **Organize Log Groups**:
-   - Use consistent naming conventions (e.g., `/application/environment/service`).
-
-2. **Use Alarms Wisely**:
-   - Avoid too many alarms to prevent alert fatigue.
-   - Use composite alarms to group related metrics.
-
-3. **Automate Monitoring**:
-   - Automate alert creation and dashboards using CloudFormation or Terraform.
-
-4. **Optimize Log Storage**:
-   - Export logs to S3 for long-term storage and analysis.
-
-5. **Enable Anomaly Detection**:
-   - Automate anomaly detection for critical metrics.
-
----
-
-## **14. References and Resources**
-
-- [CloudWatch Documentation](https://docs.aws.amazon.com/cloudwatch/)
-- [Metric Math Syntax Guide](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/using-metric-math.html)
-- [CloudWatch Pricing](https://aws.amazon.com/cloudwatch/pricing/)
+## 📚 **References & Documentation**
+
+* 🔗 [Amazon CloudWatch User Guide](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/)
+* 🔍 [CloudWatch Logs Insights Query Syntax](https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/CWL_QuerySyntax.html)
+* 📐 [Metric Math Syntax](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/using-metric-math.html)
+* 🛠️ [CloudWatch Agent Documentation](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/Install-CloudWatch-Agent.html)

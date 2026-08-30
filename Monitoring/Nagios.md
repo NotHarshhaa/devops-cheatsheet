@@ -1,194 +1,289 @@
-# Nagios Cheatsheet
+# 🖥️ Nagios Cheatsheet
 
 ![text](https://imgur.com/O9DGMee.png)
 
-**1. Introduction:**
+**Nagios Core** is a battle-tested, open-source host, service, and network monitoring system. It monitors specified hosts and services, alerting administrators when things go wrong and notifying them again when issues are resolved.
 
-- **Nagios** is a powerful open-source monitoring tool that provides comprehensive monitoring of systems, networks, and infrastructure. It is known for its robustness, flexibility, and extensive plugin system.
+---
 
-**2. Installation:**
+## **1. Core Concepts & Exit Codes**
 
-- **Installing Nagios Core:**
+### 🔹 Service Status Return Codes
 
-  ```bash
-  sudo apt-get update
-  sudo apt-get install -y build-essential libgd2-xpm-dev openssl libssl-dev xinetd apache2-utils unzip
-  wget https://assets.nagios.com/downloads/nagioscore/releases/nagios-4.4.6.tar.gz
-  tar -xzf nagios-4.4.6.tar.gz
-  cd nagios-4.4.6/
-  ./configure --with-httpd-conf=/etc/apache2/sites-enabled
-  make all
-  sudo make install
-  sudo make install-commandmode
-  sudo make install-init
-  sudo make install-config
-  sudo make install-webconf
-  ```
+Nagios plugins communicate health status back to the core daemon via strict exit codes:
 
-- **Starting Nagios:**
+| Code | Status | Meaning |
+| --- | --- | --- |
+| `0` | **OK** | Service or host is functioning within normal parameters. |
+| `1` | **WARNING** | Service is operational but approaching critical thresholds. |
+| `2` | **CRITICAL** | Service has failed, is down, or has crossed dangerous thresholds. |
+| `3` | **UNKNOWN** | Plugin encountered an error or unable to determine status. |
 
-  ```bash
-  sudo systemctl start nagios
-  sudo systemctl enable nagios
-  ```
+### 🔹 Key Terminology
 
-**3. Configuration:**
+* **Host**: A physical server, VM, network switch, or IP device.
+* **Service**: An endpoint, daemon, or attribute associated with a host (e.g. HTTP, SSH, CPU, Disk).
+* **Plugin**: Standalone executable or script returning status codes and optional performance data.
+* **Check Command**: Template definition mapping a command name to a plugin binary with arguments.
+* **Contact & Contactgroup**: Recipients who receive notification alerts during state transitions.
 
-- **Basic Configuration:**
-  - Nagios configuration files are typically located in `/usr/local/nagios/etc/`.
+---
 
-- **Defining a Host:**
+## **2. Essential CLI & Pre-Flight Verification**
 
-  ```cfg
-  define host {
-    use             linux-server
-    host_name       myserver
-    alias           My Linux Server
-    address         192.168.1.1
-    }
-  ```
+> [!IMPORTANT]
+> **Always run a configuration verification check** before restarting or reloading Nagios to avoid stopping the daemon with syntax errors!
 
-- **Defining a Service:**
+```bash
+# Verify configuration files for syntax errors
+sudo /usr/local/nagios/bin/nagios -v /usr/local/nagios/etc/nagios.cfg
 
-  ```cfg
-  define service {
+# If verification succeeds (Total Warnings: 0, Total Errors: 0), restart Nagios:
+sudo systemctl restart nagios
+
+# Reload configuration without dropping state
+sudo systemctl reload nagios
+
+# Check daemon runtime status
+sudo systemctl status nagios
+```
+
+---
+
+## **3. Installation Quickstart (Nagios Core 4.5.x)**
+
+```bash
+# Install build dependencies (Ubuntu / Debian)
+sudo apt-get update
+sudo apt-get install -y autoconf gcc libc6 make wget unzip apache2 apache2-utils \
+  php libgd-dev libssl-dev libmcrypt-dev bc gawk dc build-essential
+
+# Download & extract latest Nagios Core
+cd /tmp
+wget -O nagioscore.tar.gz https://github.com/NagiosEnterprises/nagioscore/archive/nagios-4.5.2.tar.gz
+tar xzf nagioscore.tar.gz
+cd nagioscore-nagios-4.5.2/
+
+# Compile & install
+./configure --with-httpd-conf=/etc/apache2/sites-enabled
+make all
+sudo make install-groups-users
+sudo usermod -a -G nagios www-data
+sudo make install
+sudo make install-daemoninit
+sudo make install-commandmode
+sudo make install-config
+sudo make install-webconf
+
+# Set web administrative password
+sudo htpasswd -c /usr/local/nagios/etc/htpasswd.users nagiosadmin
+
+# Enable Apache modules & start services
+sudo a2enmod rewrite cgi
+sudo systemctl restart apache2
+sudo systemctl enable --now nagios
+```
+
+---
+
+## **4. Configuration Objects Reference**
+
+All object definitions reside under `/usr/local/nagios/etc/objects/`.
+
+### 🔹 Defining a Host (`hosts.cfg`)
+
+```cfg
+define host {
+    use                     linux-server
+    host_name               web-prod-01
+    alias                   Production Web Server 01
+    address                 192.168.1.50
+    max_check_attempts      3
+    check_interval          5
+    retry_interval          1
+    check_period            24x7
+    notification_interval   60
+    notification_period     24x7
+    contact_groups          admins
+}
+```
+
+### 🔹 Defining a Service (`services.cfg`)
+
+```cfg
+define service {
     use                     generic-service
-    host_name               myserver
-    service_description     HTTP
-    check_command           check_http
-    }
-  ```
+    host_name               web-prod-01
+    service_description     Nginx HTTP Health
+    check_command           check_http!-u /healthz -e "OK"
+    check_interval          2
+    retry_interval          1
+    max_check_attempts      3
+    notification_period     24x7
+    notification_options    w,u,c,r
+    contact_groups          admins
+}
+```
 
-**4. Nagios Plugins:**
+### 🔹 Grouping Hosts & Services (`groups.cfg`)
 
-- **Installing Plugins:**
+```cfg
+define hostgroup {
+    hostgroup_name          web-servers
+    alias                   Linux Production Web Cluster
+    members                 web-prod-01,web-prod-02,web-prod-03
+}
 
+define servicegroup {
+    servicegroup_name       critical-web-services
+    alias                   Critical Web Endpoints
+}
+```
+
+### 🔹 Contacts & Notifications (`contacts.cfg`)
+
+```cfg
+define contact {
+    contact_name            oncall-devops
+    use                     generic-contact
+    alias                   On-Call DevOps Engineer
+    email                   devops-alerts@example.com
+    service_notification_period     24x7
+    host_notification_period        24x7
+    service_notification_options    w,u,c,r
+    host_notification_options       d,u,r
+}
+
+define contactgroup {
+    contactgroup_name       admins
+    alias                   Nagios Administrators
+    members                 oncall-devops
+}
+```
+
+---
+
+## **5. Remote Agent Monitoring with NRPE**
+
+NRPE (Nagios Remote Plugin Executor) allows the central Nagios server to execute plugins securely on remote target hosts.
+
+### 🔹 On Remote Target Host (`/etc/nagios/nrpe.cfg`)
+
+```bash
+sudo apt-get install -y nagios-nrpe-server monitoring-plugins
+```
+
+Edit `/etc/nagios/nrpe.cfg`:
+
+```cfg
+allowed_hosts=127.0.0.1,::1,192.168.1.10   # 192.168.1.10 is Nagios server IP
+dont_blame_nrpe=0
+
+command[check_users]=/usr/lib/nagios/plugins/check_users -w 5 -c 10
+command[check_load]=/usr/lib/nagios/plugins/check_load -r -w .15,.10,.05 -c .30,.25,.20
+command[check_disk_root]=/usr/lib/nagios/plugins/check_disk -w 20% -c 10% -p /
+```
+
+Restart remote daemon:
+
+```bash
+sudo systemctl restart nagios-nrpe-server
+```
+
+### 🔹 On Nagios Server
+
+Test connectivity:
+
+```bash
+/usr/local/nagios/libexec/check_nrpe -H 192.168.1.50
+# Returns: NRPE v4.1.0
+```
+
+Define service in Nagios config:
+
+```cfg
+define service {
+    use                     generic-service
+    host_name               web-prod-01
+    service_description     Root Disk Space
+    check_command           check_nrpe!check_disk_root
+}
+```
+
+---
+
+## **6. Writing Custom Nagios Plugins**
+
+A plugin can be written in any scripting language (Bash, Python, Go).
+
+### Standard Format
+
+1. Print one line of human-readable text to `stdout`.
+2. Optionally append performance data formatted as: `| 'label'=value[UOM];[warn];[crit];[min];[max]`.
+3. Exit with the appropriate return code (`0`, `1`, `2`, or `3`).
+
+### Example: Memory Check Script (`check_mem.sh`)
+
+```bash
+#!/usr/bin/env bash
+
+WARN_THRESHOLD=${1:-80}
+CRIT_THRESHOLD=${2:-90}
+
+MEM_TOTAL=$(free -m | awk '/Mem:/ {print $2}')
+MEM_USED=$(free -m | awk '/Mem:/ {print $3}')
+MEM_PERCENT=$(( MEM_USED * 100 / MEM_TOTAL ))
+
+# Format performance data
+PERF_DATA="mem_percent=${MEM_PERCENT}%;${WARN_THRESHOLD};${CRIT_THRESHOLD};0;100"
+
+if [ "$MEM_PERCENT" -ge "$CRIT_THRESHOLD" ]; then
+    echo "CRITICAL - Memory usage is ${MEM_PERCENT}% (${MEM_USED}MB / ${MEM_TOTAL}MB) | ${PERF_DATA}"
+    exit 2
+elif [ "$MEM_PERCENT" -ge "$WARN_THRESHOLD" ]; then
+    echo "WARNING - Memory usage is ${MEM_PERCENT}% (${MEM_USED}MB / ${MEM_TOTAL}MB) | ${PERF_DATA}"
+    exit 1
+else
+    echo "OK - Memory usage is ${MEM_PERCENT}% (${MEM_USED}MB / ${MEM_TOTAL}MB) | ${PERF_DATA}"
+    exit 0
+fi
+```
+
+Make it executable:
+
+```bash
+chmod +x /usr/local/nagios/libexec/check_mem.sh
+```
+
+---
+
+## **7. Troubleshooting & Diagnostics**
+
+* **Inspect Core Log**:
   ```bash
-  wget https://nagios-plugins.org/download/nagios-plugins-2.3.3.tar.gz
-  tar -xzf nagios-plugins-2.3.3.tar.gz
-  cd nagios-plugins-2.3.3/
-  ./configure
-  make
-  sudo make install
+  tail -f /usr/local/nagios/var/nagios.log
   ```
-
-- **Common Plugins:**
-  - **check_ping:** Monitors network connectivity.
-  - **check_http:** Monitors HTTP servers.
-  - **check_disk:** Monitors disk usage.
-
-**5. Notifications:**
-
-- **Setting Up Email Notifications:**
-  - Configure email settings in `/usr/local/nagios/etc/objects/contacts.cfg`:
-
-  ```cfg
-  define contact {
-    contact_name                    nagiosadmin
-    use                             generic-contact
-    alias                           Nagios Admin
-    email                           nagios@yourdomain.com
-  }
-  ```
-
-- **Notification Commands:**
-  - Use commands like `notify-host-by-email` and `notify-service-by-email` to define how notifications are sent.
-
-**6. Web Interface:**
-
-- **Accessing Nagios Web Interface:**
-  - Nagios web interface is usually accessible at `http://<your-server-ip>/nagios`.
-  - Default credentials: `nagiosadmin` and the password set during installation.
-
-- **Customizing the Interface:**
-  - Modify the theme and layout by editing files in `/usr/local/nagios/share`.
-
-**7. Monitoring Remote Hosts:**
-
-- **NRPE (Nagios Remote Plugin Executor):**
-  - **Installing NRPE:**
-
-    ```bash
-    sudo apt-get install nagios-nrpe-server nagios-plugins
-    sudo systemctl start nagios-nrpe-server
-    ```
-
-  - **Configuring NRPE:**
-    - Edit `/etc/nagios/nrpe.cfg` to define allowed hosts and monitored services.
-
-    ```cfg
-    allowed_hosts=127.0.0.1,192.168.1.100
-    command[check_disk]=/usr/lib/nagios/plugins/check_disk -w 20% -c 10% -p /dev/sda1
-    ```
-
-  - **Monitoring with NRPE:**
-    - Add a service in Nagios to monitor a remote host using NRPE.
-
-    ```cfg
-    define service {
-      use                     generic-service
-      host_name               remotehost
-      service_description     Disk Usage
-      check_command           check_nrpe!check_disk
-    }
-    ```
-
-**8. Nagios XI:**
-
-- **Introduction to Nagios XI:**
-  - Nagios XI is the commercial version of Nagios Core, providing additional features like a more user-friendly interface, reporting, and advanced monitoring capabilities.
-
-- **Differences from Nagios Core:**
-  - Built-in wizards, easier configuration, and more extensive support.
-
-**9. Advanced Nagios Concepts:**
-
-- **Passive Checks:**
-  - Useful for monitoring systems where Nagios cannot initiate checks, but the system can send results to Nagios.
-
-- **Distributed Monitoring:**
-  - Implement distributed monitoring by setting up multiple Nagios servers and configuring them to send data to a central Nagios server.
-
-**10. Securing Nagios:**
-
-- **Enabling HTTPS:**
-  - Configure Apache to serve Nagios over HTTPS.
-
+* **Test Plugins Directly from CLI**:
   ```bash
-  sudo a2enmod ssl
-  sudo service apache2 restart
+  /usr/local/nagios/libexec/check_http -H example.com -u /api/health -p 443 -S --sni
   ```
+* **Check Permission Errors**: Ensure files in `/usr/local/nagios/etc/` and `/usr/local/nagios/libexec/` are owned by user `nagios` and group `nagios`.
 
-  - Update Nagios configuration in `/etc/apache2/sites-available/nagios.conf` to use SSL certificates.
+---
 
-- **User Authentication:**
-  - Use `.htpasswd` files to manage user access to the Nagios web interface.
+## **8. Modern Landscape: Nagios vs Modern Observability**
 
-**11. Troubleshooting Nagios:**
+| Feature | Nagios Core | Prometheus + Grafana |
+| --- | --- | --- |
+| **Primary Model** | State checks (OK / WARN / CRIT) | Time-series metrics collection |
+| **Data Storage** | Transient state (no historical TSDB) | High-performance TSDB (PromQL) |
+| **Dynamic Cloud / K8s** | Static host definitions | Dynamic service discovery |
+| **Best Use Case** | Legacy datacenter networks, hardware ping/SNMP, on-prem appliances | Modern cloud-native microservices, containers, Kubernetes |
 
-- **Common Issues:**
-  - **Service Check Failing:** Ensure plugins are executable and paths are correct.
-  - **Email Notifications Not Working:** Verify the mail server configuration and check the `maillog` for errors.
+---
 
-- **Debugging:**
-  - Use the Nagios log file at `/usr/local/nagios/var/nagios.log` to troubleshoot issues.
-  - Run checks manually to verify plugin output.
+## 📚 **Learning Resources**
 
-  ```bash
-  /usr/local/nagios/libexec/check_http -I 127.0.0.1
-  ```
-
-**12. Nagios and Docker:**
-
-- **Running Nagios in Docker:**
-
-  ```bash
-  docker run --name nagios -p 0.0.0.0:8080:80 jasonrivers/nagios
-  ```
-
-- **Customizing Dockerized Nagios:**
-  - Mount volumes to add custom configurations and plugins.
-
-  ```bash
-  docker run --name nagios -v /path/to/nagios.cfg:/usr/local/nagios/etc/nagios.cfg jasonrivers/nagios
-  ```
+* 🔗 [Official Nagios Core Documentation](https://library.nagios.com/)
+* 📦 [Nagios Exchange (Plugins & Extensions)](https://exchange.nagios.com/)
+* 📘 [Nagios Plugin API Development Guidelines](https://nagios-plugins.org/doc/guidelines.html)

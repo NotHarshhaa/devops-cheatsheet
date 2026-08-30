@@ -1,180 +1,272 @@
-# Grafana Cheatsheet
+# 📊 Grafana Cheatsheet
 
 ![text](https://imgur.com/j07r4L6.png)
 
-**1. Introduction:**
+**Grafana** is the leading open-source visualization, observability, and metrics dashboard platform. It enables teams to query, visualize, alert on, and understand metrics, logs, and traces regardless of where they are stored.
 
-- **Grafana** is an open-source platform for monitoring and observability that allows you to query, visualize, and alert on metrics from multiple data sources like Prometheus, InfluxDB, Elasticsearch, and more.
+---
 
-**2. Key Concepts:**
+## **1. Core Architecture & Concepts**
 
-- **Dashboard:** A collection of panels organized into a grid.
-- **Panel:** A visualization of data (graphs, charts, etc.) from a specific data source.
-- **Data Source:** The database or service that provides the metrics for Grafana to visualize.
-- **Alerting:** Set up conditions to trigger notifications when metrics meet specific criteria.
+| Concept | Description |
+| --- | --- |
+| **Data Sources** | Connectors that fetch telemetry from backends (Prometheus, Loki, Tempo, OpenSearch, CloudWatch, PostgreSQL). |
+| **Panels** | Individual visualization widgets (Time Series, Bar Chart, Stat, Gauge, Table, Pie Chart, Heatmap, Node Graph). |
+| **Dashboards** | Cohesive grid layouts of organized panels, variables, and annotations. |
+| **Unified Alerting** | Centralized alert evaluation engine with notification policies, contact points, and mute timings. |
+| **Transformations** | Client-side math, joins, filtering, and aggregations applied to raw query outputs before rendering. |
 
-**3. Installation:**
+---
 
-- **Running Grafana:**
+## **2. Installation & Quickstart**
 
-  ```bash
-  sudo apt-get install -y adduser libfontconfig1
-  wget https://dl.grafana.com/oss/release/grafana_7.5.7_amd64.deb
-  sudo dpkg -i grafana_7.5.7_amd64.deb
-  sudo systemctl start grafana-server
-  sudo systemctl enable grafana-server
-  ```
+### 🔹 Run with Docker
 
-- **Docker:**
+```bash
+docker run -d \
+  --name=grafana \
+  -p 3000:3000 \
+  -v grafana-storage:/var/lib/grafana \
+  grafana/grafana:latest
+```
 
-  ```bash
-  docker run -d -p 3000:3000 --name=grafana grafana/grafana
-  ```
+Default credentials: `admin` / `admin`.
 
-**4. Configuring Data Sources:**
+### 🔹 Linux Package Installation (Ubuntu / Debian)
 
-- **Adding Prometheus as a Data Source:**
-  1. Navigate to **Configuration > Data Sources**.
-  2. Click on **Add data source** and select **Prometheus**.
-  3. Enter the URL of your Prometheus server (e.g., `http://localhost:9090`).
-  4. Click **Save & Test** to verify the connection.
+```bash
+sudo apt-get install -y apt-transport-https software-properties-common wget
+sudo mkdir -p /etc/apt/keyrings/
+wget -q -O - https://apt.grafana.com/gpg.key | gpg --dearmor | sudo tee /etc/apt/keyrings/grafana.gpg > /dev/null
+echo "deb [signed-by=/etc/apt/keyrings/grafana.gpg] https://apt.grafana.com stable main" | sudo tee -a /etc/apt/sources.list.d/grafana.list
 
-- **Adding Elasticsearch as a Data Source:**
-  1. Navigate to **Configuration > Data Sources**.
-  2. Click on **Add data source** and select **Elasticsearch**.
-  3. Enter the URL, index name, and time field.
-  4. Click **Save & Test** to verify the connection.
+sudo apt-get update
+sudo apt-get install -y grafana
+sudo systemctl enable --now grafana-server
+```
 
-**5. Building Dashboards:**
+### 🔹 Kubernetes via Helm
 
-- **Creating a New Dashboard:**
-  1. Click the **+** icon in the sidebar and select **Dashboard**.
-  2. Click **Add new panel**.
-  3. Choose your data source and write a query (e.g., `rate(http_requests_total[5m])` for Prometheus).
-  4. Select a visualization type (e.g., **Graph**, **Stat**, **Gauge**).
-  5. Save the panel and the dashboard.
+```bash
+helm repo add grafana https://grafana.github.io/helm-charts
+helm repo update
+helm install my-grafana grafana/grafana --namespace monitoring --create-namespace
+```
 
-- **Using Variables:**
-  - **Creating a Variable:**
-    1. Go to **Dashboard settings** > **Variables** > **New**.
-    2. Set the **Name**, **Type** (e.g., **Query**), and **Query**.
-    3. Use the variable in panel queries by referencing it as **`$variable_name`**.
+---
 
-**6. Alerting:**
+## **3. Declarative Provisioning as Code (IaC)**
 
-- **Creating Alerts:**
+Instead of configuring data sources and dashboards manually via the UI, Grafana supports automated file-based provisioning.
 
-  1. Add a panel to your dashboard.
-  2. In the **Alert** tab, click **Create Alert**.
-  3. Set the **Conditions** for triggering the alert (e.g., when a metric crosses a threshold).
-  4. Define the **Evaluation Interval** and **No Data** options.
-  5. Configure **Notifications** to send alerts via email, Slack, or other channels.
+### 🔹 Data Source Provisioning (`/etc/grafana/provisioning/datasources/datasources.yaml`)
 
-- **Managing Alerts:**
-  - Alerts can be managed centrally through the **Alerting** section in the sidebar.
+```yaml
+apiVersion: 1
 
-**7. Grafana Plugins:**
+datasources:
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus-server:9090
+    isDefault: true
+    jsonData:
+      httpMethod: POST
+      timeInterval: 15s
 
-- **Installing Plugins:**
+  - name: Loki
+    type: loki
+    access: proxy
+    url: http://loki:3100
+    jsonData:
+      maxLines: 1000
+```
 
-  ```bash
-  grafana-cli plugins install grafana-piechart-panel
-  sudo systemctl restart grafana-server
-  ```
+### 🔹 Dashboard Provisioning (`/etc/grafana/provisioning/dashboards/dashboards.yaml`)
 
-- **Popular Plugins:**
-  - **Pie Chart Panel:** Display metrics in a pie chart.
-  - **Worldmap Panel:** Visualize data on a world map.
-  - **Alert List Panel:** Display active alerts from multiple sources.
+```yaml
+apiVersion: 1
 
-**8. Dashboard Templating:**
+providers:
+  - name: 'Default Provider'
+    orgId: 1
+    folder: 'Production'
+    type: file
+    disableDeletion: false
+    editable: true
+    options:
+      path: /var/lib/grafana/dashboards
+```
 
-- **Using Templated Dashboards:**
-  - Leverage variables to create dynamic dashboards that can change based on user input.
+---
 
-- **Dynamic Panels:**
-  - Create repeating panels or rows based on variable values (e.g., show metrics per host).
+## **4. Dynamic Variables & Templating**
 
-**9. Customizing Grafana:**
+Variables create interactive drop-downs at the top of dashboards that update queries across all panels.
 
-- **Themes:**
-  - Switch between light and dark themes via **Preferences** in the dashboard settings.
+| Variable Type | Purpose | Example |
+| --- | --- | --- |
+| **Query** | Dynamically populate choices from a data source | `label_values(node_uname_info, instance)` |
+| **Custom** | Comma-separated hardcoded list | `production,staging,development` |
+| **Interval** | Auto-calculated time aggregation window | `auto, 1m, 5m, 1h` |
+| **Datasource** | Let users switch the underlying backend dynamically | Type: `prometheus` |
 
-- **Custom Branding:**
-  - Modify Grafana's appearance by adding custom logos and colors. Requires editing configuration files and CSS.
+### Using Variables in Queries
 
-**10. Securing Grafana:**
+```promql
+# Single selection
+node_cpu_seconds_total{instance="$instance"}
 
-- **User Management:**
-  - Add users and assign them roles such as Viewer, Editor, or Admin.
+# Multi-selection (regex match)
+node_cpu_seconds_total{instance=~"^($instance)$"}
+```
 
-- **LDAP/SSO Integration:**
-  - Configure Grafana to use LDAP or Single Sign-On (SSO) for user authentication.
+---
 
-- **Enabling HTTPS:**
+## **5. Modern Unified Alerting (Grafana 9 - 11+)**
 
-  ```yaml
-  [server]
-  protocol = https
-  cert_file = /path/to/cert.crt
-  cert_key = /path/to/cert.key
-  ```
+Grafana's Unified Alerting system manages alerts across both Grafana-managed and Prometheus/Loki data sources.
 
-**11. Advanced Queries and Visualizations:**
+### Key Components
 
-- **Grafana with PromQL:**
-  - Use advanced PromQL queries for more complex visualizations.
+```plaintext
+Alert Rule (Query & Condition)
+       ↓
+Evaluation Interval & For Duration (Pending → Firing)
+       ↓
+Labels Matching Routing Tree (Notification Policy)
+       ↓
+Contact Point (Slack, PagerDuty, Discord, Webhook)
+```
 
-- **Annotations:**
-  - Add annotations to mark specific events on graphs, useful for correlating issues with changes or incidents.
+### Alert Rule Example (YAML Provisioning)
 
-**12. Grafana Loki:**
-
-- **Introduction to Loki:**
-  - Grafana Loki is a horizontally scalable, highly available log aggregation system inspired by Prometheus.
-
-- **Setting up Loki:**
-
-  ```bash
-  docker run -d --name=loki -p 3100:3100 grafana/loki:2.2.0 -config.file=/etc/loki/local-config.yaml
-  ```
-
-- **Querying Logs in Grafana:**
-  - Use **Loki** as a data source to query and visualize logs alongside metrics.
-
-**13. Grafana in Kubernetes:**
-
-- **Deploying Grafana in Kubernetes:**
-
-  ```yaml
-  apiVersion: apps/v1
-  kind: Deployment
-  metadata:
-    name: grafana
-  spec:
-    replicas: 1
-    selector:
-      matchLabels:
-        app: grafana
-    template:
-      metadata:
+```yaml
+apiVersion: 1
+groups:
+  - orgId: 1
+    name: host_alerts
+    folder: Infrastructure
+    interval: 1m
+    rules:
+      - uid: high_cpu_usage
+        title: High CPU Usage (> 85%)
+        condition: B
+        data:
+          - refId: A
+            queryType: ''
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: 100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)
+          - refId: B
+            queryType: ''
+            model:
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator:
+                    type: gt
+                    params: [85]
+        noDataState: NoData
+        execErrState: Error
+        for: 5m
         labels:
-          app: grafana
-      spec:
-        containers:
-        - name: grafana
-          image: grafana/grafana:7.5.7
-          ports:
-          - containerPort: 3000
-  ```
+          severity: critical
+          team: ops
+        annotations:
+          summary: "Instance {{ $labels.instance }} CPU is {{ $values.B.Value }}%"
+```
 
-**14. Troubleshooting Grafana:**
+### 🔹 Contact Points & Mute Timings
 
-- **Common Issues:**
-  - **No Data:** Check data source configuration and queries.
-  - **Slow Dashboards:** Optimize queries and reduce the time range.
-  - **Plugin Errors:** Ensure plugins are compatible with your Grafana version.
+* **Contact Points**: Define notification destinations (e.g., Slack webhook URL, PagerDuty integration key, Microsoft Teams).
+* **Mute Timings**: Suppress alerts during planned maintenance windows or non-working hours.
 
-- **Debugging:**
-  - View logs at `/var/log/grafana/grafana.log` for error details.
-  - Use **`curl`** to test data source connectivity (e.g., `curl http://localhost:9090` for Prometheus).
+---
+
+## **6. LogQL Cheatsheet (Grafana Loki)**
+
+Loki integrates seamlessly into Grafana for log exploration.
+
+```logql
+# Stream selector: Filter logs from specific application
+{app="api-gateway", env="production"}
+
+# Line filter: Find lines containing "error" (case insensitive: (?i))
+{app="api-gateway"} |= "error"
+
+# Negative filter: Exclude health checks
+{app="api-gateway"} != "GET /healthz"
+
+# JSON Parser: Extract fields and filter by numeric status code
+{app="api-gateway"} | json | status_code >= 500
+
+# Regex Parser: Extract IP and path
+{app="api-gateway"} | regexp "(?P<ip>\\d+\\.\\d+\\.\\d+\\.\\d+) - - \\[(?P<time>.*?)\\] \"(?P<method>\\w+) (?P<path>.*?)\""
+
+# Metric Query: Log rate per second over 5 minutes
+rate({app="api-gateway"} |= "error" [5m])
+
+# Quantile calculation on parsed latency
+quantile_over_time(0.99, {app="api-gateway"} | json | unwrap duration_ms [5m]) by (endpoint)
+```
+
+---
+
+## **7. Modern Visualization Panels**
+
+> [!TIP]
+> Modern Grafana (v8+) includes built-in core panels for **Pie Charts**, **Bar Charts**, and **Time Series**. External legacy plugins (e.g. `grafana-piechart-panel`) are obsolete and should not be installed.
+
+* **Time Series**: The standard panel for metrics over time with threshold lines, area gradients, and multiple Y-axes.
+* **Stat Panel**: Displays single prominent values or summary counters with sparkline backgrounds.
+* **Gauge**: Circular or bar-style meters showing thresholds (e.g., Disk utilization %).
+* **Table**: Tabular data supporting column filtering, cell coloring, and value mappings.
+* **State Timeline / Status History**: Visualizes state changes over time (e.g., HTTP status, service up/down).
+* **Canvas**: Freeform drag-and-drop layout builder for server architecture diagrams and IoT floorplans.
+
+---
+
+## **8. Security & User Management**
+
+### 🔹 Enforce HTTPS (`/etc/grafana/grafana.ini`)
+
+```ini
+[server]
+protocol = https
+http_port = 3000
+cert_file = /etc/ssl/certs/grafana.crt
+cert_key = /etc/ssl/private/grafana.key
+
+[security]
+admin_user = admin
+disable_gravatar = true
+cookie_secure = true
+```
+
+### 🔹 Role-Based Access Control (RBAC)
+
+* **Viewer**: Read-only access to dashboards.
+* **Editor**: Create and edit dashboards and alerts (cannot modify data sources).
+* **Admin**: Full control over org data sources, users, and provisioning.
+
+---
+
+## **9. Troubleshooting & Performance Tips**
+
+1. **Query Inspector**: Open Panel Menu → **Inspect** → **Data / Query** to view raw queries, latency, and response payloads.
+2. **Optimize Dashboard Auto-Refresh**: Set refresh rates to **1m or 5m** instead of 5s on large public NOC dashboards to reduce database load.
+3. **Use Recording Rules in Prometheus**: Precompute expensive aggregations in Prometheus so Grafana panels query instant pre-calculated series.
+4. **Log Inspection**: Check `/var/log/grafana/grafana.log` for data source connection timeouts and authentication errors.
+
+---
+
+## 📚 **Learning Resources**
+
+* 🔗 [Official Grafana Documentation](https://grafana.com/docs/grafana/latest/)
+* 📦 [Grafana Community Dashboards](https://grafana.com/grafana/dashboards/)
+* 📜 [LogQL Official Guide](https://grafana.com/docs/loki/latest/query/)
+* 🎓 [Grafana Fundamentals Tutorials](https://grafana.com/tutorials/)
