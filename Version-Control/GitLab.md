@@ -1,108 +1,49 @@
-# GitLab Cheatsheet
+# 🦊 GitLab Cheatsheet
 
 ![text](https://imgur.com/QJ7J3qs.png)
 
-**GitLab** is a web-based DevOps platform that provides a robust set of tools for source code management, CI/CD, project management, and deployment automation. This cheatsheet covers everything from basic usage to advanced GitLab features.
+**GitLab** is a comprehensive, single-application DevSecOps platform providing source code management (Git), advanced CI/CD pipelines, container and package registries, security scanning, and Kubernetes integration.
 
 ---
 
-## 1. **Introduction to GitLab**
+## **1. Core Platform Architecture**
 
-### What is GitLab?
-
-GitLab is an open-source DevOps platform offering integrated tools for:
-
-- Source control (Git)
-- Continuous Integration/Continuous Deployment (CI/CD)
-- Issue tracking and project management
-- Container registry and DevSecOps
-
-### Key Features
-
-- **Git Repository Management**: Handles distributed version control and code review.
-- **CI/CD Pipelines**: Automates testing, integration, and deployment.
-- **DevSecOps**: Built-in security scanning for dependencies, container images, and code.
-- **Container Registry**: Docker container management.
+| Feature | Description |
+| --- | --- |
+| **GitLab CI/CD** | Industry-standard declarative pipeline engine configured via `.gitlab-ci.yml`. |
+| **GitLab Runner** | Scalable agent (Docker, Kubernetes, Shell, VirtualBox) that executes pipeline jobs. |
+| **GitLab Agent for Kubernetes (`agentk`)** | Secure, pull-based GitOps integration connecting Kubernetes clusters to GitLab. |
+| **Container & Package Registry** | Built-in registry for Docker/OCI images, Maven, npm, PyPI, and Helm charts. |
+| **Integrated DevSecOps** | Native SAST, DAST, Secret Detection, Container Scanning, and License Compliance. |
 
 ---
 
-## 2. **Basic GitLab Setup**
+## **2. Account & SSH Key Setup**
 
-### Signing Up and Creating a Project
+### 🔹 Generate Modern Ed25519 SSH Key
 
-1. **Sign up**: Visit [GitLab](https://gitlab.com/) and create an account.
-2. **Create a Project**:
-   - Go to **Projects** → **New Project**.
-   - Choose **Blank Project**, **Import**, or **Template**.
-   - Configure visibility (Private, Internal, or Public).
-
-### Adding SSH Keys
-
-1. Generate an SSH key:
-
-   ```bash
-   ssh-keygen -t rsa -b 4096 -C "your_email@example.com"
-   ```
-
-2. Copy the public key:
-
-   ```bash
-   cat ~/.ssh/id_rsa.pub
-   ```
-
-3. Add the key in GitLab:
-   - Go to **User Settings** → **SSH Keys** → Paste the public key.
-
----
-
-## 3. **GitLab Basics**
-
-### Cloning a Repository
+Ed25519 is the modern cryptographic standard offering superior security and speed over legacy RSA:
 
 ```bash
-git clone git@gitlab.com:username/projectname.git
+# Generate Ed25519 SSH key
+ssh-keygen -t ed25519 -C "your_email@example.com"
 ```
 
-### Committing Changes
-
-```bash
-# Stage files
-git add .
-# Commit files
-git commit -m "Initial commit"
-# Push changes
-git push origin main
-```
-
-### Branching
-
-- Create a branch:
-
-  ```bash
-  git checkout -b feature-branch
-  ```
-
-- Push the branch:
-
-  ```bash
-  git push origin feature-branch
-  ```
-
-### Merge Requests (MRs)
-
-1. Go to your project on GitLab.
-2. Navigate to **Merge Requests** → **New Merge Request**.
-3. Select source and target branches and create an MR.
+Add your public key (`cat ~/.ssh/id_ed25519.pub`) to GitLab:
+1. Navigate to **Preferences** → **SSH Keys** → **Add new key**.
+2. Test connection:
+   ```bash
+   ssh -T git@gitlab.com
+   ```
 
 ---
 
-## 4. **Working with GitLab CI/CD**
+## **3. Modern GitLab CI/CD (`.gitlab-ci.yml`)**
 
-### Basics of `.gitlab-ci.yml`
+### 🔹 Modern Pipeline: `rules`, DAG Pipelines (`needs`), and Caching
 
-The `.gitlab-ci.yml` file defines the CI/CD pipeline.
-
-#### Example File:
+> [!IMPORTANT]
+> **Modern Syntax Update**: The legacy `only` and `except` keywords are deprecated. Always use **`rules:`** to control job execution.
 
 ```yaml
 stages:
@@ -110,290 +51,213 @@ stages:
   - test
   - deploy
 
+default:
+  image: node:20-alpine
+  cache:
+    key:
+      files:
+        - package-lock.json
+    paths:
+      - .npm/
+
+# Build Stage
 build_job:
   stage: build
   script:
-    - echo "Building the project"
-    - ./build-script.sh
-
-test_job:
-  stage: test
-  script:
-    - echo "Running tests"
-    - ./test-script.sh
-
-deploy_job:
-  stage: deploy
-  script:
-    - echo "Deploying to production"
-    - ./deploy-script.sh
-```
-
-### Pipeline Lifecycle
-
-1. **Stages**: Define steps (e.g., `build`, `test`, `deploy`).
-2. **Jobs**: Define tasks in each stage.
-3. **Runners**: Execute pipeline jobs (shared or custom).
-
-### Running a Pipeline
-
-- Push changes to a branch:
-
-  ```bash
-  git push origin branch-name
-  ```
-
-- Check pipelines:
-  - Navigate to **CI/CD** → **Pipelines** in GitLab.
-
----
-
-## 5. **Intermediate GitLab Features**
-
-### GitLab Runners
-
-- Runners execute CI/CD jobs.
-- **Shared Runners**: Provided by GitLab.
-- **Custom Runners**: Self-hosted.
-
-#### Register a Custom Runner:
-
-1. Install GitLab Runner:
-
-   ```bash
-   sudo apt install gitlab-runner
-   ```
-
-2. Register the Runner:
-
-   ```bash
-   gitlab-runner register
-   ```
-
-   - Enter GitLab URL, registration token, executor (e.g., `shell`, `docker`), and tags.
-
-### Managing Variables
-
-- **Set Environment Variables**:
-  1. Go to **Settings** → **CI/CD** → **Variables**.
-  2. Add variables (e.g., `AWS_ACCESS_KEY`, `DOCKER_PASSWORD`).
-  
-- Use in `.gitlab-ci.yml`:
-
-  ```yaml
-  script:
-    - echo $MY_VARIABLE
-  ```
-
-### Artifacts
-
-Artifacts store job outputs.
-
-```yaml
-test_job:
-  stage: test
-  script:
-    - ./run-tests
+    - npm ci --cache .npm --prefer-offline
+    - npm run build
   artifacts:
+    name: "build-artifacts-${CI_COMMIT_REF_SLUG}"
     paths:
-      - test-results/
-```
+      - dist/
+    expire_in: 1 week
 
----
-
-## 6. **Advanced GitLab Features**
-
-### GitLab Pages
-
-Host static websites directly on GitLab.
-
-#### Example `.gitlab-ci.yml` for Pages:
-
-```yaml
-pages:
-  stage: deploy
+# Test Stage (Runs in parallel with DAG optimization)
+unit_test:
+  stage: test
+  needs: ["build_job"]  # Starts immediately after build_job completes without waiting for other build stage jobs
   script:
-    - mkdir .public
-    - cp -r * .public
+    - npm ci --cache .npm --prefer-offline
+    - npm run test:unit
+  coverage: '/All files[^|]*\|[^|]*\s+(\d+(?:\.\d+)?)/'
   artifacts:
-    paths:
-      - public
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage/cobertura-coverage.xml
+
+lint_check:
+  stage: test
+  needs: []  # Starts immediately at pipeline start (DAG)
+  script:
+    - npm ci --cache .npm --prefer-offline
+    - npm run lint
+
+# Deploy to Production (Only on default branch with manual trigger)
+deploy_prod:
+  stage: deploy
+  needs: ["unit_test", "lint_check"]
+  script:
+    - ./scripts/deploy.sh production
+  environment:
+    name: production
+    url: https://app.example.com
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      when: manual
 ```
 
-### Container Registry
+---
 
-- GitLab provides a built-in Docker registry for container storage.
-- **Push an Image**:
+## **4. `cache` vs `artifacts`**
 
-  ```bash
-  docker build -t registry.gitlab.com/username/projectname:tag .
-  docker login registry.gitlab.com
-  docker push registry.gitlab.com/username/projectname:tag
-  ```
+| Feature | `cache` | `artifacts` |
+| --- | --- | --- |
+| **Purpose** | Speeds up execution by reusing dependencies across builds (e.g. `node_modules`, `.pip-cache`). | Passes verified build outputs or test reports between pipeline stages. |
+| **Guaranteed?** | No (can be purged or missing on new runners). | Yes (downloaded and extracted before subsequent stage jobs). |
+| **Transfer** | Stored in S3 or local runner cache directory. | Uploaded to GitLab server and downloadable from UI. |
 
-### GitLab Kubernetes Integration
+---
 
-- Integrate Kubernetes clusters with GitLab for deployments.
-- Navigate to **Operations** → **Kubernetes** to connect your cluster.
+## **5. Built-in Container Registry Operations**
 
-#### Deploy Using Helm:
+GitLab CI automatically provides pre-configured credentials for the project container registry:
 
 ```yaml
-deploy:
-  stage: deploy
+build_and_push_docker:
+  stage: build
+  image: docker:25.0
+  services:
+    - docker:25.0-dind
+  variables:
+    DOCKER_TLS_CERTDIR: "/certs"
+  before_script:
+    - echo "$CI_REGISTRY_PASSWORD" | docker login $CI_REGISTRY -u $CI_REGISTRY_USER --password-stdin
   script:
-    - helm install my-app ./helm-chart
+    - docker build -t $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA -t $CI_REGISTRY_IMAGE:latest .
+    - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+    - docker push $CI_REGISTRY_IMAGE:latest
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
 ```
 
 ---
 
-## 7. **Security in GitLab**
+## **6. Dynamic Review Apps (Ephemeral Environments)**
 
-### SAST (Static Application Security Testing)
+Automatically deploy a staging environment for each active Merge Request:
 
-- Enable SAST to scan for vulnerabilities:
-
-  ```yaml
-  include:
-    - template: Security/SAST.gitlab-ci.yml
-  ```
-
-### DAST (Dynamic Application Security Testing)
-
-- Perform runtime vulnerability scans:
-
-  ```yaml
-  include:
-    - template: Security/DAST.gitlab-ci.yml
-  ```
-
-### Secret Detection
-
-- Detect hardcoded secrets:
-
-  ```yaml
-  include:
-    - template: Security/Secret-Detection.gitlab-ci.yml
-  ```
-
----
-
-## 8. **GitLab Monitoring and Analytics**
-
-### Pipeline Analytics
-
-- Navigate to **Analytics** → **CI/CD** → **Pipelines** to review pipeline efficiency.
-
-### Code Coverage
-
-- Enable coverage reports in `.gitlab-ci.yml`:
-
-  ```yaml
-  test_job:
-    stage: test
-    script:
-      - ./run-tests
-    coverage: '/Code Coverage: \d+%/'
-  ```
-
-### Container Scanning
-
-- Scan Docker images for vulnerabilities:
-
-  ```yaml
-  include:
-    - template: Security/Container-Scanning.gitlab-ci.yml
-  ```
-
----
-
-## 9. **GitLab Backup and Recovery**
-
-### Backing Up GitLab
-
-- For self-hosted GitLab, run:
-
-  ```bash
-  gitlab-backup create
-  ```
-
-- Backup includes repositories, CI/CD logs, uploads, and settings.
-
-### Restoring GitLab
-
-- Restore a backup:
-
-  ```bash
-  gitlab-restore restore BACKUP_FILE=backup_filename
-  ```
-
----
-
-## 10. **Troubleshooting GitLab**
-
-### Common Errors
-
-- **Pipeline Failures**:
-  - Check pipeline logs in **CI/CD** → **Jobs**.
-- **Runner Issues**:
-  - Ensure the runner is active: `gitlab-runner status`.
-- **Permission Errors**:
-  - Verify SSH key and repository access.
-
-### Debugging CI/CD Pipelines
-
-- Add verbose logging:
-
-  ```yaml
+```yaml
+deploy_review:
+  stage: deploy
   script:
-    - echo "Debugging info"
-    - set -x
-    - ./my-script.sh
-  ```
+    - ./scripts/deploy-review.sh $CI_ENVIRONMENT_SLUG
+  environment:
+    name: review/$CI_COMMIT_REF_SLUG
+    url: https://$CI_ENVIRONMENT_SLUG.review.example.com
+    on_stop: stop_review
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+
+stop_review:
+  stage: deploy
+  script:
+    - ./scripts/teardown-review.sh $CI_ENVIRONMENT_SLUG
+  environment:
+    name: review/$CI_COMMIT_REF_SLUG
+    action: stop
+  when: manual
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+```
 
 ---
 
-## 11. **GitLab Best Practices**
+## **7. GitLab DevSecOps Security Templates**
 
-- **Use Branching Strategies**:
-  - Implement GitLab Flow or GitFlow for streamlined collaboration.
-- **Secure CI/CD Pipelines**:
-  - Use environment variables to manage sensitive data.
-- **Automate Reviews**:
-  - Use merge request templates and code owners.
-- **Leverage GitLab Templates**:
-  - Use pre-built `.gitlab-ci.yml` templates to save time.
-- **Monitor Usage**:
-  - Regularly check project and pipeline analytics.
+Enable comprehensive security scans by adding GitLab's official CI templates:
 
----
-
-## 12. **Useful GitLab CLI Commands**
-
-### Basic Commands
-
-- **Login to GitLab CLI**:
-
-  ```bash
-  glab auth login
-  ```
-
-- **List Repositories**:
-
-  ```bash
-  glab repo list
-  ```
-
-- **Create an Issue**:
-
-  ```bash
-  glab issue create --title "Bug report" --description "Details here"
-  ```
+```yaml
+include:
+  # Static Application Security Testing
+  - template: Security/SAST.gitlab-ci.yml
+  # Secret Detection
+  - template: Security/Secret-Detection.gitlab-ci.yml
+  # Container Scanning
+  - template: Security/Container-Scanning.gitlab-ci.yml
+  # Dependency Scanning
+  - template: Security/Dependency-Scanning.gitlab-ci.yml
+```
 
 ---
 
-## References and Resources
+## **8. Modern Kubernetes Integration: GitLab Agent (`agentk`)**
 
-1. [GitLab Documentation](https://docs.gitlab.com/)
-2. [GitLab CI/CD Examples](https://docs.gitlab.com/ee/ci/examples/)
-3. [GitLab CLI](https://github.com/profclems/glab)
+GitLab uses a pull-based Kubernetes Agent (`agentk`) installed via Helm inside your cluster:
+
+```bash
+# Install GitLab Kubernetes Agent via Helm
+helm repo add gitlab https://charts.gitlab.io
+helm repo update
+helm upgrade --install k8s-agent gitlab/gitlab-agent \
+  --namespace gitlab-agent \
+  --create-namespace \
+  --set image.tag="v16.9.0" \
+  --set config.token="<AGENT_TOKEN>" \
+  --set config.kasAddress="wss://kas.gitlab.com"
+```
+
+Configure GitOps synchronization in `.gitlab/agents/<agent-name>/config.yaml`:
+
+```yaml
+gitops:
+  manifest_projects:
+    - id: "my-group/my-k8s-manifests"
+      paths:
+        - glob: "manifests/**/*.yaml"
+```
+
+---
+
+## **9. GitLab CLI (`glab`) Everyday Workflows**
+
+```bash
+# Authenticate with GitLab instance
+glab auth login
+
+# Clone project
+glab repo clone group/project
+
+# Create a Merge Request with title and description
+glab mr create --fill --remove-source-branch
+
+# Checkout a team member's Merge Request locally
+glab mr checkout 42
+
+# View Merge Request approval status
+glab mr view 42
+
+# Watch the pipeline for the current branch
+glab ci view
+
+# Stream live terminal output of a running job
+glab ci trace <job-id>
+```
+
+---
+
+## **10. Production Best Practices**
+
+1. **Protect Main Branches**: Require Merge Request approvals, enforce code owner reviews via `CODEOWNERS`, and enable "Pipelines must succeed".
+2. **Mask and Protect CI Variables**: Mark sensitive API tokens and credentials as **Masked** and **Protected** in **Settings** → **CI/CD** → **Variables**.
+3. **Use DAG (`needs:`) for Faster Pipelines**: Eliminate stage bottlenecks by allowing independent tests to execute as soon as their required build artifacts are ready.
+4. **Use Pre-commit / Secret Detection**: Prevent secret leaks before commits reach the remote server.
+
+---
+
+## 📚 **Learning Resources**
+
+* 🔗 [Official GitLab Documentation](https://docs.gitlab.com/)
+* 📜 [GitLab CI/CD Keyword Reference](https://docs.gitlab.com/ee/ci/yaml/)
+* 📦 [GitLab Agent for Kubernetes](https://docs.gitlab.com/ee/user/clusters/agent/)
+* 💻 [GitLab CLI (`glab`) Repository](https://gitlab.com/gitlab-org/cli)

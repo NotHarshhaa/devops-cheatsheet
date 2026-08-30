@@ -1,341 +1,267 @@
-# Github Cheatsheet
+# 🐙 GitHub Cheatsheet
 
 ![text](https://imgur.com/c189VXy.png)
 
-**GitHub** is a powerful platform for version control, collaboration, CI/CD automation, and DevOps workflows. This cheatsheet provides an in-depth guide to using GitHub, covering basic operations to advanced features.
+**GitHub** is the world's leading cloud-based Git repository hosting, collaboration, and DevOps platform. It combines Git version control with **GitHub Actions** (CI/CD), **GitHub Packages**, **Dependabot**, **CodeQL**, and project management tools.
 
 ---
 
-## 1. **Introduction to GitHub**
+## **1. Core Platform Architecture**
 
-### What is GitHub?
-
-GitHub is a web-based platform that uses Git for version control and provides tools for:
-
-- Collaborative software development
-- CI/CD automation
-- Project management
-- Code review and DevOps integration
-
-### Key Features
-
-- **Git Repositories**: Centralized code hosting with Git.
-- **Collaboration**: Pull requests, code reviews, and discussions.
-- **Actions**: Automate workflows with GitHub Actions.
-- **Project Management**: Boards, issues, and milestones for agile workflows.
-- **Security**: Dependabot alerts and code scanning for vulnerabilities.
+| Feature | Description |
+| --- | --- |
+| **GitHub Actions** | Native CI/CD workflow automation platform running on cloud-hosted or self-hosted runners. |
+| **GitHub Packages (ghcr.io)** | Package and OCI-compliant container registry hosting Docker images, npm, Maven, and NuGet packages. |
+| **Dependabot** | Automated dependency updates and security vulnerability PRs. |
+| **CodeQL & Secret Scanning** | Semantic static code analysis (SAST) and real-time push protection against leaked credentials. |
+| **GitHub CLI (`gh`)** | The official command-line interface bringing pull requests, issues, releases, and actions to your terminal. |
 
 ---
 
-## 2. **Getting Started**
+## **2. SSH Keys & Authentication**
 
-### Creating an Account
+### 🔹 Generate Modern Ed25519 Key
 
-1. Sign up at [GitHub](https://github.com/).
-2. Create or join an organization for team collaboration.
+Ed25519 is the modern cryptographic standard, providing faster operations and stronger security than legacy RSA:
 
-### Adding SSH Keys
+```bash
+# Generate Ed25519 SSH key
+ssh-keygen -t ed25519 -C "your_email@example.com"
+```
 
-1. Generate an SSH key:
-
+Add your public key (`cat ~/.ssh/id_ed25519.pub`) to GitHub:
+1. Go to **Settings** → **SSH and GPG keys** → **New SSH key**.
+2. Test authentication:
    ```bash
-   ssh-keygen -t rsa -b 4096 -C "your_email@example.com"
+   ssh -T git@github.com
    ```
 
-2. Add the key to your GitHub account:
-   - Go to **Settings** → **SSH and GPG keys** → Add Key.
-
-### Creating a Repository
-
-1. Go to **Repositories** → **New**.
-2. Configure repository name, description, and visibility.
-3. Add a `.gitignore` file or license if needed.
-
 ---
 
-## 3. **Basic GitHub Operations**
+## **3. Modern Git Commands & Daily Workflows**
 
-### Cloning a Repository
-
-```bash
-git clone git@github.com:username/repository.git
-```
-
-### Committing and Pushing Changes
+Git 2.23+ introduced modern porcelain commands that replace overloaded legacy `git checkout`:
 
 ```bash
-# Stage changes
-git add .
-# Commit changes
-git commit -m "Initial commit"
-# Push changes
-git push origin main
-```
+# Clone a repository
+git clone git@github.com:owner/repo.git
+cd repo
 
-### Pulling Changes
+# Switch to or create a new branch (modern syntax)
+git switch -c feature/auth-service
 
-```bash
-git pull origin main
+# Switch back to main
+git switch main
+
+# Discard uncommitted changes in working directory (modern syntax)
+git restore src/index.ts
+
+# Unstage a file without resetting working copy
+git restore --staged src/index.ts
+
+# Interactive rebase of the last 3 commits
+git rebase -i HEAD~3
+
+# Stash current work including untracked files
+git stash push -u -m "WIP on auth"
+git stash pop
 ```
 
 ---
 
-## 4. **Branching and Merging**
+## **4. GitHub Actions (Modern CI/CD Workflows)**
 
-### Creating and Switching Branches
+Workflows reside under `.github/workflows/*.yml`.
 
-```bash
-# Create a new branch
-git checkout -b feature-branch
-# Switch to an existing branch
-git checkout main
-```
-
-### Pushing a Branch
-
-```bash
-git push origin feature-branch
-```
-
-### Merging Branches
-
-1. Open a **Pull Request** on GitHub:
-   - Navigate to the repository → **Pull Requests** → **New Pull Request**.
-2. Review and merge changes.
-
-### Deleting a Branch
-
-```bash
-# Delete locally
-git branch -d feature-branch
-# Delete on remote
-git push origin --delete feature-branch
-```
-
----
-
-## 5. **GitHub Issues and Project Boards**
-
-### Creating an Issue
-
-1. Go to **Issues** → **New Issue**.
-2. Add title, description, and assign labels or assignees.
-
-### Automating Project Boards
-
-- **Add Issues Automatically**:
-  1. Go to the project board.
-  2. Set up automation rules like "Add issues in progress."
-
-### Linking Pull Requests to Issues
-
-Use keywords in PR descriptions:
-
-```text
-Fixes #issue_number
-Closes #issue_number
-```
-
----
-
-## 6. **GitHub Actions (CI/CD)**
-
-GitHub Actions is a workflow automation tool for CI/CD.
-
-### Basics of `.github/workflows/<workflow>.yml`
-
-#### Example Workflow:
+### 🔹 Production Workflow: Matrix Builds, Caching & Concurrency
 
 ```yaml
-name: CI Pipeline
+name: CI/CD Pipeline
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Cancel in-flight runs on the same branch when a new commit is pushed
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  test:
+    name: Test on Node ${{ matrix.node-version }} - ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        node-version: [18.x, 20.x, 22.x]
+
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js with Native Caching
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
       - name: Install Dependencies
-        run: npm install
-      - name: Run Tests
-        run: npm test
+        run: npm ci
+
+      - name: Run Linter
+        run: npm run lint
+
+      - name: Run Test Suite
+        run: npm test -- --coverage
+
+      - name: Upload Test Coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ matrix.node-version }}
+          path: coverage/
 ```
 
-### Workflow Triggers
-
-- **push**: Runs the workflow when a commit is pushed.
-- **pull_request**: Triggers on pull requests.
-- **schedule**: Triggers on a cron schedule.
-
-### Managing Secrets
-
-1. Go to **Settings** → **Secrets and variables** → **Actions**.
-2. Add variables like `AWS_ACCESS_KEY_ID` or `DOCKER_PASSWORD`.
-
-### Example with Secrets
+### 🔹 Deployment with Environments & Approvals
 
 ```yaml
-jobs:
   deploy:
+    needs: test
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://my-app.example.com
     steps:
-      - name: Deploy to AWS
-        run: aws s3 sync ./build s3://my-bucket
+      - uses: actions/checkout@v4
+      - name: Deploy to Cloud
         env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          API_SECRET: ${{ secrets.PROD_API_KEY }}
+        run: ./scripts/deploy.sh
 ```
 
 ---
 
-## 7. **GitHub Packages**
+## **5. GitHub Container Registry (ghcr.io)**
 
-### Using GitHub as a Docker Registry
+Build and push OCI container images directly within GitHub Actions using the automatic `GITHUB_TOKEN`:
 
-1. Authenticate:
+```yaml
+- name: Log in to GHCR
+  uses: docker/login-action@v3
+  with:
+    registry: ghcr.io
+    username: ${{ github.actor }}
+    password: ${{ secrets.GITHUB_TOKEN }}
 
-   ```bash
-   docker login ghcr.io -u USERNAME -p TOKEN
-   ```
-
-2. Build and Push:
-
-   ```bash
-   docker build -t ghcr.io/username/image-name:tag .
-   docker push ghcr.io/username/image-name:tag
-   ```
-
-### Installing from GitHub Packages
-
-- Add dependency in `package.json` (Node.js):
-
-  ```json
-  "dependencies": {
-    "package-name": "github:username/repository"
-  }
-  ```
-
----
-
-## 8. **Advanced GitHub Features**
-
-### Protecting Branches
-
-1. Go to **Settings** → **Branches**.
-2. Enable branch protection rules (e.g., prevent force-pushes, require PR reviews).
-
-### Code Review Automation
-
-- Use GitHub Apps like **CodeCov** or **LGTM** for automated code review.
-
-### Dependency Management with Dependabot
-
-1. Enable Dependabot under **Insights** → **Dependency Graph**.
-2. Dependabot creates pull requests to update outdated dependencies.
-
----
-
-## 9. **GitHub Security**
-
-### Code Scanning
-
-1. Enable **Code Scanning Alerts** under **Security**.
-2. Include scanning actions in workflows:
-
-   ```yaml
-   - name: CodeQL Analysis
-     uses: github/codeql-action/analyze@v2
-   ```
-
-### Secret Scanning
-
-- GitHub scans public repositories for leaked secrets and alerts the repository owner.
-
-### Enabling 2FA
-
-1. Go to **Settings** → **Account Security** → Enable Two-Factor Authentication.
-
----
-
-## 10. **GitHub CLI (gh)**
-
-### Installing GitHub CLI
-
-```bash
-brew install gh  # macOS
-sudo apt install gh  # Linux
+- name: Build and Push Docker Image
+  uses: docker/build-push-action@v5
+  with:
+    context: .
+    push: true
+    tags: ghcr.io/${{ github.repository }}:${{ github.sha }},ghcr.io/${{ github.repository }}:latest
 ```
 
-### Authenticating
+---
+
+## **6. GitHub CLI (`gh`) Everyday Workflows**
 
 ```bash
+# 1. Authenticate with GitHub CLI
 gh auth login
-```
 
-### Common Commands
+# 2. Clone a repository
+gh repo clone owner/repository
 
-- Clone a Repository:
+# 3. Create a Pull Request interactively or via browser
+gh pr create --title "feat: Add billing service" --body "Fixes #45"
+gh pr create --web
 
-  ```bash
-  gh repo clone username/repository
-  ```
+# 4. Checkout a Pull Request locally for code review
+gh pr checkout 102
 
-- Create a Pull Request:
+# 5. Review and approve a Pull Request
+gh pr review --approve -b "LGTM!"
 
-  ```bash
-  gh pr create --title "Feature Update" --body "Details of PR"
-  ```
+# 6. Merge a Pull Request with squash
+gh pr merge 102 --squash --delete-branch
 
-- List Issues:
+# 7. Watch a running GitHub Actions pipeline in real time
+gh run watch
 
-  ```bash
-  gh issue list
-  ```
+# 8. Set an action secret in the repository
+gh secret set AWS_SECRET_KEY --body "supersecret123"
 
----
-
-## 11. **GitHub API**
-
-### Using the API
-
-Authenticate using a personal access token:
-
-```bash
-curl -H "Authorization: token YOUR_TOKEN" https://api.github.com/user/repos
-```
-
-### Example: Creating an Issue
-
-```bash
-curl -X POST -H "Authorization: token YOUR_TOKEN" \
--H "Content-Type: application/json" \
--d '{"title": "Bug Report", "body": "Description of the bug"}' \
-https://api.github.com/repos/username/repository/issues
+# 9. Create a new GitHub Release with release notes
+gh release create v1.2.0 --generate-notes
 ```
 
 ---
 
-## 12. **GitHub Best Practices**
+## **7. Security: CodeQL, Secret Scanning & Dependabot**
 
-- **Use Descriptive Commit Messages**:
+### 🔹 Automated Dependency Updates (`.github/dependabot.yml`)
 
-  ```text
-  Fix bug in login page #123
-  ```
+```yaml
+version: 2
+updates:
+  # Maintain npm dependencies
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "devops-team"
 
-- **Enable Branch Protections** to enforce review processes.
-- **Automate Testing** using GitHub Actions for pull requests.
-- **Use Issues and Labels** for effective project tracking.
+  # Maintain GitHub Actions versions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+```
+
+### 🔹 Secret Scanning & Push Protection
+
+* **Secret Scanning**: Scans commits for exposed API keys, private certificates, and tokens.
+* **Push Protection**: Blocks developers from pushing commits containing known secret formats directly to GitHub.
+
+### 🔹 CodeQL SAST Analysis
+
+```yaml
+- name: Initialize CodeQL
+  uses: github/codeql-action/init@v3
+  with:
+    languages: 'javascript-typescript'
+
+- name: Perform CodeQL Analysis
+  uses: github/codeql-action/analyze@v3
+```
 
 ---
 
-## References and Resources
+## **8. Production Best Practices**
 
-1. [GitHub Documentation](https://docs.github.com/)
-2. [GitHub CLI Documentation](https://cli.github.com/manual/)
-3. [GitHub Actions Guide](https://docs.github.com/en/actions)
+1. **Enforce Branch Protection Rules / Rulesets**:
+   * Require pull request reviews before merging (minimum 1-2 approvals).
+   * Require status checks to pass (CI tests, CodeQL, linting).
+   * Require signed commits (`git commit -S`).
+   * Require linear history (Squash or Rebase merges).
+2. **Use Fine-Grained Personal Access Tokens (PATs)**: Scope access to specific repositories and minimal permissions.
+3. **Pin GitHub Actions to Full Commit SHAs**: Prevent supply chain attacks by pinning third-party actions:
+   ```yaml
+   uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+   ```
+4. **Use PR Issue Closing Keywords**: Use `Fixes #12` or `Closes #12` in PR descriptions to automatically close linked issues upon merge.
+
+---
+
+## 📚 **Learning Resources**
+
+* 🔗 [Official GitHub Documentation](https://docs.github.com/)
+* 📦 [GitHub Actions Marketplace](https://github.com/marketplace?type=actions)
+* 💻 [GitHub CLI (`gh`) Manual](https://cli.github.com/manual/)
+* 🛡️ [GitHub Advanced Security Overview](https://docs.github.com/en/code-security)

@@ -1,348 +1,253 @@
-# BitBucket Cheatsheet
+# 🪣 Bitbucket Cheatsheet
 
 ![text](https://imgur.com/7PDN0aZ.png)
 
-Bitbucket, developed by Atlassian, is a Git-based source code repository hosting service. It is designed for teams and provides strong integration with other Atlassian tools like Jira, Trello, and Confluence. This cheatsheet provides a detailed guide for mastering Bitbucket from basic operations to advanced features.
+**Bitbucket**, developed by Atlassian, is a Git-based source code management, CI/CD, and collaboration platform. It offers native integration with Jira, Confluence, and the broader Atlassian cloud ecosystem, making it a primary choice for enterprise DevOps teams.
 
 ---
 
-## **1. Introduction to Bitbucket**
+## **1. Core Concepts & Overview**
 
-### What is Bitbucket?
-
-- Bitbucket is a Git-based platform for version control, CI/CD pipelines, and project collaboration.
-- It supports both **private** and **public repositories**.
-- Known for its seamless integration with Atlassian tools (e.g., Jira) and in-built CI/CD pipelines.
-
-### Key Features
-
-- Git repository hosting
-- In-built CI/CD via **Bitbucket Pipelines**
-- Jira integration for issue tracking
-- Branch permissions and code review tools
-- Supports Mercurial (deprecated)
+| Feature | Description |
+| --- | --- |
+| **Workspaces & Projects** | Hierarchical grouping of repositories under organizational teams. |
+| **Bitbucket Pipelines** | Serverless CI/CD service configured via `bitbucket-pipelines.yml` with native Docker container execution. |
+| **Bitbucket Pipes** | Reusable, parameterized Docker-based tasks for integrating third-party tools (AWS, Slack, SonarCloud). |
+| **Deployments** | Environment tracking (Test, Staging, Production) with concurrency limits and manual approval gates. |
+| **Jira Smart Commits** | Automatically transition Jira issues, log work hours, or add comments via commit messages. |
 
 ---
 
-## **2. Getting Started**
+## **2. Account & SSH Key Setup**
 
-### Creating a Bitbucket Account
+### 🔹 Generate Modern Ed25519 SSH Key
 
-1. Go to [Bitbucket](https://bitbucket.org/) and sign up for an account.
-2. Optionally, link your Atlassian account for better integration.
+Ed25519 is the modern cryptographic standard, offering superior security and performance over legacy RSA:
 
-### Setting Up SSH Keys
+```bash
+# Generate Ed25519 key (recommended)
+ssh-keygen -t ed25519 -C "your_email@example.com"
 
-1. Generate an SSH key:
+# Fallback: RSA 4096-bit
+ssh-keygen -t rsa -b 4096 -C "your_email@example.com"
+```
 
+Add your public key (`~/.ssh/id_ed25519.pub`) to Bitbucket:
+1. Navigate to **Personal Settings** → **SSH Keys** → **Add Key**.
+2. Test connection:
    ```bash
-   ssh-keygen -t rsa -b 4096 -C "your_email@example.com"
+   ssh -T git@bitbucket.org
    ```
 
-2. Add the public key to Bitbucket:
-   - Navigate to **Personal Settings** → **SSH Keys** → **Add Key**.
-
-### Creating a Repository
-
-1. Log in to Bitbucket.
-2. Go to **Repositories** → **Create Repository**.
-3. Configure:
-   - Repository Name
-   - Access level (Private/Public)
-   - Repository Type (Git)
-
 ---
 
-## **3. Basic Operations**
-
-### Cloning a Repository
+## **3. Basic Git & Daily Operations**
 
 ```bash
-git clone git@bitbucket.org:username/repository.git
-```
+# Clone a repository using SSH
+git clone git@bitbucket.org:workspace-name/repo-name.git
+cd repo-name
 
-### Staging, Committing, and Pushing
+# Modern branch switching (Git 2.23+)
+git switch -c feature/login-auth
 
-```bash
-# Stage changes
+# Stage, commit, and link Jira issue
 git add .
-# Commit changes
-git commit -m "Initial commit"
-# Push changes
-git push origin main
+git commit -m "PROJ-101: Implement OAuth2 login flow #comment Completed initial handler"
+
+# Push branch and set upstream tracking
+git push -u origin feature/login-auth
 ```
 
-### Pulling Changes
+### 🔹 Jira Smart Commits Syntax
 
-```bash
-git pull origin main
+Format: `<JIRA-ISSUE-KEY> #<COMMAND> <ARGUMENTS>`
+
+```text
+PROJ-42 #resolve #time 2h 30m #comment Ready for QA review
+PROJ-88 #close
 ```
 
 ---
 
-## **4. Branching and Merging**
+## **4. Bitbucket Pipelines (CI/CD)**
 
-### Creating and Switching Branches
+Pipelines run inside Docker containers defined directly in the root file `bitbucket-pipelines.yml`.
 
-```bash
-# Create a new branch
-git checkout -b feature-branch
-# Switch to an existing branch
-git checkout main
-```
-
-### Pushing a Branch
-
-```bash
-git push origin feature-branch
-```
-
-### Creating a Pull Request (PR)
-
-1. Open Bitbucket and navigate to **Pull Requests**.
-2. Click **Create Pull Request**.
-3. Select branches, add reviewers, and provide a description.
-
-### Merging Pull Requests
-
-1. Approve the PR.
-2. Merge using the options:
-   - **Merge Commit**: Keeps all commits intact.
-   - **Squash Merge**: Combines all commits into one.
-   - **Rebase**: Rewrites commit history.
-
----
-
-## **5. Bitbucket Pipelines (CI/CD)**
-
-### Overview
-
-Bitbucket Pipelines is an integrated CI/CD service to automate builds, tests, and deployments.
-
-### Enabling Pipelines
-
-1. Go to the repository settings → **Pipelines**.
-2. Enable Pipelines and configure the `.bitbucket-pipelines.yml` file.
-
-### Sample Pipeline Configuration
+### 🔹 Production Pipeline Example with Caching & Testing
 
 ```yaml
+image: node:20-alpine
+
+definitions:
+  caches:
+    npm-custom: ~/.npm
+
 pipelines:
   default:
     - step:
         name: Build and Test
-        image: node:14
+        caches:
+          - node
         script:
-          - npm install
+          - npm ci
           - npm test
-    - step:
-        name: Deploy to Production
-        script:
-          - echo "Deploying to production..."
-```
 
-### Key Triggers
-
-- **default**: Runs on any branch when pushed.
-- **branches**: Customizes triggers for specific branches.
-- **tags**: Automates deployment for version tags.
-
-### Variables and Secrets
-
-1. Go to **Repository Settings** → **Pipelines** → **Environment Variables**.
-2. Add sensitive variables like `AWS_ACCESS_KEY`.
-
-#### Using Variables in Pipelines
-
-```yaml
-script:
-  - echo "Using secret: $AWS_ACCESS_KEY"
-```
-
----
-
-## **6. Branch Permissions and Access Control**
-
-### Branch Permissions
-
-1. Go to **Repository Settings** → **Branch Permissions**.
-2. Add rules such as:
-   - Prevent direct pushes to `main`.
-   - Require at least 2 code reviews before merging.
-
-### User Roles
-
-- **Admin**: Full control over repositories and permissions.
-- **Write**: Can push and pull code.
-- **Read**: Read-only access to repositories.
-
----
-
-## **7. Integration with Jira**
-
-### Linking a Repository to Jira
-
-1. Go to **Repository Settings** → **Jira Settings**.
-2. Connect the repository to a Jira project.
-
-### Automating Issue Tracking
-
-- Add Jira issue keys in commit messages:
-
-  ```text
-  PROJ-123: Fix login page bug
-  ```
-
-- Jira automatically links commits, pull requests, and deployments.
-
----
-
-## **8. Code Review and Quality**
-
-### Using Pull Requests for Code Review
-
-1. Assign reviewers while creating a pull request.
-2. Add comments inline to highlight issues.
-
-### Integrating Code Quality Tools
-
-- Add tools like **SonarCloud** or **CodeClimate** to your pipelines for static code analysis.
-- Example: Adding SonarCloud to Bitbucket Pipelines:
-
-  ```yaml
-  - pipe: sonarsource/sonarcloud-scan:1.4.0
-    variables:
-      SONAR_TOKEN: $SONAR_TOKEN
-  ```
-
----
-
-## **9. Bitbucket API**
-
-### Authenticating
-
-Generate a personal access token:
-
-1. Go to **Personal Settings** → **Access Management** → **Create App Password**.
-
-Use the token in API calls:
-
-```bash
-curl -u username:app_password https://api.bitbucket.org/2.0/repositories
-```
-
-### Common API Endpoints
-
-- List repositories:
-
-  ```bash
-  curl -X GET https://api.bitbucket.org/2.0/repositories/{username}
-  ```
-
-- Create an issue:
-
-  ```bash
-  curl -X POST -u username:app_password \
-  -H "Content-Type: application/json" \
-  -d '{"title": "Bug in Login Page", "content": {"raw": "Description"}}' \
-  https://api.bitbucket.org/2.0/repositories/{username}/{repo}/issues
-  ```
-
----
-
-## **10. Advanced Features**
-
-### Deployments with Bitbucket Pipelines
-
-Track deployment environments:
-
-1. Go to **Deployments** → Configure environments (e.g., Dev, Staging, Prod).
-
-Add deployment steps in `.bitbucket-pipelines.yml`:
-
-```yaml
-pipelines:
   branches:
     main:
+      - step:
+          name: Build and Unit Test
+          caches:
+            - node
+          script:
+            - npm ci
+            - npm run build
+            - npm test
+          artifacts:
+            - build/**
+
       - step:
           name: Deploy to Staging
           deployment: staging
           script:
-            - ./deploy.sh staging
+            - pipe: atlassian/aws-s3-deploy:1.6.0
+              variables:
+                AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID
+                AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
+                AWS_DEFAULT_REGION: 'us-east-1'
+                S3_BUCKET: 'my-staging-bucket'
+                LOCAL_PATH: 'build'
+
+      - step:
+          name: Deploy to Production
+          trigger: manual  # Requires human approval gate in UI
+          deployment: production
+          script:
+            - pipe: atlassian/aws-s3-deploy:1.6.0
+              variables:
+                AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID
+                AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
+                AWS_DEFAULT_REGION: 'us-east-1'
+                S3_BUCKET: 'my-prod-bucket'
+                LOCAL_PATH: 'build'
+            - pipe: atlassian/slack-notify:2.8.0
+              variables:
+                WEBHOOK_URL: $SLACK_WEBHOOK_URL
+                MESSAGE: 'Production deployment completed successfully! :rocket:'
 ```
 
-### Monorepo Support
+---
 
-Host multiple services in one repository:
+## **5. Popular Bitbucket Pipes**
 
-- Use Pipelines for individual service builds:
+Pipes modularize pipeline steps without requiring custom bash scripts.
 
-  ```yaml
-  pipelines:
-    default:
+### 🔹 Build and Push Docker Image
+
+```yaml
+- step:
+    name: Build & Push Docker Image
+    services:
+      - docker
+    script:
+      - pipe: atlassian/docker-build:1.0.0
+        variables:
+          IMAGE_NAME: 'myorg/myapp'
+          TAGS: '${BITBUCKET_COMMIT} latest'
+          DOCKER_USERNAME: $DOCKER_USERNAME
+          DOCKER_PASSWORD: $DOCKER_PASSWORD
+```
+
+### 🔹 Run SonarCloud Static Code Analysis
+
+```yaml
+- step:
+    name: SonarCloud Code Analysis
+    script:
+      - pipe: sonarsource/sonarcloud-scan:2.0.0
+        variables:
+          SONAR_TOKEN: $SONAR_TOKEN
+          EXTRA_ARGS: '-Dsonar.projectKey=myorg_myapp'
+```
+
+---
+
+## **6. Monorepo Selective Builds (`changesets`)**
+
+Prevent rebuilding all services when only one subfolder changes:
+
+```yaml
+pipelines:
+  pull-requests:
+    '**':
       - step:
-          name: Build Service A
+          name: Build Backend API Only
+          condition:
+            changesets:
+              includePaths:
+                - "backend/**"
           script:
-            - cd services/service-a && npm install && npm test
-  ```
+            - cd backend && npm test
 
-### Mirror Repositories
+      - step:
+          name: Build Frontend Only
+          condition:
+            changesets:
+              includePaths:
+                - "frontend/**"
+          script:
+            - cd frontend && npm test
+```
 
-Mirror a repository between Bitbucket and GitHub:
+---
+
+## **7. Branch Permissions & Merge Checks**
+
+Enforce governance and code review standards under **Repository Settings** → **Branch Permissions**:
+
+1. **Prevent Direct Pushing**: Enforce all code changes to flow through Pull Requests.
+2. **Minimum Approvals**: Require at least 2 peer reviews before merging.
+3. **Passing Builds Check**: Block merging if the associated Bitbucket Pipeline build is failing or pending.
+4. **Task Completion Check**: Require all PR review comment tasks to be resolved before merge.
+5. **No Unresolved Discussions**: Prevent merging with active unacknowledged review threads.
+
+---
+
+## **8. Bitbucket REST API v2**
+
+Authenticate using an **App Password** with scoped permissions:
 
 ```bash
-git remote add bitbucket git@bitbucket.org:username/repo.git
-git push bitbucket --mirror
+# List all repositories in workspace
+curl -s -u "$BB_USER:$BB_APP_PASSWORD" \
+  "https://api.bitbucket.org/2.0/repositories/my-workspace" | jq .
+
+# Trigger a custom pipeline build via API
+curl -X POST -u "$BB_USER:$BB_APP_PASSWORD" \
+  -H 'Content-Type: application/json' \
+  https://api.bitbucket.org/2.0/repositories/my-workspace/my-repo/pipelines/ \
+  -d '{
+    "target": {
+      "ref_type": "branch",
+      "type": "pipeline_ref_target",
+      "ref_name": "main"
+    }
+  }'
 ```
 
 ---
 
-## **11. Security and Best Practices**
+## **9. Production Best Practices**
 
-### Enforcing Two-Factor Authentication (2FA)
-
-1. Go to **Personal Settings** → **Security** → Enable 2FA.
-
-### Secret Scanning
-
-Bitbucket scans for hard-coded credentials and alerts users.
-
-### Dependency Scanning
-
-Use Atlassian tools like **Snyk** or **Dependabot** to identify vulnerabilities.
+1. **Use App Passwords Instead of Account Passwords**: Create dedicated app passwords with minimal scopes for CI/CD and API automations.
+2. **Leverage Pipeline Service Containers**: Use `services: - docker` or define custom service containers (PostgreSQL, Redis) for integration tests.
+3. **Secure Pipeline Variables**: Mark passwords, API tokens, and cloud keys as **Secured** in repository and deployment environment settings.
+4. **Standardize PR Templates**: Add a `.bitbucket/pull_request_template.md` to ensure standardized descriptions, test logs, and Jira links.
 
 ---
 
-## **12. Best Practices**
+## 📚 **Learning Resources**
 
-1. **Branch Naming Convention**:
-   - Use prefixes like `feature/`, `bugfix/`, and `release/`.
-
-   ```text
-   feature/add-login-form
-   bugfix/fix-authentication-error
-   ```
-
-2. **Commit Messages**:
-   - Follow a format like:
-
-     ```text
-     [PROJ-123] Fix bug in login functionality
-     ```
-
-   - Reference Jira issues in commit messages.
-
-3. **Automate Everything**:
-   - Use Pipelines for CI/CD.
-   - Automate linting, testing, and deployment.
-
-4. **Use Pull Request Templates**:
-   - Add `.bitbucket/pull_request_template.md` to standardize PR descriptions.
-
----
-
-## **13. References and Resources**
-
-- [Bitbucket Documentation](https://bitbucket.org/product/)
-- [Bitbucket API Documentation](https://developer.atlassian.com/bitbucket/api/2/reference/)
-- [Pipelines Guide](https://bitbucket.org/product/features/pipelines)
+* 🔗 [Official Bitbucket Documentation](https://support.atlassian.com/bitbucket-cloud/)
+* 📦 [Bitbucket Pipes Marketplace](https://bitbucket.org/product/features/pipelines/integrations)
+* 📜 [Bitbucket Cloud REST API Reference](https://developer.atlassian.com/cloud/bitbucket/rest/intro/)
