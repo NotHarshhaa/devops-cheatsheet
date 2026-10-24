@@ -111,7 +111,7 @@ Boost deployment speed with continuous integration & continuous deployment:
 🚀 [GitHub Actions](./CI-CD/GitHub-Actions.md)  
 🚀 [GitLab CI](./CI-CD/GitLab-CI.md)  
 🚀 [CircleCI](./CI-CD/CircleCI.md)  
-
+🚀 [Argo CD](./CI-CD/Argo.md)
 ### 🐳 **Containerization & Orchestration**  
 
 Build, manage, and deploy containers effortlessly:  
