@@ -14,27 +14,11 @@ Welcome to the **DevOps Tools Cheatsheet Collection** – your go-to resource fo
 
 ---
 
-## 🌐 DevOps Tools Cheatsheet UI
+## 🌐 Browse Online
 
 > [!TIP]
 >
-> Access this collection through our modern web interface at [cheatsheet.prodevopsguytech.com](https://cheatsheet.prodevopsguytech.com)
-
-### 🛠️ Built With
-- **Next.js** - React framework for production
-- **TypeScript** - Type-safe JavaScript
-- **Tailwind CSS** - Utility-first CSS framework
-
-The web interface provides an enhanced, interactive experience for browsing and searching through our DevOps cheatsheets.
-
-### ✨ Key Features
-
-- 📱 **Responsive Design**: Access the cheatsheets seamlessly across all devices
-- 🎨 **Modern Interface**: Enjoy a sleek UI with smooth transitions and animations
-- 🔍 **Smart Navigation**: Easily browse through different DevOps categories
-- 📚 **Rich Content**: Access our comprehensive collection of DevOps tools and best practices
-- 🌙 **Dark Mode**: Comfortable viewing in any lighting condition
-- ⚡ **Fast Performance**: Optimized for quick loading and smooth interactions
+> Prefer browsing in a browser? Read this collection at [cheatsheet.prodevopsguytech.com](https://cheatsheet.prodevopsguytech.com)
 
 ---
 
