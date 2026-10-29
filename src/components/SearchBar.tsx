@@ -22,9 +22,9 @@ export function SearchBar() {
   };
 
   return (
-    <form onSubmit={handleSearch} className="w-full relative group">
+    <form action="/search" method="GET" onSubmit={handleSearch} className="w-full relative group">
       <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500/30 via-blue-500/30 to-purple-500/30 rounded-2xl blur-lg opacity-70 group-hover:opacity-100 transition-all duration-300"></div>
-      
+
       <div className="relative flex items-center bg-background/90 dark:bg-gray-950/90 backdrop-blur-2xl border border-border/80 group-hover:border-primary/50 rounded-2xl p-1.5 shadow-2xl transition-all">
         <div className="pl-3.5 pr-2 text-primary flex items-center shrink-0">
           <Terminal className="w-5 h-5 text-cyan-500" />
@@ -32,6 +32,7 @@ export function SearchBar() {
 
         <Input
           type="text"
+          name="q"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search 200+ DevOps tools, commands, Docker, K8s, Terraform..."

@@ -147,12 +147,12 @@ export function Footer() {
             </div>
             <ul className="space-y-2.5 text-xs">
               {[
-                { name: "Docker Reference", path: "/containerization/docker" },
-                { name: "Kubernetes Commands", path: "/containerization/kubernetes" },
-                { name: "Terraform IaC Syntax", path: "/infrastructure-management/terraform" },
-                { name: "GitHub Actions Workflows", path: "/ci-cd/github-actions" },
-                { name: "Prometheus Monitoring", path: "/monitoring/prometheus" },
-                { name: "Linux Networking", path: "/networking/linux-networking" },
+                { name: "Docker Reference", path: "/Containerization/Docker" },
+                { name: "Kubernetes Commands", path: "/Containerization/Kubernetes" },
+                { name: "Terraform IaC Syntax", path: "/Infrastructure-Management/Terraform" },
+                { name: "GitHub Actions Workflows", path: "/CI-CD/GitHub-Actions" },
+                { name: "Prometheus Monitoring", path: "/Monitoring/Prometheus" },
+                { name: "Istio Service Mesh", path: "/Networking/Istio" },
               ].map((link) => (
                 <li key={link.name}>
                   <Link

@@ -1,7 +1,9 @@
 import { Metadata } from 'next';
-import { getCheatsheetBySlug } from '@/utils/markdown';
+import { notFound } from 'next/navigation';
+import { marked } from 'marked';
+import DOMPurify from 'isomorphic-dompurify';
+import { getCheatsheetBySlug, getAllCheatsheets } from '@/utils/markdown';
 import { categoryData, type Category } from '@/utils/categoryData';
-import { getAllCheatsheets } from '@/data/cheatsheets';
 import { CheatsheetPageClient } from './CheatsheetPageClient';
 
 type RouteParams = {
@@ -9,22 +11,13 @@ type RouteParams = {
   slug: string;
 };
 
-async function resolveParams(
-  paramsOrPromise: RouteParams | Promise<RouteParams>
-): Promise<RouteParams> {
-  return await paramsOrPromise;
-}
-
 export async function generateMetadata({
   params,
 }: {
   params: RouteParams | Promise<RouteParams>;
 }): Promise<Metadata> {
-  const resolved = await resolveParams(params);
-  const cheatsheet = await getCheatsheetBySlug(
-    resolved.category as Category,
-    resolved.slug
-  );
+  const resolved = await params;
+  const cheatsheet = await getCheatsheetBySlug(resolved.category, resolved.slug);
   if (!cheatsheet) return {};
 
   return {
@@ -34,37 +27,44 @@ export async function generateMetadata({
 }
 
 export async function generateStaticParams(): Promise<RouteParams[]> {
-  // Get all categories
-  const categories = Object.keys(categoryData) as Category[];
-  
-  // For each category, get all cheatsheets
-  const params = await Promise.all(
-    categories.map(async (category) => {
-      const cheatsheets = await getAllCheatsheets(category);
-      // Map each cheatsheet to its params
-      return cheatsheets.map((cheatsheet) => ({
-        category: category,
-        slug: cheatsheet.slug,
-      }));
-    })
-  );
-  
-  // Flatten the array of arrays into a single array of params
-  return params.flat();
+  const { cheatsheets } = await getAllCheatsheets('', 1, 1000);
+  return cheatsheets.map((cheatsheet) => ({
+    category: cheatsheet.category,
+    slug: cheatsheet.slug,
+  }));
 }
+
+// Every cheatsheet is prerendered; anything else is a genuine 404.
+export const dynamicParams = false;
 
 export default async function CheatsheetPage({
   params,
 }: {
   params: RouteParams | Promise<RouteParams>;
 }) {
-  const resolved = await resolveParams(params);
+  const resolved = await params;
+  const cheatsheet = await getCheatsheetBySlug(resolved.category, resolved.slug);
 
-  // Cast the category to Category type since we know it's valid from generateStaticParams
-  const safeParams: RouteParams & { category: Category } = {
-    ...resolved,
-    category: resolved.category as Category,
-  };
+  if (!cheatsheet || !(cheatsheet.category in categoryData)) {
+    notFound();
+  }
 
-  return <CheatsheetPageClient params={safeParams} />;
-} 
+  const parsedContent = await marked.parse(cheatsheet.content, { async: false });
+  const words = cheatsheet.content.trim().split(/\s+/).length;
+  const readingTime = `${Math.max(1, Math.round(words / 200))} min read`;
+
+  return (
+    <CheatsheetPageClient
+      category={cheatsheet.category as Category}
+      slug={cheatsheet.slug}
+      title={cheatsheet.title}
+      icon={cheatsheet.icon}
+      description={cheatsheet.description}
+      difficulty={cheatsheet.difficulty}
+      popularity={cheatsheet.popularity}
+      parsedContent={DOMPurify.sanitize(parsedContent)}
+      rawMarkdown={cheatsheet.content}
+      readingTime={readingTime}
+    />
+  );
+}

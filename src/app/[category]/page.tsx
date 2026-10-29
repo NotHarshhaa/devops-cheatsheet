@@ -1,18 +1,32 @@
+import { notFound } from 'next/navigation';
 import { CategoryPageClient } from './CategoryPageClient';
-import { categories } from "@/utils/categoryData";
+import { categories, categoryData, type Category } from '@/utils/categoryData';
+import { getAllCheatsheets } from '@/utils/markdown';
 
-export function generateStaticParams(): Promise<any> | any {
+export function generateStaticParams() {
   return categories.map((category) => ({
     category: category,
   }));
 }
 
-export default async function CategoryPage({ params }: any) {
-  const resolvedParams = await params;
+// All valid categories are prerendered; anything else is a genuine 404.
+export const dynamicParams = false;
 
-  // If the category is 404, show the NotFound component
-  if (resolvedParams.category === '404') {
-    return null; // This will trigger the not-found.tsx page
+export default async function CategoryPage({ params }: { params: Promise<{ category: string }> }) {
+  const { category } = await params;
+  const categoryInfo = categoryData[category as keyof typeof categoryData];
+
+  if (!categoryInfo) {
+    notFound();
   }
-  return <CategoryPageClient params={resolvedParams} />;
+
+  const { cheatsheets } = await getAllCheatsheets(category, 1, 1000);
+
+  return (
+    <CategoryPageClient
+      category={category as Category}
+      description={categoryInfo.description}
+      cheatsheets={cheatsheets.map(({ content: _content, ...meta }) => meta)}
+    />
+  );
 }

@@ -12,23 +12,9 @@ export interface Cheatsheet {
   content?: string;
 }
 
-export const getAllCheatsheets = async (category?: string): Promise<Cheatsheet[]> => {
-  try {
-    const protocol = process.env.NODE_ENV === 'development' ? 'http' : 'https';
-    const host = typeof window === 'undefined' ? 'localhost:3000' : window.location.host;
-    const baseUrl = `${protocol}://${host}`;
-    
-    const url = category 
-      ? `${baseUrl}/api/cheatsheets?limit=1000&category=${category}`
-      : `${baseUrl}/api/cheatsheets?limit=1000`;
-    const response = await fetch(url);
-    const data = await response.json();
-    return data.cheatsheets || [];
-  } catch (error) {
-    console.error('Error fetching cheatsheets:', error);
-    return [];
-  }
-};
+// NOTE: cheatsheet content is read from the markdown files on disk via
+// `@/utils/markdown`. The list below is a lightweight index used for search,
+// filters and API responses — do not fetch this module's data over HTTP.
 
 export const cheatsheets: Cheatsheet[] = [
   // CI-CD
@@ -467,15 +453,3 @@ export const cheatsheets: Cheatsheet[] = [
     updatedAt: "",
   },
 ];
-
-export async function getCheatsheetBySlug(
-  category: string,
-  slug: string,
-): Promise<Cheatsheet | null> {
-  const cheatsheet = cheatsheets.find(
-    (c) =>
-      c.category.toLowerCase() === category.toLowerCase() &&
-      c.slug.toLowerCase() === slug.toLowerCase(),
-  );
-  return cheatsheet || null;
-}

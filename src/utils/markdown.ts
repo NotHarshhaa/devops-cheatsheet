@@ -38,10 +38,19 @@ export interface PaginatedResponse {
   totalPages: number;
 }
 
+/**
+ * Only plain file/folder names are allowed in URL segments — anything with
+ * path separators or relative segments is rejected before it can reach the
+ * filesystem.
+ */
+function isSafeSegment(value: string): boolean {
+  return /^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(value) && !value.includes('..');
+}
+
 export async function getCheatsheetBySlug(category: string, slug: string): Promise<Cheatsheet | null> {
   try {
     // Validate input
-    if (!category || !slug) {
+    if (!category || !slug || !isSafeSegment(category) || !isSafeSegment(slug)) {
       return null;
     }
 
@@ -84,6 +93,9 @@ export async function getAllCheatsheets(category: string | '' = '', page = 1, li
 
     // Process each category
     for (const cat of categoriesToProcess) {
+      if (!isSafeSegment(cat)) {
+        continue;
+      }
       const categoryPath = path.join(process.cwd(), cat);
       
       try {

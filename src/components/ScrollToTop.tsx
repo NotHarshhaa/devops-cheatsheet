@@ -13,7 +13,7 @@ export function ScrollToTop() {
     const toggleVisibility = () => {
       if (!ticking) {
         window.requestAnimationFrame(() => {
-          setIsVisible(window.pageYOffset > 300);
+          setIsVisible(window.scrollY > 300);
           ticking = false;
         });
         ticking = true;

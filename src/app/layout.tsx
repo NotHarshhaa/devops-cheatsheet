@@ -7,6 +7,7 @@ import { ScrollToTop } from "@/components/ScrollToTop";
 import { GlobalLoader } from "@/components/GlobalLoader";
 import { Toaster } from "react-hot-toast";
 import { ThemeProvider } from "@/context/ThemeContext";
+import { themeScript } from "@/utils/themeScript";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { CommandMenu } from "@/components/CommandMenu";
 import { cn } from "@/lib/utils";
@@ -17,10 +18,8 @@ const manrope = Manrope({
   display: "swap",
 });
 
-// Force static generation
-export const dynamic = "force-static";
-export const revalidate = false;
-
+// Pages are prerendered via generateStaticParams on each route; forcing
+// static here would also cache not-found renders as HTTP 200.
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
@@ -33,6 +32,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://devops-cheatsheet.com"),
   title: "DevOps Cheatsheet Hub",
   description: "A comprehensive collection of DevOps tools and practices",
   icons: {
@@ -69,7 +69,7 @@ export const metadata: Metadata = {
     siteName: "DevOps Cheatsheet Hub",
     images: [
       {
-        url: "/og-image.png",
+        url: "/logo.png",
         width: 1200,
         height: 630,
       },
@@ -82,8 +82,8 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "DevOps Cheatsheet Hub",
     description: "A comprehensive collection of DevOps tools and practices",
-    images: ["/twitter-image.png"],
-  },
+    images: ["/logo.png"],
+  }
 };
 
 export default function RootLayout({
@@ -93,7 +93,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={cn("h-full", manrope.variable)}>
-      <head />
+      <head>
+        {/* Set the theme class before first paint to avoid a flash */}
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
       <body
         className={`${manrope.className} min-h-screen bg-background text-foreground flex flex-col overflow-x-hidden font-sans`}
       >

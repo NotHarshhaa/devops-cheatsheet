@@ -15,33 +15,18 @@ interface ThemeContextType {
   theme: Theme;
   toggleTheme: () => void;
   isDarkMode: boolean;
+  mounted: boolean;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-const themeScript = `
-  (function() {
-    try {
-      const storedTheme = localStorage.getItem('theme');
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      const theme = storedTheme || (prefersDark ? 'dark' : 'light');
-
-      if (theme === 'dark') {
-        document.documentElement.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
-      }
-    } catch (e) {
-      // Ignore any errors accessing localStorage
-    }
-  })();
-`;
-
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<Theme | undefined>(undefined);
+  const [theme, setTheme] = useState<Theme>("light");
   const [mounted, setMounted] = useState(false);
 
-  // Initialize theme
+  // Initialize theme from storage/system preference.
+  // The <html> class itself is set pre-paint by the inline script in the
+  // root layout, so this only syncs React state with what's already applied.
   useEffect(() => {
     try {
       const storedTheme = localStorage.getItem("theme") as Theme | null;
@@ -49,14 +34,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         "(prefers-color-scheme: dark)",
       ).matches;
 
-      if (storedTheme) {
+      if (storedTheme === "dark" || storedTheme === "light") {
         setTheme(storedTheme);
-      } else if (prefersDark) {
-        setTheme("dark");
-        localStorage.setItem("theme", "dark");
       } else {
-        setTheme("light");
-        localStorage.setItem("theme", "light");
+        setTheme(prefersDark ? "dark" : "light");
       }
     } catch {
       setTheme("light");
@@ -64,81 +45,53 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     setMounted(true);
   }, []);
 
-  // Add script to head
-  useEffect(() => {
-    if (!document.getElementById("theme-script")) {
-      const script = document.createElement("script");
-      script.id = "theme-script";
-      script.innerHTML = themeScript;
-      document.head.appendChild(script);
-    }
-  }, []);
-
-  // Watch system theme changes
+  // Watch system theme changes (only while the user has no explicit choice)
   useEffect(() => {
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
 
     const handleChange = (e: MediaQueryListEvent) => {
-      if (!localStorage.getItem("theme")) {
-        setTheme(e.matches ? "dark" : "light");
-        if (e.matches) {
-          document.documentElement.classList.add("dark");
-        } else {
-          document.documentElement.classList.remove("dark");
-        }
+      let hasStoredTheme = false;
+      try {
+        hasStoredTheme = !!localStorage.getItem("theme");
+      } catch {
+        hasStoredTheme = false;
       }
+      if (hasStoredTheme) return;
+
+      const next: Theme = e.matches ? "dark" : "light";
+      setTheme(next);
+      document.documentElement.classList.toggle("dark", next === "dark");
     };
 
-    if ("addEventListener" in mediaQuery) {
-      mediaQuery.addEventListener("change", handleChange);
-      return () => mediaQuery.removeEventListener("change", handleChange);
-    } else {
-      // For older browsers that use the deprecated API
-      const mql = mediaQuery as MediaQueryList & {
-        addListener(
-          listener: (this: MediaQueryList, ev: MediaQueryListEvent) => void,
-        ): void;
-        removeListener(
-          listener: (this: MediaQueryList, ev: MediaQueryListEvent) => void,
-        ): void;
-      };
-      mql.addListener(handleChange);
-      return () => mql.removeListener(handleChange);
-    }
+    mediaQuery.addEventListener("change", handleChange);
+    return () => mediaQuery.removeEventListener("change", handleChange);
   }, []);
 
   const toggleTheme = useCallback(() => {
     setTheme((prevTheme) => {
-      const newTheme = prevTheme === "light" ? "dark" : "light";
+      const newTheme: Theme = prevTheme === "light" ? "dark" : "light";
       try {
         localStorage.setItem("theme", newTheme);
       } catch {
         // Ignore localStorage errors
       }
-      if (newTheme === "dark") {
-        document.documentElement.classList.add("dark");
-      } else {
-        document.documentElement.classList.remove("dark");
-      }
+      document.documentElement.classList.toggle("dark", newTheme === "dark");
       return newTheme;
     });
   }, []);
 
-  const contextValue = useMemo(() => {
-    if (!theme) return undefined;
-    const isDarkMode = theme === "dark";
-    return {
+  const contextValue = useMemo(
+    () => ({
       theme,
       toggleTheme,
-      isDarkMode,
-    };
-  }, [theme, toggleTheme]);
+      isDarkMode: theme === "dark",
+      mounted,
+    }),
+    [theme, toggleTheme, mounted],
+  );
 
-  // Don't render until mounted and theme is determined
-  if (!mounted || !contextValue) {
-    return null;
-  }
-
+  // Children are always rendered so pages are server-rendered normally;
+  // consumers use `mounted` to avoid hydration-sensitive UI.
   return (
     <ThemeContext.Provider value={contextValue}>
       {children}

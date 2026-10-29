@@ -8,12 +8,25 @@ import { useIsLowEndDevice } from "@/hooks/useOptimizedAnimation";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 
 export function ThemeToggleComponent() {
-  const { toggleTheme, isDarkMode } = useTheme();
+  const { toggleTheme, isDarkMode, mounted } = useTheme();
   const isLowEnd = useIsLowEndDevice();
 
   const handleToggle = useCallback(() => {
     toggleTheme();
   }, [toggleTheme]);
+
+  // Render a stable placeholder until the theme has been read from
+  // storage, so server and client markup always match.
+  if (!mounted) {
+    return (
+      <div
+        className="flex items-center justify-center h-9 w-9 rounded-xl border border-border/60 bg-muted/40 text-transparent"
+        aria-hidden="true"
+      >
+        <FaSun className="w-4 h-4" />
+      </div>
+    );
+  }
 
   // Simpler animations for low-end devices
   const animationProps = isLowEnd

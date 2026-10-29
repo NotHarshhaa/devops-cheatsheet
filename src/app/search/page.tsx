@@ -1,34 +1,31 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, Suspense } from 'react';
 import Link from 'next/link';
-import { Search as SearchIcon, Loader2, Tag, Star, BarChart2, Activity, Box, Cloud, Shield, GitBranch, Server, Network, BarChart } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
+import { Search as SearchIcon, Loader2, Tag, Star, BarChart2, SearchX } from 'lucide-react';
 import { Cheatsheet } from '@/data/cheatsheets';
+import { CheatsheetIcon } from '@/components/CheatsheetIcon';
 
-// Helper function to get the icon component
-const getIconComponent = (iconString: string) => {
-  const iconMap = {
-    '<Activity />': Activity,
-    '<Box />': Box,
-    '<Cloud />': Cloud,
-    '<Shield />': Shield,
-    '<GitBranch />': GitBranch,
-    '<Server />': Server,
-    '<Network />': Network,
-    '<BarChart />': BarChart,
-  };
-  
-  const IconComponent = iconMap[iconString as keyof typeof iconMap];
-  return IconComponent ? <IconComponent className="w-8 h-8 text-blue-600 dark:text-blue-400" /> : null;
-};
+function escapeRegExp(text: string) {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function formatCategoryName(category: string) {
+  if (category === 'CI-CD') return 'CI/CD';
+  return category
+    .split('-')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
 
 function highlightText(text: string, query: string) {
   if (!query.trim()) return text;
 
-  const parts = text.split(new RegExp(`(${query})`, 'gi'));
-  return parts.map((part, index) => 
-    part.toLowerCase() === query.toLowerCase() ? 
-      <span key={index} className="bg-yellow-200 dark:bg-yellow-800 text-gray-900 dark:text-white rounded px-0.5">{part}</span> : 
+  const parts = text.split(new RegExp(`(${escapeRegExp(query)})`, 'gi'));
+  return parts.map((part, index) =>
+    part.toLowerCase() === query.toLowerCase() ?
+      <span key={index} className="bg-yellow-200 dark:bg-yellow-800 text-gray-900 dark:text-white rounded px-0.5">{part}</span> :
       part
   );
 }
@@ -47,11 +44,18 @@ function DifficultyBadge({ difficulty }: { difficulty: Cheatsheet['difficulty'] 
   );
 }
 
-export default function SearchPage() {
+function SearchPageContent() {
+  const searchParams = useSearchParams();
   const [searchTerm, setSearchTerm] = useState('');
   const [cheatsheets, setCheatsheets] = useState<Cheatsheet[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+
+  // Sync the search box with the ?q= query parameter (e.g. from the home
+  // page search bar or the command menu fallback).
+  useEffect(() => {
+    setSearchTerm(searchParams.get('q') ?? '');
+  }, [searchParams]);
 
   useEffect(() => {
     const fetchCheatsheets = async () => {
@@ -69,19 +73,19 @@ export default function SearchPage() {
     fetchCheatsheets();
   }, []);
 
-  const categories = useMemo(() => 
+  const categories = useMemo(() =>
     Array.from(new Set(cheatsheets.map(sheet => sheet.category))),
     [cheatsheets]
   );
 
   const filteredCheatsheets = useMemo(() => {
     return cheatsheets.filter(cheatsheet => {
-      const matchesSearch = searchTerm.trim() === '' || 
+      const matchesSearch = searchTerm.trim() === '' ||
         `${cheatsheet.title} ${cheatsheet.description} ${cheatsheet.category}`
           .toLowerCase()
           .includes(searchTerm.toLowerCase());
 
-      const matchesCategory = selectedCategories.length === 0 || 
+      const matchesCategory = selectedCategories.length === 0 ||
         selectedCategories.includes(cheatsheet.category);
 
       return matchesSearch && matchesCategory;
@@ -89,8 +93,8 @@ export default function SearchPage() {
   }, [cheatsheets, searchTerm, selectedCategories]);
 
   const toggleCategory = (category: string) => {
-    setSelectedCategories(prev => 
-      prev.includes(category) 
+    setSelectedCategories(prev =>
+      prev.includes(category)
         ? prev.filter(c => c !== category)
         : [...prev, category]
     );
@@ -138,7 +142,7 @@ export default function SearchPage() {
                     : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
                   }`}
               >
-                {category.replace(/-/g, ' ')}
+                {formatCategoryName(category)}
               </button>
             ))}
           </div>
@@ -155,7 +159,7 @@ export default function SearchPage() {
             <div className="space-y-6">
               <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
                 Found {filteredCheatsheets.length} results
-                {searchTerm && ` for &ldquo;${searchTerm}&rdquo;`}
+                {searchTerm && ` for “${searchTerm}”`}
               </p>
               {filteredCheatsheets.map((cheatsheet) => (
                 <Link
@@ -165,7 +169,7 @@ export default function SearchPage() {
                 >
                   <div className="flex items-start gap-4">
                     <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center">
-                      {getIconComponent(cheatsheet.icon)}
+                      <CheatsheetIcon icon={cheatsheet.icon} className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                     </div>
                     <div className="flex-1">
                       <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
@@ -177,7 +181,7 @@ export default function SearchPage() {
                       <div className="flex flex-wrap items-center gap-3 text-sm">
                         <span className="flex items-center gap-1 text-gray-500 dark:text-gray-400">
                           <Tag className="w-4 h-4" />
-                          {cheatsheet.category.replace(/-/g, ' ')}
+                          {formatCategoryName(cheatsheet.category)}
                         </span>
                         <span className="flex items-center gap-1 text-gray-500 dark:text-gray-400">
                           <Star className="w-4 h-4" />
@@ -195,6 +199,7 @@ export default function SearchPage() {
             </div>
           ) : (
             <div className="text-center py-12">
+              <SearchX className="w-10 h-10 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
               <p className="text-gray-600 dark:text-gray-400">No results found for &ldquo;{searchTerm}&rdquo;</p>
               <p className="text-gray-500 dark:text-gray-500 mt-2">Try different keywords or browse our categories</p>
             </div>
@@ -203,4 +208,18 @@ export default function SearchPage() {
       </div>
     </div>
   );
-} 
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-black dark:to-gray-900 flex items-center justify-center">
+          <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
+        </div>
+      }
+    >
+      <SearchPageContent />
+    </Suspense>
+  );
+}

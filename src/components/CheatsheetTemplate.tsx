@@ -1,32 +1,24 @@
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Copy, 
-  Share2, 
-  Bookmark, 
-  Clock, 
-  Star, 
-  ChevronRight, 
-  ChevronLeft, 
-  Activity, 
-  Box, 
-  Cloud, 
-  Shield, 
-  GitBranch, 
-  Server, 
-  Network, 
-  BarChart,
+import {
+  Copy,
+  Share2,
+  Bookmark,
+  Clock,
+  Star,
+  ChevronRight,
+  ChevronLeft,
   Terminal,
   Check,
   List,
   Download,
-  Search,
-  Filter
+  Search
 } from 'lucide-react';
 import { useState, useEffect, useMemo } from 'react';
 import { toast } from 'react-hot-toast';
 import { MarkdownContent } from '@/components/MarkdownContent';
+import { CheatsheetIcon } from '@/components/CheatsheetIcon';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -46,39 +38,26 @@ interface CheatsheetSection {
 interface CheatsheetTemplateProps {
   title: string;
   category: string;
+  slug: string;
   icon: string;
   description: string;
   difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
   readingTime: string;
   popularity: number;
+  rawMarkdown?: string;
   sections: CheatsheetSection[];
 }
-
-// Helper function to get the icon component
-const getIconComponent = (iconString: string) => {
-  const iconMap = {
-    '<Activity />': Activity,
-    '<Box />': Box,
-    '<Cloud />': Cloud,
-    '<Shield />': Shield,
-    '<GitBranch />': GitBranch,
-    '<Server />': Server,
-    '<Network />': Network,
-    '<BarChart />': BarChart,
-  };
-  
-  const IconComponent = iconMap[iconString as keyof typeof iconMap];
-  return IconComponent ? <IconComponent className="w-8 h-8 text-primary" /> : <Terminal className="w-8 h-8 text-primary" />;
-};
 
 export function CheatsheetTemplate({
   title,
   category,
+  slug,
   icon,
   description,
   difficulty,
   readingTime,
   popularity,
+  rawMarkdown,
   sections
 }: CheatsheetTemplateProps) {
   const [currentSection, setCurrentSection] = useState(0);
@@ -87,13 +66,17 @@ export function CheatsheetTemplate({
   const [scrollProgress, setScrollProgress] = useState(0);
   const [searchFilter, setSearchFilter] = useState('');
 
+  // Bookmark key is the canonical URL of this cheatsheet, so the Saved
+  // drawer can link straight back to it.
+  const savedKey = `/${category}/${slug}`;
+
   // Handle localStorage bookmark sync
   useEffect(() => {
-    setIsSaved(isItemSaved(title));
-    const handleStorageChange = () => setIsSaved(isItemSaved(title));
+    setIsSaved(isItemSaved(savedKey));
+    const handleStorageChange = () => setIsSaved(isItemSaved(savedKey));
     window.addEventListener('saved-items-changed', handleStorageChange);
     return () => window.removeEventListener('saved-items-changed', handleStorageChange);
-  }, [title]);
+  }, [savedKey]);
 
   // Handle scroll progress
   useEffect(() => {
@@ -105,7 +88,7 @@ export function CheatsheetTemplate({
       setScrollProgress(progress);
     };
 
-    window.addEventListener('scroll', handleScroll);
+    window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
@@ -172,17 +155,29 @@ export function CheatsheetTemplate({
 
   const handleSave = () => {
     if (isSaved) {
-      removeItem(title);
+      removeItem(savedKey);
       setIsSaved(false);
       toast.success('Removed from bookmarks');
     } else {
-      saveItem(title);
+      saveItem(savedKey);
       setIsSaved(true);
       toast.success('Added to bookmarks');
     }
   };
 
   const handleDownloadMarkdown = () => {
+    if (rawMarkdown) {
+      const blob = new Blob([rawMarkdown], { type: 'text/markdown;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${slug.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-cheatsheet.md`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success('Downloaded cheatsheet as Markdown!');
+      return;
+    }
+
     let md = `# ${title} Cheatsheet\n\n`;
     md += `> ${description}\n\n`;
     md += `- **Domain**: ${category}\n`;
@@ -245,7 +240,7 @@ export function CheatsheetTemplate({
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mb-8">
               <div className="flex items-start gap-4 sm:gap-6">
                 <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0 shadow-inner">
-                  {getIconComponent(icon)}
+                  <CheatsheetIcon icon={icon} className="w-8 h-8 text-primary" />
                 </div>
                 <div>
                   <div className="flex items-center gap-2 mb-2 font-mono text-xs text-primary font-semibold">

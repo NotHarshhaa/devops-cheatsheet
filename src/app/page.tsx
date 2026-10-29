@@ -2,24 +2,16 @@ import { SearchBar } from "@/components/SearchBar";
 import { HomeFilters } from "@/components/HomeFilters";
 import Link from "next/link";
 import { categories, categoryData } from "@/utils/categoryData";
-import { 
-  ArrowRight, 
-  Sparkles, 
-  Terminal, 
-  ShieldCheck, 
-  Zap, 
-  Cpu, 
-  Server, 
-  GitBranch, 
-  Box, 
-  Cloud, 
-  Shield, 
-  Network, 
-  BarChart2, 
-  Github, 
+import {
+  ArrowRight,
+  Sparkles,
+  Terminal,
+  ShieldCheck,
+  Zap,
+  Cpu,
+  Github,
   Layers,
-  CheckCircle2,
-  Copy
+  CheckCircle2
 } from "lucide-react";
 import { CategoryIcon } from "@/components/CategoryIcon";
 import { CategoryActions } from "@/components/CategoryActions";
@@ -96,12 +88,12 @@ export default function HomePage() {
             <div className="flex flex-wrap items-center justify-center gap-2 max-w-2xl mx-auto mb-14 text-xs">
               <span className="text-muted-foreground font-mono text-[11px] mr-1">Trending:</span>
               {[
-                { label: 'kubernetes', path: '/containerization/kubernetes' },
-                { label: 'docker', path: '/containerization/docker' },
-                { label: 'terraform', path: '/infrastructure-management/terraform' },
-                { label: 'github-actions', path: '/ci-cd/github-actions' },
-                { label: 'prometheus', path: '/monitoring/prometheus' },
-                { label: 'security', path: '/security' },
+                { label: 'kubernetes', path: '/Containerization/Kubernetes' },
+                { label: 'docker', path: '/Containerization/Docker' },
+                { label: 'terraform', path: '/Infrastructure-Management/Terraform' },
+                { label: 'github-actions', path: '/CI-CD/GitHub-Actions' },
+                { label: 'prometheus', path: '/Monitoring/Prometheus' },
+                { label: 'security', path: '/Security' },
               ].map((tag) => (
                 <Link
                   key={tag.label}

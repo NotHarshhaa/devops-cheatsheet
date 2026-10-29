@@ -2,17 +2,17 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { 
-  Star, 
-  Clock, 
-  BookOpen, 
-  ArrowRight, 
-  TrendingUp, 
-  Shield, 
-  Building2, 
-  Code 
+import {
+  Star,
+  Clock,
+  BookOpen,
+  ArrowRight,
+  TrendingUp,
+  Shield,
+  Building2
 } from 'lucide-react';
 import { Cheatsheet } from '@/data/cheatsheets';
+import { CheatsheetIcon } from '@/components/CheatsheetIcon';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -175,7 +175,7 @@ export function HomeFilters() {
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center text-base group-hover:scale-105 transition-transform">
-                        {tool.icon || <Code className="w-5 h-5" />}
+                        <CheatsheetIcon icon={tool.icon} className="w-5 h-5 text-primary" />
                       </div>
                       <div>
                         <h3 className="text-lg font-semibold text-foreground group-hover:text-primary transition-colors">
@@ -233,7 +233,7 @@ export function HomeFilters() {
                       <span className="text-xs text-muted-foreground">{tool.status || 'Active'}</span>
                     </div>
                     <Link
-                      href={`/${tool.category.toLowerCase()}/${tool.slug}`}
+                      href={`/${tool.category}/${tool.slug}`}
                       className="inline-flex items-center gap-1 text-primary hover:underline font-medium text-xs group/link"
                     >
                       Learn more

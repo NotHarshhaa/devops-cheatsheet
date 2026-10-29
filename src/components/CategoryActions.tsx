@@ -14,19 +14,22 @@ interface CategoryActionsProps {
 export function CategoryActions({ category }: CategoryActionsProps) {
   const [isSaved, setIsSaved] = useState(false);
 
+  // Store the canonical URL so the Saved drawer can link back to it
+  const savedKey = `/${category}`;
+
   useEffect(() => {
-    setIsSaved(isItemSaved(category));
-  }, [category]);
+    setIsSaved(isItemSaved(savedKey));
+  }, [savedKey]);
 
   const handleSave = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     if (isSaved) {
-      removeItem(category);
+      removeItem(savedKey);
       setIsSaved(false);
       toast.success('Removed from saved items');
     } else {
-      saveItem(category);
+      saveItem(savedKey);
       setIsSaved(true);
       toast.success('Added to saved items');
     }

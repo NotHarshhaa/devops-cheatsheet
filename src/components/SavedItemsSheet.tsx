@@ -48,9 +48,16 @@ export function SavedItemsSheet() {
     toast.success('Cleared all saved items');
   };
 
+  // Entries are stored as canonical paths ("/CI-CD", "/CI-CD/Jenkins").
+  // Older entries may be bare names ("CI-CD"); keep their original casing
+  // since routing is case-sensitive.
   const formatItemPath = (item: string) => {
     if (item.startsWith('/')) return item;
-    return `/${item.toLowerCase().replace(/\s+/g, '-')}`;
+    return `/${item}`;
+  };
+
+  const formatItemLabel = (item: string) => {
+    return item.replace(/^\//, '').replace(/-/g, ' ');
   };
 
   return (
@@ -128,7 +135,7 @@ export function SavedItemsSheet() {
                       </div>
                       <div className="truncate">
                         <div className="text-sm font-semibold text-foreground truncate group-hover:text-primary transition-colors capitalize">
-                          {item.replace(/-/g, ' ')}
+                          {formatItemLabel(item)}
                         </div>
                         <div className="text-[10px] text-muted-foreground font-mono truncate">
                           {path}
